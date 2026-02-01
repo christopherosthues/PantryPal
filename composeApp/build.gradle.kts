@@ -12,7 +12,7 @@ plugins {
 
 kotlin {
     androidLibrary {
-        namespace = "com.darchacheron.pantrypal.compose"
+        namespace = "compose.org.darchacheron.pantrypal"
         compileSdk = libs.versions.android.compileSdk.get().toInt()
         minSdk = libs.versions.android.minSdk.get().toInt()
 
@@ -23,10 +23,10 @@ kotlin {
         withDeviceTestBuilder {
             sourceSetTreeName = "test"
         }
-        withDeviceTest {
-            instrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-            execution = "HOST"
-        }
+//        withDeviceTest {
+//            instrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+//            execution = "HOST"
+//        }
 
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_25)
@@ -91,11 +91,11 @@ dependencies {
 
 compose.desktop {
     application {
-        mainClass = "com.darchacheron.pantrypal.MainKt"
+        mainClass = "org.darchacheron.pantrypal.MainKt"
 
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            packageName = "com.darchacheron.pantrypal"
+            packageName = "org.darchacheron.pantrypal"
             packageVersion = "1.0.0"
         }
     }

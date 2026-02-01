@@ -1,4 +1,4 @@
-rootProject.name = "pantrypal"
+rootProject.name = "PantryPal"
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 pluginManagement {

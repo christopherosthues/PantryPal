@@ -21,11 +21,11 @@ kotlin {
 }
 
 android {
-    namespace = "com.darchacheron.pantrypal"
+    namespace = "org.darchacheron.pantrypal"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
 
     defaultConfig {
-        applicationId = "com.darchacheron.pantrypal"
+        applicationId = "org.darchacheron.pantrypal"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1
