@@ -6,6 +6,8 @@ plugins {
     alias(libs.plugins.composeCompiler)
 }
 
+val appVersionName = project.property("appVersionName") as String
+
 kotlin {
     dependencies {
         implementation(projects.composeApp)
@@ -28,8 +30,8 @@ android {
         applicationId = "org.darchacheron.pantrypal"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = project.property("appVersionCode").toString().toInt()
+        versionName = appVersionName
     }
     packaging {
         resources {

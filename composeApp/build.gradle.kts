@@ -10,6 +10,8 @@ plugins {
     alias(libs.plugins.composeHotReload)
 }
 
+val appVersionName = project.property("appVersionName") as String
+
 kotlin {
     androidLibrary {
         namespace = "compose.org.darchacheron.pantrypal"
@@ -96,7 +98,7 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "org.darchacheron.pantrypal"
-            packageVersion = "1.0.0"
+            packageVersion = appVersionName
         }
     }
 }
