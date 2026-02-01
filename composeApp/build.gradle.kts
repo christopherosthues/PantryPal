@@ -17,9 +17,15 @@ kotlin {
         minSdk = libs.versions.android.minSdk.get().toInt()
 
 //        withJava()
-        withHostTestBuilder {}.configure {}
+        withHostTestBuilder {}.configure {
+            isIncludeAndroidResources = true
+        }
         withDeviceTestBuilder {
             sourceSetTreeName = "test"
+        }
+        withDeviceTest {
+            instrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+            execution = "HOST"
         }
 
         compilerOptions {
