@@ -9,8 +9,8 @@ plugins {
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.composeHotReload)
     alias(libs.plugins.jetbrains.kotlin.serialization)
-//    alias(libs.plugins.ksp)
-//    alias(libs.plugins.room)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.room)
 }
 
 val appVersionName = project.property("appVersionName") as String
@@ -69,9 +69,9 @@ kotlin {
 //        binaries.executable()
 //    }
 
-//    room {
-//        schemaDirectory("$projectDir/schemas")
-//    }
+    room {
+        schemaDirectory("$projectDir/schemas")
+    }
 
     sourceSets {
         commonMain.dependencies {
@@ -90,8 +90,9 @@ kotlin {
             implementation(libs.koin.compose.viewmodel.navigation)
             implementation(libs.androidx.navigation.compose)
             implementation(libs.kotlinx.serialization.json)
-//            implementation(libs.androidx.room.runtime)
-//            implementation(libs.sqlite.bundled)
+
+            implementation(libs.androidx.room.runtime)
+            implementation(libs.sqlite.bundled)
 
 //            api(libs.androidx.datastore)
 //            api(libs.androidx.datastore.preferences)
@@ -113,13 +114,13 @@ kotlin {
 dependencies {
     androidRuntimeClasspath(libs.compose.uiTooling)
 
-//    add("kspAndroid", libs.androidx.room.compiler)
-////    add("kspIosX64", libs.androidx.room.compiler)
-//    add("kspIosArm64", libs.androidx.room.compiler)
-//    add("kspIosSimulatorArm64", libs.androidx.room.compiler)
-//    add("kspJvm", libs.androidx.room.compiler)
-////    add("kspJs", libs.androidx.room.compiler)
-////    add("kspWasmJs", libs.androidx.room.compiler)
+    add("kspAndroid", libs.androidx.room.compiler)
+//    add("kspIosX64", libs.androidx.room.compiler)
+    add("kspIosArm64", libs.androidx.room.compiler)
+    add("kspIosSimulatorArm64", libs.androidx.room.compiler)
+    add("kspJvm", libs.androidx.room.compiler)
+//    add("kspJs", libs.androidx.room.compiler)
+//    add("kspWasmJs", libs.androidx.room.compiler)
 }
 
 compose.desktop {
