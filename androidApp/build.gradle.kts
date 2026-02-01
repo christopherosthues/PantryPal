@@ -13,6 +13,10 @@ kotlin {
         implementation(projects.composeApp)
         implementation(libs.compose.uiToolingPreview)
         implementation(libs.androidx.activity.compose)
+
+        implementation(libs.koin.android)
+        implementation(libs.koin.androidx.compose)
+//            implementation(libs.koin.androidx.compose.navigation)
     }
 
     target {

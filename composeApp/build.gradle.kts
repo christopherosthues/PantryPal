@@ -4,10 +4,13 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
-    alias(libs.plugins.android.kotlin.multiplatform.library)
+    alias(libs.plugins.androidMultiplatformLibrary)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.composeHotReload)
+    alias(libs.plugins.jetbrains.kotlin.serialization)
+//    alias(libs.plugins.ksp)
+//    alias(libs.plugins.room)
 }
 
 val appVersionName = project.property("appVersionName") as String
@@ -55,16 +58,20 @@ kotlin {
         }
     }
 
-    js {
-        browser()
-        binaries.executable()
-    }
+//    js {
+//        browser()
+//        binaries.executable()
+//    }
+//
+//    @OptIn(ExperimentalWasmDsl::class)
+//    wasmJs {
+//        browser()
+//        binaries.executable()
+//    }
 
-    @OptIn(ExperimentalWasmDsl::class)
-    wasmJs {
-        browser()
-        binaries.executable()
-    }
+//    room {
+//        schemaDirectory("$projectDir/schemas")
+//    }
 
     sourceSets {
         commonMain.dependencies {
@@ -76,9 +83,25 @@ kotlin {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
+
+            api(libs.koin.core)
+            implementation(libs.koin.compose)
+            implementation(libs.koin.compose.viewmodel)
+            implementation(libs.koin.compose.viewmodel.navigation)
+            implementation(libs.androidx.navigation.compose)
+            implementation(libs.kotlinx.serialization.json)
+//            implementation(libs.androidx.room.runtime)
+//            implementation(libs.sqlite.bundled)
+
+//            api(libs.androidx.datastore)
+//            api(libs.androidx.datastore.preferences)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
+
+//            implementation(libs.kotlinx.coroutines.test)
+//            implementation(libs.androidx.room.testing)
+//            implementation(libs.turbine.test)
         }
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
@@ -89,6 +112,14 @@ kotlin {
 
 dependencies {
     androidRuntimeClasspath(libs.compose.uiTooling)
+
+//    add("kspAndroid", libs.androidx.room.compiler)
+////    add("kspIosX64", libs.androidx.room.compiler)
+//    add("kspIosArm64", libs.androidx.room.compiler)
+//    add("kspIosSimulatorArm64", libs.androidx.room.compiler)
+//    add("kspJvm", libs.androidx.room.compiler)
+////    add("kspJs", libs.androidx.room.compiler)
+////    add("kspWasmJs", libs.androidx.room.compiler)
 }
 
 compose.desktop {
