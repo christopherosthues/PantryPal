@@ -1,0 +1,25 @@
+package org.darchacheron.pantrypal.food
+
+import androidx.room.Dao
+import androidx.room.Delete
+import androidx.room.Query
+import androidx.room.Upsert
+import kotlinx.coroutines.flow.Flow
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
+
+@OptIn(ExperimentalUuidApi::class)
+@Dao
+interface FoodDao {
+    @Query("SELECT * FROM food")
+    fun getAll(): Flow<List<FoodEntity>>
+
+    @Query("SELECT * FROM food WHERE id = :id")
+    fun getById(id: Uuid): FoodEntity?
+
+    @Upsert
+    suspend fun upsert(food: FoodEntity)
+
+    @Delete
+    suspend fun delete(id: Uuid)
+}

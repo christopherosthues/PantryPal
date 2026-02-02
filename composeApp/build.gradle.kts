@@ -94,6 +94,8 @@ kotlin {
             implementation(libs.androidx.room.runtime)
             implementation(libs.sqlite.bundled)
 
+            implementation(libs.kotlinx.dateime)
+
 //            api(libs.androidx.datastore)
 //            api(libs.androidx.datastore.preferences)
         }
