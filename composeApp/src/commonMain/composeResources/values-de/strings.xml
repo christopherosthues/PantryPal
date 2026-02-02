@@ -1,4 +1,10 @@
 <resources>
+    <string name="settings_title">Einstellungen</string>
+    <string name="settings_measurement_unit">Maßeinheit</string>
+    <string name="settings_default_unit">Standardeinheit</string>
+    <string name="settings_select_unit">Einheit auswählen</string>
+    <string name="settings_theme">Design</string>
+
     <!-- Weight Units -->
     <string name="measure_unit_g">Gramm</string>
     <string name="measure_unit_kg">Kilogramm</string>
