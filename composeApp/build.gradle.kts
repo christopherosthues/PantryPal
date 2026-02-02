@@ -96,8 +96,8 @@ kotlin {
 
             implementation(libs.kotlinx.dateime)
 
-//            api(libs.androidx.datastore)
-//            api(libs.androidx.datastore.preferences)
+            api(libs.androidx.datastore)
+            api(libs.androidx.datastore.preferences)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

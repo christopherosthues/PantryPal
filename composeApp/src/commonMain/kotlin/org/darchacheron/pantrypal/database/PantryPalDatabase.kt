@@ -4,9 +4,11 @@ import androidx.room.ConstructedBy
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import org.darchacheron.pantrypal.food.FoodEntity
 
 @Database(
     entities = [
+        FoodEntity::class
     ],
     version = 1
 )

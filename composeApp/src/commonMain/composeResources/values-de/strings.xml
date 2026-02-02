@@ -1,0 +1,22 @@
+<resources>
+    <!-- Weight Units -->
+    <string name="measure_unit_g">Gramm</string>
+    <string name="measure_unit_kg">Kilogramm</string>
+    <string name="measure_unit_oz">Unze</string>
+    <string name="measure_unit_lb">Pfund</string>
+
+    <!-- Volume Units -->
+    <string name="measure_unit_ml">Milliliter</string>
+    <string name="measure_unit_l">Liter</string>
+    <string name="measure_unit_tbsp">Esslöffel</string>
+    <string name="measure_unit_tsp">Teelöffel</string>
+    <string name="measure_unit_cup">Tasse</string>
+
+    <!-- Other Units -->
+    <string name="measure_unit_piece">Stück</string>
+
+    <!-- Theme -->
+    <string name="theme_light">Hell</string>
+    <string name="theme_dark">Dunkel</string>
+    <string name="theme_system">System</string>
+</resources>

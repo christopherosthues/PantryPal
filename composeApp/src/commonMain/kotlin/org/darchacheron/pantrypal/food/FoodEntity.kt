@@ -16,6 +16,7 @@ data class FoodEntity(
     val carbs: Int,
     val fat: Int,
     val protein: Int,
+    val weightInGrams: Int,
     val bestBeforeDate: LocalDate?,
     val useByDate: LocalDate?,
     val createdAt: Instant,
