@@ -83,12 +83,14 @@ kotlin {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
+            implementation(libs.androidx.lifecycle.viewmodel.nav3)
 
             api(libs.koin.core)
             implementation(libs.koin.compose)
             implementation(libs.koin.compose.viewmodel)
             implementation(libs.koin.compose.viewmodel.navigation)
-            implementation(libs.androidx.navigation.compose)
+            implementation(libs.androidx.navigation3.ui)
+//            implementation(libs.androidx.navigation.compose)
             implementation(libs.kotlinx.serialization.json)
 
             implementation(libs.androidx.room.runtime)
