@@ -16,7 +16,10 @@ import androidx.savedstate.serialization.SavedStateConfiguration
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
+import org.darchacheron.pantrypal.settings.Settings
+import org.darchacheron.pantrypal.settings.SettingsView
 import org.darchacheron.pantrypal.settings.SettingsViewModel
+import org.darchacheron.pantrypal.ui.AppTheme
 import org.koin.compose.KoinApplication
 import org.koin.compose.koinInject
 
@@ -43,30 +46,30 @@ fun App(
     settingsViewModel: SettingsViewModel = koinInject()
 ) {
     KoinApplication(application = {}) {
-        val settingsUiState = settingsViewModel.settingsFlow.collectAsState()
+        val settingsUiState = settingsViewModel.uiState.collectAsState()
 
         val currentSettings = settingsUiState.value
-        val settings = if (currentSettings is UiState.Success<*>) {
-            currentSettings.data as Settings
+        val settings = if (currentSettings.hasData) {
+            currentSettings.data!!
         } else {
             Settings()
         }
 
         AppTheme(themeMode = settings.themeMode) {
-            val backStack = rememberNavBackStack(org.darchacheron.gofirst.navConfig, org.darchacheron.gofirst.NavRoute.Play)
+            val backStack = rememberNavBackStack(navConfig, NavRoute.Play)
 
             NavDisplay(
                 backStack = backStack,
                 onBack = { backStack.removeLastOrNull() },
                 entryProvider = { key ->
                     when (key) {
-                        org.darchacheron.gofirst.NavRoute.Play -> NavEntry(key) {
+                        NavRoute.Play -> NavEntry(key) {
                             PlayScreen(
-                                onSettingsClick = { backStack.add(org.darchacheron.gofirst.NavRoute.Settings) }
+                                onSettingsClick = { backStack.add(NavRoute.Settings) }
                             )
                         }
 
-                        org.darchacheron.gofirst.NavRoute.Settings -> NavEntry(key) {
+                        NavRoute.Settings -> NavEntry(key) {
                             SettingsView(
                                 onBack = {
                                     if (backStack.size > 1) {
