@@ -11,7 +11,10 @@ plugins {
     alias(libs.plugins.jetbrains.kotlin.serialization)
     alias(libs.plugins.ksp)
     alias(libs.plugins.room)
+    alias(libs.plugins.changelog)
 }
+
+fun properties(key: String) = providers.gradleProperty(key)
 
 val appVersionName = project.property("appVersionName") as String
 
@@ -83,14 +86,13 @@ kotlin {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
-            implementation(libs.androidx.lifecycle.viewmodel.nav3)
+            implementation(libs.jetbrains.lifecycle.viewmodelNavigation3)
+            implementation(libs.jetbrains.navigation3.ui)
 
             api(libs.koin.core)
             implementation(libs.koin.compose)
             implementation(libs.koin.compose.viewmodel)
             implementation(libs.koin.compose.viewmodel.navigation)
-            implementation(libs.androidx.navigation3.ui)
-//            implementation(libs.androidx.navigation.compose)
             implementation(libs.kotlinx.serialization.json)
 
             implementation(libs.androidx.room.runtime)
@@ -127,13 +129,21 @@ dependencies {
 //    add("kspWasmJs", libs.androidx.room.compiler)
 }
 
+// Configure Gradle Changelog Plugin - read more: https://github.com/JetBrains/gradle-changelog-plugin
+changelog {
+    groups = listOf("Added", "Changed", "Removed", "Fixed")
+    repositoryUrl = properties("appRepositoryUrl")
+    version = properties("appVersionName")
+    path = rootProject.file("CHANGELOG.md").path
+}
+
 compose.desktop {
     application {
         mainClass = "org.darchacheron.pantrypal.MainKt"
 
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            packageName = "org.darchacheron.pantrypal"
+            packageName = properties("appName").get()
             packageVersion = appVersionName
         }
     }
