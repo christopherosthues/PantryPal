@@ -33,24 +33,20 @@ fun SettingsView(viewModel: SettingsViewModel = koinInject()) {
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            when (val state = uiState) {
-                is SettingsUiState.Loading -> {
-                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-                }
-                is SettingsUiState.Error -> {
-                    Text(
-                        text = state.message,
-                        color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.align(Alignment.Center).padding(16.dp)
-                    )
-                }
-                is SettingsUiState.Success -> {
-                    SettingsContent(
-                        settings = state.settings,
-                        onMeasureUnitSelected = viewModel::onMeasureUnitSelected,
-                        onThemeModeSelected = viewModel::onThemeModeSelected
-                    )
-                }
+            if (uiState.isLoading) {
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+            } else if (uiState.hasError) {
+                Text(
+                    text = stringResource(uiState.error!!),
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.align(Alignment.Center).padding(16.dp)
+                )
+            } else if (uiState.hasData) {
+                SettingsContent(
+                    settings = uiState.data!!,
+                    onMeasureUnitSelected = viewModel::onMeasureUnitSelected,
+                    onThemeModeSelected = viewModel::onThemeModeSelected
+                )
             }
         }
     }
@@ -83,7 +79,7 @@ private fun SettingsContent(
             )
         }
 
-        Divider()
+        HorizontalDivider()
 
         // Theme Section
         Column {
@@ -117,7 +113,10 @@ private fun MeasureUnitDropdown(
             modifier = Modifier.fillMaxWidth(),
             trailingIcon = {
                 IconButton(onClick = { expanded = true }) {
-                    Icon(painter = painterResource(Res.drawable.arrow_drop_down), contentDescription = stringResource(Res.string.settings_select_unit))
+                    Icon(
+                        painter = painterResource(Res.drawable.arrow_drop_down),
+                        contentDescription = stringResource(Res.string.settings_select_unit)
+                    )
                 }
             }
         )

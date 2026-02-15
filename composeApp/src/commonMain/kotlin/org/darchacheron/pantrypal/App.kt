@@ -1,49 +1,94 @@
 package org.darchacheron.pantrypal
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.safeContentPadding
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import org.jetbrains.compose.resources.painterResource
+import androidx.navigation3.runtime.NavEntry
+import androidx.navigation3.runtime.NavKey
+import androidx.navigation3.runtime.rememberNavBackStack
+import androidx.navigation3.ui.NavDisplay
+import androidx.savedstate.serialization.SavedStateConfiguration
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.modules.SerializersModule
+import kotlinx.serialization.modules.polymorphic
+import org.darchacheron.pantrypal.settings.SettingsViewModel
+import org.koin.compose.KoinApplication
+import org.koin.compose.koinInject
 
-import pantrypal.composeapp.generated.resources.Res
-import pantrypal.composeapp.generated.resources.compose_multiplatform
+@Serializable
+sealed interface NavRoute : NavKey {
+    @Serializable
+    data object Play : NavRoute
+    @Serializable
+    data object Settings : NavRoute
+}
+
+private val navConfig = SavedStateConfiguration {
+    serializersModule = SerializersModule {
+        polymorphic(NavKey::class) {
+            subclass(NavRoute.Play::class, NavRoute.Play.serializer())
+            subclass(NavRoute.Settings::class, NavRoute.Settings.serializer())
+        }
+    }
+}
 
 @Composable
 @Preview
-fun App() {
-    MaterialTheme {
-        var showContent by remember { mutableStateOf(false) }
-        Column(
-            modifier = Modifier
-                .background(MaterialTheme.colorScheme.primaryContainer)
-                .safeContentPadding()
-                .fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Button(onClick = { showContent = !showContent }) {
-                Text("Click me!")
-            }
-            AnimatedVisibility(showContent) {
-                val greeting = remember { Greeting().greet() }
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Image(painterResource(Res.drawable.compose_multiplatform), null)
-                    Text("Compose: $greeting")
+fun App(
+    settingsViewModel: SettingsViewModel = koinInject()
+) {
+    KoinApplication(application = {}) {
+        val settingsUiState = settingsViewModel.settingsFlow.collectAsState()
+
+        val currentSettings = settingsUiState.value
+        val settings = if (currentSettings is UiState.Success<*>) {
+            currentSettings.data as Settings
+        } else {
+            Settings()
+        }
+
+        AppTheme(themeMode = settings.themeMode) {
+            val backStack = rememberNavBackStack(org.darchacheron.gofirst.navConfig, org.darchacheron.gofirst.NavRoute.Play)
+
+            NavDisplay(
+                backStack = backStack,
+                onBack = { backStack.removeLastOrNull() },
+                entryProvider = { key ->
+                    when (key) {
+                        org.darchacheron.gofirst.NavRoute.Play -> NavEntry(key) {
+                            PlayScreen(
+                                onSettingsClick = { backStack.add(org.darchacheron.gofirst.NavRoute.Settings) }
+                            )
+                        }
+
+                        org.darchacheron.gofirst.NavRoute.Settings -> NavEntry(key) {
+                            SettingsView(
+                                onBack = {
+                                    if (backStack.size > 1) {
+                                        backStack.removeAt(backStack.size - 1)
+                                    }
+                                }
+                            )
+                        }
+
+                        else -> NavEntry(key) { Text("Unknown route") }
+                    }
+                },
+                transitionSpec = {
+                    slideInVertically(initialOffsetY = { it }) togetherWith ExitTransition.KeepUntilTransitionsFinished
+                },
+                popTransitionSpec = {
+                    EnterTransition.None togetherWith slideOutVertically(targetOffsetY = { it })
+                },
+                predictivePopTransitionSpec = {
+                    EnterTransition.None togetherWith slideOutVertically(targetOffsetY = { it })
                 }
-            }
+            )
         }
     }
 }

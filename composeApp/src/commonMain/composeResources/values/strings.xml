@@ -4,6 +4,8 @@
     <string name="settings_default_unit">Default Unit</string>
     <string name="settings_select_unit">Select unit</string>
     <string name="settings_theme">Theme</string>
+    <string name="settings_error_loading">Failed to load settings</string>
+    <string name="settings_error_saving">Failed to save settings</string>
 
     <!-- Weight Units -->
     <string name="measure_unit_g">Gram</string>
