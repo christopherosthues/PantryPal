@@ -15,11 +15,11 @@ interface FoodDao {
     fun getAll(): Flow<List<FoodEntity>>
 
     @Query("SELECT * FROM food WHERE id = :id")
-    fun getById(id: Uuid): FoodEntity?
+    suspend fun getById(id: Uuid): FoodEntity?
 
     @Upsert
     suspend fun upsert(food: FoodEntity)
 
-    @Delete
+    @Query("DELETE FROM food WHERE id = :id")
     suspend fun delete(id: Uuid)
 }

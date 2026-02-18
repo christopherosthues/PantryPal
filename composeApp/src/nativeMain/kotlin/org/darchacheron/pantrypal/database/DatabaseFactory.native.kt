@@ -7,7 +7,7 @@ import platform.Foundation.NSDocumentDirectory
 import platform.Foundation.NSFileManager
 import platform.Foundation.NSUserDomainMask
 
-actual class DatabaseFactory {
+actual class PantryPalDatabaseFactory {
     actual fun create(): RoomDatabase.Builder<PantryPalDatabase> {
         val dbFile = documentDirectory() + "/${PantryPalDatabase.DB_NAME}"
         return Room.databaseBuilder<PantryPalDatabase>(

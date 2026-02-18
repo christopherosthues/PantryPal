@@ -3,12 +3,10 @@ package org.darchacheron.pantrypal.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.darchacheron.pantrypal.ui.UiState
@@ -20,41 +18,52 @@ class SettingsViewModel(
     private val settingsRepository: SettingsRepository
 ) : ViewModel() {
 
-    private val _saveError = MutableStateFlow<org.jetbrains.compose.resources.StringResource?>(null)
+    private val _settingsFlow = MutableStateFlow<UiState<Settings>>(UiState.loading())
+    val settingsFlow: StateFlow<UiState<Settings>> = _settingsFlow.asStateFlow()
 
-    val uiState: StateFlow<UiState<Settings>> = settingsRepository.getSettingsFlow()
-        .map { settings -> UiState.success(settings) }
-        .catch { emit(UiState.error(Res.string.settings_error_loading)) }
-        .combine(_saveError) { state, error ->
-            if (error != null) state.copy(error = error) else state
+    private lateinit var _originalSettings: Settings
+
+    init {
+        viewModelScope.launch {
+            settingsRepository.getSettingsFlow()
+                .onStart { _settingsFlow.value = UiState.loading() }
+                .catch { _settingsFlow.value = UiState.error(Res.string.settings_error_loading) }
+                .collect { settings ->
+                    _originalSettings = settings
+                    _settingsFlow.value = UiState.success(settings)
+                }
         }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = UiState.loading()
-        )
+    }
 
     fun onMeasureUnitSelected(unit: MeasureUnit) {
-        saveSettings { it.copy(weightUnit = unit) }
+        _settingsFlow.update { state ->
+            state.data?.let { UiState.success(it.copy(weightUnit = unit)) } ?: state
+        }
     }
 
     fun onThemeModeSelected(mode: ThemeMode) {
-        saveSettings { it.copy(themeMode = mode) }
+        _settingsFlow.update { state ->
+            state.data?.let { UiState.success(it.copy(themeMode = mode)) } ?: state
+        }
     }
 
-    private fun saveSettings(update: (Settings) -> Settings) {
+    fun saveSettings(onSuccess: () -> Unit) {
+        val currentSettings = settingsFlow.value.data ?: return
         viewModelScope.launch {
             try {
-                _saveError.update { null }
-                val currentSettings = uiState.value.data ?: return@launch
-                settingsRepository.saveSettings(update(currentSettings))
+                settingsRepository.saveSettings(currentSettings)
+                onSuccess()
             } catch (e: Exception) {
-                _saveError.update { Res.string.settings_error_saving }
+                _settingsFlow.update { it.copy(error = Res.string.settings_error_saving) }
             }
         }
     }
 
-    fun onErrorDismissed() {
-        _saveError.update { null }
+    fun revertChanges() {
+        _settingsFlow.value = UiState.success(_originalSettings)
+    }
+
+    fun resetToDefaults() {
+        _settingsFlow.value = UiState.success(Settings())
     }
 }

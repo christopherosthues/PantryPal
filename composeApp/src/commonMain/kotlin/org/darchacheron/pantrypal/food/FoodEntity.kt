@@ -10,7 +10,7 @@ import kotlin.uuid.Uuid
 @OptIn(ExperimentalUuidApi::class)
 @Entity(tableName = "food")
 data class FoodEntity(
-    @PrimaryKey(autoGenerate = true) val id: Uuid = Uuid.generateV7(),
+    @PrimaryKey(autoGenerate = false) val id: Uuid = Uuid.generateV7(),
     val name: String,
     val calories: Int,
     val carbs: Int,
@@ -19,6 +19,38 @@ data class FoodEntity(
     val weightInGrams: Int,
     val bestBeforeDate: LocalDate?,
     val useByDate: LocalDate?,
+    val openedAt: LocalDate?,
     val createdAt: Instant,
     val lastModifiedAt: Instant,
+) {
+    fun toFood(): Food = Food(
+        id = id,
+        name = name,
+        calories = calories,
+        carbs = carbs,
+        fat = fat,
+        protein = protein,
+        weightInGrams = weightInGrams,
+        bestBeforeDate = bestBeforeDate,
+        useByDate = useByDate,
+        openedAt = openedAt,
+        createdAt = createdAt,
+        lastModifiedAt = lastModifiedAt
+    )
+}
+
+@OptIn(ExperimentalUuidApi::class)
+fun Food.toFoodEntity(): FoodEntity = FoodEntity(
+    id = id,
+    name = name,
+    calories = calories,
+    carbs = carbs,
+    fat = fat,
+    protein = protein,
+    weightInGrams = weightInGrams,
+    bestBeforeDate = bestBeforeDate,
+    useByDate = useByDate,
+    openedAt = openedAt,
+    createdAt = createdAt,
+    lastModifiedAt = lastModifiedAt
 )

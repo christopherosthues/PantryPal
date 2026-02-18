@@ -27,6 +27,7 @@ androidx-splashscreen = "1.2.0"
 changelog = "2.5.0"
 multiplatform-nav3-ui = "1.1.0-alpha02"
 compose-multiplatform-lifecycle = "2.10.0-alpha08"
+camerak = "0.2.0"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -70,6 +71,12 @@ androidx-datastore-preferences = { group = "androidx.datastore", name = "datasto
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
 androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
 sqlite-bundled = { module = "androidx.sqlite:sqlite-bundled", version.ref = "sqlite" }
+
+camerak = { module = "io.github.kashif-mehmood-km:camerak", version.ref = "camerak" }
+camerak-image-saver = { module = "io.github.kashif-mehmood-km:image_saver_plugin", version.ref = "camerak" }
+#camerak-qr-scanner = { module = "io.github.kashif-mehmood-km:qr_scanner_plugin", version.ref = "camerak" }
+camerak-ocr = { module = "io.github.kashif-mehmood-km:ocr_plugin", version.ref = "camerak" }
+
 
 [plugins]
 changelog = { id = "org.jetbrains.changelog", version.ref = "changelog" }

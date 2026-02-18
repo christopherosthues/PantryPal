@@ -4,6 +4,9 @@ import androidx.room.ConstructedBy
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import org.darchacheron.pantrypal.database.converters.InstantConverter
+import org.darchacheron.pantrypal.database.converters.LocalDateConverter
+import org.darchacheron.pantrypal.database.converters.UuidConverter
 import org.darchacheron.pantrypal.food.FoodDao
 import org.darchacheron.pantrypal.food.FoodEntity
 
@@ -12,6 +15,11 @@ import org.darchacheron.pantrypal.food.FoodEntity
         FoodEntity::class
     ],
     version = 1
+)
+@TypeConverters(
+    InstantConverter::class,
+    LocalDateConverter::class,
+    UuidConverter::class
 )
 @ConstructedBy(PantryPalDatabaseConstructor::class)
 abstract class PantryPalDatabase : RoomDatabase() {

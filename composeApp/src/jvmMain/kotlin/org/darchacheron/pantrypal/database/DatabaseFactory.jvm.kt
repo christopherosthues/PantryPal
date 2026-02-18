@@ -4,7 +4,7 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import java.io.File
 
-actual class DatabaseFactory {
+actual class PantryPalDatabaseFactory {
     actual fun create(): androidx.room.RoomDatabase.Builder<PantryPalDatabase> {
         val os = System.getProperty("os.name").lowercase()
         val userHome = System.getProperty("user.home")

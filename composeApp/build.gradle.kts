@@ -102,6 +102,11 @@ kotlin {
 
             api(libs.androidx.datastore)
             api(libs.androidx.datastore.preferences)
+
+            implementation(libs.camerak)
+            implementation(libs.camerak.image.saver)
+//            implementation(libs.camerak.qr.scanner)
+            implementation(libs.camerak.ocr)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -114,6 +119,13 @@ kotlin {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutinesSwing)
         }
+    }
+}
+
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+    compilerOptions {
+        freeCompilerArgs.add("-opt-in=kotlin.uuid.ExperimentalUuidApi")
+        freeCompilerArgs.add("-opt-in=kotlin.time.ExperimentalTime")
     }
 }
 

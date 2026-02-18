@@ -18,14 +18,58 @@ import pantrypal.composeapp.generated.resources.arrow_drop_down
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsView(viewModel: SettingsViewModel = koinInject()) {
-    val uiState by viewModel.uiState.collectAsState()
+fun SettingsView(
+    viewModel: SettingsViewModel = koinInject(),
+    onBack: () -> Unit = {}
+) {
+    val uiState by viewModel.settingsFlow.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(Res.string.settings_title)) }
+                title = { Text(stringResource(Res.string.settings_title)) },
+                navigationIcon = {
+                    IconButton(onClick = {
+                        viewModel.revertChanges()
+                        onBack()
+                    }) {
+                        Icon(
+                            painter = painterResource(Res.drawable.ic_back),
+                            contentDescription = stringResource(Res.string.settings_content_description_back)
+                        )
+                    }
+                },
+                actions = {}
             )
+        },
+        floatingActionButton = {
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                FloatingActionButton(
+                    onClick = { viewModel.resetToDefaults() },
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                ) {
+                    Icon(
+                        painter = painterResource(Res.drawable.ic_reset),
+                        contentDescription = stringResource(Res.string.settings_content_description_reset)
+                    )
+                }
+                FloatingActionButton(
+                    onClick = {
+                        viewModel.saveSettings { onBack() }
+                    }
+                ) {
+                    Icon(
+                        painter = painterResource(Res.drawable.ic_save),
+                        contentDescription = stringResource(Res.string.settings_content_description_save)
+                    )
+                }
+            }
         }
     ) { paddingValues ->
         Box(
@@ -36,11 +80,10 @@ fun SettingsView(viewModel: SettingsViewModel = koinInject()) {
             if (uiState.isLoading) {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             } else if (uiState.hasError) {
-                Text(
-                    text = stringResource(uiState.error!!),
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.align(Alignment.Center).padding(16.dp)
-                )
+                val errorMessage = stringResource(uiState.error!!)
+                LaunchedEffect(errorMessage) {
+                    snackbarHostState.showSnackbar(message = errorMessage)
+                }
             } else if (uiState.hasData) {
                 SettingsContent(
                     settings = uiState.data!!,
@@ -120,7 +163,6 @@ private fun MeasureUnitDropdown(
                 }
             }
         )
-        // Invisible clickable overlay to trigger dropdown
         Box(
             modifier = Modifier
                 .matchParentSize()

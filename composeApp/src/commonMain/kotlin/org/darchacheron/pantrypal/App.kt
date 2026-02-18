@@ -16,6 +16,9 @@ import androidx.savedstate.serialization.SavedStateConfiguration
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
+import org.darchacheron.pantrypal.food.CameraView
+import org.darchacheron.pantrypal.food.FoodDetailView
+import org.darchacheron.pantrypal.food.FoodListView
 import org.darchacheron.pantrypal.settings.Settings
 import org.darchacheron.pantrypal.settings.SettingsView
 import org.darchacheron.pantrypal.settings.SettingsViewModel
@@ -26,7 +29,14 @@ import org.koin.compose.koinInject
 @Serializable
 sealed interface NavRoute : NavKey {
     @Serializable
-    data object Play : NavRoute
+    data object FoodList : NavRoute
+
+    @Serializable
+    data class FoodDetail(val foodId: String? = null) : NavRoute
+
+    @Serializable
+    data object Camera : NavRoute
+
     @Serializable
     data object Settings : NavRoute
 }
@@ -34,7 +44,8 @@ sealed interface NavRoute : NavKey {
 private val navConfig = SavedStateConfiguration {
     serializersModule = SerializersModule {
         polymorphic(NavKey::class) {
-            subclass(NavRoute.Play::class, NavRoute.Play.serializer())
+            subclass(NavRoute.FoodList::class, NavRoute.FoodList.serializer())
+            subclass(NavRoute.FoodDetail::class, NavRoute.FoodDetail.serializer())
             subclass(NavRoute.Settings::class, NavRoute.Settings.serializer())
         }
     }
@@ -46,7 +57,7 @@ fun App(
     settingsViewModel: SettingsViewModel = koinInject()
 ) {
     KoinApplication(application = {}) {
-        val settingsUiState = settingsViewModel.uiState.collectAsState()
+        val settingsUiState = settingsViewModel.settingsFlow.collectAsState()
 
         val currentSettings = settingsUiState.value
         val settings = if (currentSettings.hasData) {
@@ -56,17 +67,40 @@ fun App(
         }
 
         AppTheme(themeMode = settings.themeMode) {
-            val backStack = rememberNavBackStack(navConfig, NavRoute.Play)
+            val backStack = rememberNavBackStack(navConfig, NavRoute.FoodList)
 
             NavDisplay(
                 backStack = backStack,
                 onBack = { backStack.removeLastOrNull() },
                 entryProvider = { key ->
                     when (key) {
-                        NavRoute.Play -> NavEntry(key) {
-                            PlayScreen(
-                                onSettingsClick = { backStack.add(NavRoute.Settings) }
+                        NavRoute.FoodList -> NavEntry(key) {
+                            FoodListView(
+                                onNavigateToDetail = { foodId ->
+                                    backStack.add(NavRoute.FoodDetail(foodId))
+                                },
+                                onSettingsClick = {
+                                    backStack.add(NavRoute.Settings)
+                                }
                             )
+                        }
+
+                        is NavRoute.FoodDetail -> NavEntry(key) {
+                            FoodDetailView(
+                                key.foodId,
+                                onBack = {
+                                    if (backStack.size > 1) {
+                                        backStack.removeAt(backStack.size - 1)
+                                    }
+                                },
+                                onOpenCamera = {
+                                    backStack.add(NavRoute.Camera)
+                                }
+                            )
+                        }
+
+                        NavRoute.Camera -> NavEntry(key) {
+                            CameraView()
                         }
 
                         NavRoute.Settings -> NavEntry(key) {
