@@ -21,7 +21,8 @@ import kotlin.uuid.Uuid
 @OptIn(ExperimentalUuidApi::class)
 class FoodDetailViewModel(private val foodRepository: FoodRepository) : ViewModel() {
 
-    private var foodId: Uuid? = null
+    var foodId by mutableStateOf(Uuid.generateV7())
+        private set
 
     var name by mutableStateOf("")
     var calories by mutableStateOf("")
@@ -32,6 +33,7 @@ class FoodDetailViewModel(private val foodRepository: FoodRepository) : ViewMode
     var bestBeforeDate by mutableStateOf<LocalDate?>(null)
     var useByDate by mutableStateOf<LocalDate?>(null)
     var openedAt by mutableStateOf<LocalDate?>(null)
+    var imagePath by mutableStateOf<String?>(null)
 
     private val _uiState = MutableStateFlow(UiState<Food?>())
     val uiState: StateFlow<UiState<Food?>> = _uiState.asStateFlow()
@@ -41,7 +43,6 @@ class FoodDetailViewModel(private val foodRepository: FoodRepository) : ViewMode
 
     fun loadFood(id: String?) {
         if (id == null) {
-            foodId = null
             resetFields()
             return
         }
@@ -62,6 +63,7 @@ class FoodDetailViewModel(private val foodRepository: FoodRepository) : ViewMode
                     bestBeforeDate = food.bestBeforeDate
                     useByDate = food.useByDate
                     openedAt = food.openedAt
+                    imagePath = food.imagePath
                     _uiState.value = UiState.success(null)
                 } else {
                     _uiState.value = UiState.error(Res.string.food_detail_error_loading)
@@ -73,6 +75,7 @@ class FoodDetailViewModel(private val foodRepository: FoodRepository) : ViewMode
     }
 
     private fun resetFields() {
+        foodId = Uuid.generateV7()
         name = ""
         calories = ""
         carbs = ""
@@ -82,6 +85,7 @@ class FoodDetailViewModel(private val foodRepository: FoodRepository) : ViewMode
         bestBeforeDate = null
         useByDate = null
         openedAt = null
+        imagePath = null
     }
 
     fun save() {
@@ -90,18 +94,19 @@ class FoodDetailViewModel(private val foodRepository: FoodRepository) : ViewMode
             try {
                 val now = Clock.System.now()
                 val food = Food(
-                    id = foodId ?: Uuid.generateV7(),
+                    id = foodId,
                     name = name,
-                    calories = calories.toIntOrNull() ?: 0,
-                    carbs = carbs.toIntOrNull() ?: 0,
-                    fat = fat.toIntOrNull() ?: 0,
-                    protein = protein.toIntOrNull() ?: 0,
-                    weightInGrams = weight.toIntOrNull() ?: 0,
+                    calories = calories.toIntOrNull(),
+                    carbs = carbs.toIntOrNull(),
+                    fat = fat.toIntOrNull(),
+                    protein = protein.toIntOrNull(),
+                    weightInGrams = weight.toIntOrNull(),
                     bestBeforeDate = bestBeforeDate,
                     useByDate = useByDate,
                     openedAt = openedAt,
                     createdAt = now,
-                    lastModifiedAt = now
+                    lastModifiedAt = now,
+                    imagePath = imagePath
                 )
                 foodRepository.upsert(food)
                 _isSaved.value = true
@@ -113,11 +118,10 @@ class FoodDetailViewModel(private val foodRepository: FoodRepository) : ViewMode
     }
 
     fun delete() {
-        val id = foodId ?: return
         viewModelScope.launch {
             _uiState.value = UiState.loading()
             try {
-                foodRepository.delete(id)
+                foodRepository.delete(foodId)
                 _isSaved.value = true
                 _uiState.value = UiState.success(null)
             } catch (e: Exception) {

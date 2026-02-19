@@ -107,6 +107,9 @@ kotlin {
             implementation(libs.camerak.image.saver)
 //            implementation(libs.camerak.qr.scanner)
             implementation(libs.camerak.ocr)
+
+            implementation(libs.coil.compose)
+            implementation(libs.coil.network.ktor)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

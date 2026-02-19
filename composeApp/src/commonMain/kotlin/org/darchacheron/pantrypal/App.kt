@@ -19,6 +19,7 @@ import kotlinx.serialization.modules.polymorphic
 import org.darchacheron.pantrypal.food.CameraView
 import org.darchacheron.pantrypal.food.FoodDetailView
 import org.darchacheron.pantrypal.food.FoodListView
+import org.darchacheron.pantrypal.food.SimpleCameraView
 import org.darchacheron.pantrypal.settings.Settings
 import org.darchacheron.pantrypal.settings.SettingsView
 import org.darchacheron.pantrypal.settings.SettingsViewModel
@@ -35,7 +36,10 @@ sealed interface NavRoute : NavKey {
     data class FoodDetail(val foodId: String? = null) : NavRoute
 
     @Serializable
-    data object Camera : NavRoute
+    data class Camera(val foodId: String) : NavRoute
+
+    @Serializable
+    data class SimpleCamera(val foodId: String) : NavRoute
 
     @Serializable
     data object Settings : NavRoute
@@ -46,6 +50,7 @@ private val navConfig = SavedStateConfiguration {
         polymorphic(NavKey::class) {
             subclass(NavRoute.FoodList::class, NavRoute.FoodList.serializer())
             subclass(NavRoute.FoodDetail::class, NavRoute.FoodDetail.serializer())
+            subclass(NavRoute.Camera::class, NavRoute.Camera.serializer())
             subclass(NavRoute.Settings::class, NavRoute.Settings.serializer())
         }
     }
@@ -93,14 +98,24 @@ fun App(
                                         backStack.removeAt(backStack.size - 1)
                                     }
                                 },
-                                onOpenCamera = {
-                                    backStack.add(NavRoute.Camera)
+                                onOpenCamera = { foodId ->
+                                    backStack.add(NavRoute.SimpleCamera(foodId))
                                 }
                             )
                         }
 
-                        NavRoute.Camera -> NavEntry(key) {
-                            CameraView()
+                        is NavRoute.Camera -> NavEntry(key) {
+                            CameraView(
+                                foodId = key.foodId,
+                                onBack = { backStack.removeLastOrNull() }
+                            )
+                        }
+
+                        is NavRoute.SimpleCamera -> NavEntry(key) {
+                            SimpleCameraView(
+                                foodId = key.foodId,
+                                onBack = { backStack.removeLastOrNull() }
+                            )
                         }
 
                         NavRoute.Settings -> NavEntry(key) {

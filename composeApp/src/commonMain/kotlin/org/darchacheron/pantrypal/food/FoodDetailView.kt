@@ -1,15 +1,20 @@
 package org.darchacheron.pantrypal.food
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import coil3.compose.AsyncImage
 import kotlinx.datetime.LocalDate
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
@@ -22,7 +27,7 @@ import kotlin.uuid.ExperimentalUuidApi
 fun FoodDetailView(
     foodId: String?,
     onBack: () -> Unit,
-    onOpenCamera: () -> Unit,
+    onOpenCamera: (String) -> Unit,
     viewModel: FoodDetailViewModel = koinInject()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -106,6 +111,18 @@ fun FoodDetailView(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            if (viewModel.imagePath != null) {
+                AsyncImage(
+                    model = viewModel.imagePath,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp)
+                        .clip(RoundedCornerShape(8.dp)),
+                    contentScale = ContentScale.Crop
+                )
+            }
+
             OutlinedTextField(
                 value = viewModel.name,
                 onValueChange = { viewModel.name = it },
@@ -179,7 +196,7 @@ fun FoodDetailView(
             )
 
             IconButton(
-                onClick = onOpenCamera,
+                onClick = { onOpenCamera(viewModel.foodId.toString()) },
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             ) {
                 Icon(

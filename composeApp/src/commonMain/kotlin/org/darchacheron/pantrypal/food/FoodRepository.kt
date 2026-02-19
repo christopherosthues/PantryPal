@@ -15,6 +15,9 @@ class FoodRepository(
     suspend fun getById(id: Uuid): Food? =
         foodDao.getById(id)?.toFood()
 
+    fun observeById(id: Uuid): Flow<Food?> =
+        foodDao.observeById(id).map { it?.toFood() }
+
     suspend fun upsert(food: Food) =
         foodDao.upsert(food.toFoodEntity())
 

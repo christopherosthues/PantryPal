@@ -17,6 +17,9 @@ interface FoodDao {
     @Query("SELECT * FROM food WHERE id = :id")
     suspend fun getById(id: Uuid): FoodEntity?
 
+    @Query("SELECT * FROM food WHERE id = :id")
+    fun observeById(id: Uuid): Flow<FoodEntity?>
+
     @Upsert
     suspend fun upsert(food: FoodEntity)
 

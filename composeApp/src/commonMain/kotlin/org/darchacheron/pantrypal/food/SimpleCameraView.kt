@@ -1,0 +1,520 @@
+package org.darchacheron.pantrypal.food
+
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.dp
+import com.kashif.cameraK.compose.CameraKScreen
+import com.kashif.cameraK.compose.rememberCameraKState
+import com.kashif.cameraK.controller.CameraController
+import com.kashif.cameraK.enums.AspectRatio
+import com.kashif.cameraK.enums.CameraDeviceType
+import com.kashif.cameraK.enums.CameraLens
+import com.kashif.cameraK.enums.Directory
+import com.kashif.cameraK.enums.FlashMode
+import com.kashif.cameraK.enums.ImageFormat
+import com.kashif.cameraK.enums.QualityPrioritization
+import com.kashif.cameraK.enums.TorchMode
+import com.kashif.cameraK.permissions.Permissions
+import com.kashif.cameraK.permissions.providePermissions
+import com.kashif.cameraK.result.ImageCaptureResult
+import com.kashif.cameraK.state.CameraConfiguration
+import com.kashif.cameraK.state.CameraKState
+import com.kashif.imagesaverplugin.ImageSaverConfig
+import com.kashif.imagesaverplugin.ImageSaverPlugin
+import com.kashif.imagesaverplugin.rememberImageSaverPlugin
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.ExperimentalResourceApi
+import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.koinInject
+import pantrypal.composeapp.generated.resources.Res
+import pantrypal.composeapp.generated.resources.appName
+import pantrypal.composeapp.generated.resources.ic_camera
+import pantrypal.composeapp.generated.resources.ic_cameraswitch
+import pantrypal.composeapp.generated.resources.ic_flash_off
+import pantrypal.composeapp.generated.resources.ic_flash_on
+import pantrypal.composeapp.generated.resources.ic_flashlight_off
+import pantrypal.composeapp.generated.resources.ic_flashlight_on
+import pantrypal.composeapp.generated.resources.ic_x
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
+
+@OptIn(ExperimentalUuidApi::class)
+@Composable
+fun SimpleCameraView(
+    foodId: String,
+    onBack: () -> Unit,
+    foodRepository: FoodRepository = koinInject()
+) {
+    val permissions: Permissions = providePermissions()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        modifier = Modifier.windowInsetsPadding(WindowInsets.systemBars),
+    ) {
+        val cameraPermissionState = remember { mutableStateOf(permissions.hasCameraPermission()) }
+        val storagePermissionState = remember { mutableStateOf(permissions.hasStoragePermission()) }
+
+        // Create all plugin instances
+        val imageSaverPlugin = rememberImageSaverPlugin(
+            config = ImageSaverConfig(
+                isAutoSave = true,
+                prefix = stringResource(Res.string.appName),
+                directory = Directory.PICTURES,
+                customFolderName = stringResource(Res.string.appName),
+            ),
+        )
+
+        PermissionsHandler(
+            permissions = permissions,
+            cameraPermissionState = cameraPermissionState,
+            storagePermissionState = storagePermissionState,
+        )
+
+        if (cameraPermissionState.value && storagePermissionState.value) {
+            CameraContent(
+                foodId = foodId,
+                onBack = onBack,
+                imageSaverPlugin = imageSaverPlugin,
+                foodRepository = foodRepository,
+            )
+        }
+    }
+}
+
+@Composable
+private fun PermissionsHandler(
+    permissions: Permissions,
+    cameraPermissionState: MutableState<Boolean>,
+    storagePermissionState: MutableState<Boolean>,
+) {
+    if (!cameraPermissionState.value) {
+        permissions.RequestCameraPermission(
+            onGranted = { cameraPermissionState.value = true },
+            onDenied = { println("Camera Permission Denied") },
+        )
+    }
+
+    if (!storagePermissionState.value) {
+        permissions.RequestStoragePermission(
+            onGranted = { storagePermissionState.value = true },
+            onDenied = { println("Storage Permission Denied") },
+        )
+    }
+}
+
+@OptIn(ExperimentalUuidApi::class)
+@Composable
+private fun CameraContent(
+    foodId: String,
+    onBack: () -> Unit,
+    imageSaverPlugin: ImageSaverPlugin,
+    foodRepository: FoodRepository,
+) {
+    val cameraState by rememberCameraKState(
+        config = CameraConfiguration(
+            cameraLens = CameraLens.BACK,
+            flashMode = FlashMode.OFF,
+            imageFormat = ImageFormat.JPEG,
+            directory = Directory.PICTURES,
+            torchMode = TorchMode.OFF,
+            qualityPrioritization = QualityPrioritization.QUALITY,
+            cameraDeviceType = CameraDeviceType.WIDE_ANGLE,
+            aspectRatio = AspectRatio.RATIO_16_9,
+            targetResolution = 1920 to 1080,
+            returnFilePath = true
+        ),
+        setupPlugins = { stateHolder ->
+            stateHolder.attachPlugin(imageSaverPlugin)
+        },
+    )
+
+    CameraKScreen(
+        cameraState = cameraState,
+        showPreview = true,
+        loadingContent = {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center,
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    Text(
+                        "Initializing Camera...",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                }
+            }
+        },
+        errorContent = { error ->
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center,
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    modifier = Modifier.padding(32.dp),
+                ) {
+                    Icon(
+                        painter = painterResource(Res.drawable.ic_x),
+                        contentDescription = "Error",
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(48.dp),
+                    )
+                    Text(
+                        "Camera Error",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                    Text(
+                        error.message,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Center,
+                    )
+                }
+            }
+        },
+    ) { state ->
+        EnhancedCameraScreen(
+            foodId = foodId,
+            onBack = onBack,
+            cameraState = state,
+            foodRepository = foodRepository,
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalUuidApi::class)
+@Composable
+fun EnhancedCameraScreen(
+    foodId: String,
+    onBack: () -> Unit,
+    cameraState: CameraKState.Ready,
+    foodRepository: FoodRepository,
+) {
+    val scope = rememberCoroutineScope()
+    val cameraController = cameraState.controller
+    var imageBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
+    var isCapturing by remember { mutableStateOf(false) }
+
+    // Camera settings state
+    var flashMode by remember { mutableStateOf(FlashMode.OFF) }
+    var torchMode by remember { mutableStateOf(TorchMode.OFF) }
+    var zoomLevel by remember { mutableFloatStateOf(1f) }
+    var maxZoom by remember { mutableFloatStateOf(1f) }
+
+    LaunchedEffect(cameraController) {
+        maxZoom = cameraController.getMaxZoom()
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        // Quick controls overlay (Flash, Torch, Switch)
+        QuickControlsOverlay(
+            modifier = Modifier.align(Alignment.TopEnd),
+            flashMode = flashMode,
+            torchMode = torchMode,
+            onFlashToggle = {
+                cameraController.toggleFlashMode()
+                flashMode = cameraController.getFlashMode() ?: FlashMode.OFF
+            },
+            onTorchToggle = {
+                cameraController.toggleTorchMode()
+                torchMode = cameraController.getTorchMode() ?: TorchMode.OFF
+            },
+            onLensSwitch = {
+                cameraController.toggleCameraLens()
+                maxZoom = cameraController.getMaxZoom()
+                zoomLevel = 1f
+            }
+        )
+
+        // Zoom Slider (Left side)
+        Box(
+            modifier = Modifier
+                .align(Alignment.CenterStart)
+                .padding(start = 16.dp)
+                .fillMaxHeight(0.5f),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(
+                horizontalAlignment = Alignment.Start,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = "${(maxZoom * 10).toInt() / 10f}x",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color.White,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+
+                Slider(
+                    value = zoomLevel,
+                    onValueChange = {
+                        zoomLevel = it
+                        cameraController.setZoom(it)
+                    },
+                    valueRange = 1f..maxZoom,
+                    modifier = Modifier
+                        .graphicsLayer {
+                            rotationZ = 270f
+                            transformOrigin = androidx.compose.ui.graphics.TransformOrigin.Center
+                        }
+                        .width(20.dp) // Fixed width for the rotated slider
+                        .layout { measurable, constraints ->
+                            val placeable = measurable.measure(
+                                Constraints(
+                                    minWidth = constraints.minHeight,
+                                    maxWidth = constraints.maxHeight,
+                                    minHeight = constraints.minWidth,
+                                    maxHeight = constraints.maxWidth
+                                )
+                            )
+                            layout(placeable.height, placeable.width) {
+                                placeable.place(
+                                    -((placeable.width - placeable.height) / 2),
+                                    -((placeable.height - placeable.width) / 2)
+                                )
+                            }
+                        },
+                    colors = SliderDefaults.colors(
+                        thumbColor = Color.White,
+                        activeTrackColor = Color.White,
+                        inactiveTrackColor = Color.White.copy(alpha = 0.3f)
+                    )
+                )
+
+                Text(
+                    text = "1x",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color.White,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+            }
+        }
+
+        // Capture button
+        CaptureButton(
+            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 60.dp),
+            isCapturing = isCapturing,
+            onCapture = {
+                if (!isCapturing) {
+                    isCapturing = true
+                    scope.launch {
+                        handleImageCapture(
+                            foodId = foodId,
+                            cameraController = cameraController,
+                            foodRepository = foodRepository,
+                        )
+                        isCapturing = false
+                        onBack()
+                    }
+                }
+            },
+        )
+
+        // Captured image preview
+        CapturedImagePreview(imageBitmap = imageBitmap) {
+            imageBitmap = null
+        }
+    }
+}
+
+@Composable
+private fun QuickControlsOverlay(
+    modifier: Modifier = Modifier,
+    flashMode: FlashMode,
+    torchMode: TorchMode,
+    onFlashToggle: () -> Unit,
+    onTorchToggle: () -> Unit,
+    onLensSwitch: () -> Unit,
+) {
+    Surface(
+        modifier = modifier.padding(16.dp),
+        color = Color.Black.copy(alpha = 0.6f),
+        shape = RoundedCornerShape(12.dp),
+    ) {
+        Row(
+            modifier = Modifier.padding(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            IconButton(onClick = onFlashToggle) {
+                Icon(
+                    painter = painterResource(
+                        if (flashMode == FlashMode.OFF) Res.drawable.ic_flash_off else Res.drawable.ic_flash_on
+                    ),
+                    contentDescription = "Flash: $flashMode",
+                    tint = Color.White,
+                )
+            }
+            IconButton(onClick = onTorchToggle) {
+                Icon(
+                    painter = painterResource(
+                        if (torchMode == TorchMode.OFF) Res.drawable.ic_flashlight_off else Res.drawable.ic_flashlight_on
+                    ),
+                    contentDescription = "Torch: $torchMode",
+                    tint = Color.White,
+                )
+            }
+            IconButton(onClick = onLensSwitch) {
+                Icon(
+                    painter = painterResource(Res.drawable.ic_cameraswitch),
+                    contentDescription = "Switch Camera",
+                    tint = Color.White,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CaptureButton(modifier: Modifier = Modifier, isCapturing: Boolean, onCapture: () -> Unit) {
+    FilledTonalButton(
+        onClick = onCapture,
+        enabled = !isCapturing,
+        modifier = modifier.size(80.dp).clip(CircleShape),
+        colors = ButtonDefaults.filledTonalButtonColors(
+            containerColor = MaterialTheme.colorScheme.primary,
+            disabledContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+        ),
+    ) {
+        Icon(
+            painter = painterResource(Res.drawable.ic_camera),
+            contentDescription = "Capture",
+            tint = if (isCapturing) Color.White.copy(alpha = 0.5f) else Color.White,
+            modifier = Modifier.size(32.dp),
+        )
+    }
+}
+
+@Composable
+private fun CapturedImagePreview(imageBitmap: ImageBitmap?, onDismiss: () -> Unit) {
+    imageBitmap?.let { bitmap ->
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = Color.Black.copy(alpha = 0.9f),
+        ) {
+            Box(modifier = Modifier.fillMaxSize()) {
+                Image(
+                    bitmap = bitmap,
+                    contentDescription = "Captured Image",
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
+                    contentScale = ContentScale.Fit,
+                )
+
+                IconButton(
+                    onClick = onDismiss,
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(16.dp)
+                        .background(
+                            MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.6f),
+                            CircleShape,
+                        ),
+                ) {
+                    Icon(
+                        painter = painterResource(Res.drawable.ic_x),
+                        contentDescription = "Close Preview",
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.rotate(120f),
+                    )
+                }
+            }
+        }
+
+        LaunchedEffect(bitmap) {
+            delay(3000)
+            onDismiss()
+        }
+    }
+}
+
+@OptIn(ExperimentalResourceApi::class, ExperimentalUuidApi::class)
+private suspend fun handleImageCapture(
+    foodId: String,
+    cameraController: CameraController,
+    foodRepository: FoodRepository,
+) {
+    when (val result = cameraController.takePictureToFile()) {
+        is ImageCaptureResult.SuccessWithFile -> {
+            // Image saved directly to file - significantly faster!
+            println("Image captured and saved at: ${result.filePath}")
+
+            try {
+                val uuid = Uuid.parse(foodId)
+                val food = foodRepository.getById(uuid)
+                if (food != null) {
+                    foodRepository.upsert(food.copy(imagePath = result.filePath))
+                }
+            } catch (e: Exception) {
+                println("Error updating food image path: ${e.message}")
+            }
+        }
+
+        is ImageCaptureResult.Success -> {
+            // Fallback for platforms that don't support direct file capture
+            println("Image captured successfully (${result.byteArray.size} bytes)")
+        }
+
+        is ImageCaptureResult.Error -> {
+            println("Image Capture Error: ${result.exception.message}")
+        }
+    }
+}

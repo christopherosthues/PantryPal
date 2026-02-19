@@ -12,16 +12,17 @@ import kotlin.uuid.Uuid
 data class FoodEntity(
     @PrimaryKey(autoGenerate = false) val id: Uuid = Uuid.generateV7(),
     val name: String,
-    val calories: Int,
-    val carbs: Int,
-    val fat: Int,
-    val protein: Int,
-    val weightInGrams: Int,
+    val calories: Int?,
+    val carbs: Int?,
+    val fat: Int?,
+    val protein: Int?,
+    val weightInGrams: Int?,
     val bestBeforeDate: LocalDate?,
     val useByDate: LocalDate?,
     val openedAt: LocalDate?,
     val createdAt: Instant,
     val lastModifiedAt: Instant,
+    val imagePath: String? = null,
 ) {
     fun toFood(): Food = Food(
         id = id,
@@ -35,7 +36,8 @@ data class FoodEntity(
         useByDate = useByDate,
         openedAt = openedAt,
         createdAt = createdAt,
-        lastModifiedAt = lastModifiedAt
+        lastModifiedAt = lastModifiedAt,
+        imagePath = imagePath
     )
 }
 
@@ -52,5 +54,6 @@ fun Food.toFoodEntity(): FoodEntity = FoodEntity(
     useByDate = useByDate,
     openedAt = openedAt,
     createdAt = createdAt,
-    lastModifiedAt = lastModifiedAt
+    lastModifiedAt = lastModifiedAt,
+    imagePath = imagePath
 )

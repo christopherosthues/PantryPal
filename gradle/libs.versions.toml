@@ -28,6 +28,7 @@ changelog = "2.5.0"
 multiplatform-nav3-ui = "1.1.0-alpha02"
 compose-multiplatform-lifecycle = "2.10.0-alpha08"
 camerak = "0.2.0"
+coil = "3.3.0"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -77,6 +78,8 @@ camerak-image-saver = { module = "io.github.kashif-mehmood-km:image_saver_plugin
 #camerak-qr-scanner = { module = "io.github.kashif-mehmood-km:qr_scanner_plugin", version.ref = "camerak" }
 camerak-ocr = { module = "io.github.kashif-mehmood-km:ocr_plugin", version.ref = "camerak" }
 
+coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }
+coil-network-ktor = { module = "io.coil-kt.coil3:coil-network-ktor3", version.ref = "coil" }
 
 [plugins]
 changelog = { id = "org.jetbrains.changelog", version.ref = "changelog" }
