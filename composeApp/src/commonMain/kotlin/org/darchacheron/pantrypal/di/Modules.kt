@@ -31,25 +31,12 @@ val navigationModule = module {
         val navigator = get<Navigator>()
         FoodListView(
             foodListViewModel = koinViewModel(),
-            onNavigateToDetail = { foodId ->
-                navigator.goToFoodDetail(foodId)
-            },
-            onSettingsClick = {
-                navigator.goToSettings()
-            }
         )
     }
 
     navigation<NavRoute.FoodDetail> { route ->
-        val navigator = get<Navigator>()
         FoodDetailView(
             viewModel = koinViewModel { parametersOf(route) },
-            onBack = {
-                navigator.goBack()
-            },
-            onOpenCamera = { foodId ->
-                navigator.goToSimpleCamera(foodId)
-            }
         )
     }
 
@@ -66,7 +53,9 @@ val navigationModule = module {
     navigation<NavRoute.SimpleCamera> { route ->
         val navigator = get<Navigator>()
         SimpleCameraView(
-            foodId = route.foodId,
+            onCapture = {
+                route.onCapture(it)
+            },
             onBack = {
                 navigator.goBack()
             }

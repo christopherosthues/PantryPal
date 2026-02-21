@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
 import org.darchacheron.pantrypal.navigation.NavRoute
+import org.darchacheron.pantrypal.navigation.Navigator
 import org.darchacheron.pantrypal.ui.UiState
 import org.jetbrains.compose.resources.StringResource
 import pantrypal.composeapp.generated.resources.Res
@@ -25,10 +26,11 @@ import kotlin.uuid.Uuid
 
 @OptIn(ExperimentalUuidApi::class)
 class FoodDetailViewModel(
-    val navFoodId: NavRoute.FoodDetail,
-    private val foodRepository: FoodRepository
-) : ViewModel() {
-    var foodId by mutableStateOf(if (navFoodId.foodId != null) Uuid.parse(navFoodId.foodId) else Uuid.generateV7())
+    val navigationRoute: NavRoute.FoodDetail,
+    private val foodRepository: FoodRepository,
+    private val navigator: Navigator,
+    ) : ViewModel() {
+    var foodId by mutableStateOf(if (navigationRoute.foodId != null) Uuid.parse(navigationRoute.foodId) else Uuid.generateV7())
     var name by mutableStateOf("")
     var calories by mutableStateOf("")
     var carbs by mutableStateOf("")
@@ -50,7 +52,7 @@ class FoodDetailViewModel(
     val snackbarMessage: StateFlow<StringResource?> = _snackbarMessage.asStateFlow()
 
     init {
-        navFoodId.foodId?.let {
+        navigationRoute.foodId?.let {
             viewModelScope.launch {
                 _uiState.value = UiState.loading()
                 try {
@@ -129,5 +131,17 @@ class FoodDetailViewModel(
 
     fun clearSnackbar() {
         _snackbarMessage.value = null
+    }
+
+    fun goBack() {
+        navigator.goBack()
+    }
+
+    fun openCamera() {
+        navigator.goToSimpleCamera(
+            onSuccess = { imagePath ->
+                this.imagePath = imagePath
+            }
+        )
     }
 }

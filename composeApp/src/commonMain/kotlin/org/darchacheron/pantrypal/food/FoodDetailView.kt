@@ -1,6 +1,5 @@
 package org.darchacheron.pantrypal.food
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -26,8 +25,6 @@ import kotlin.uuid.ExperimentalUuidApi
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalUuidApi::class)
 @Composable
 fun FoodDetailView(
-    onBack: () -> Unit,
-    onOpenCamera: (String) -> Unit,
     viewModel: FoodDetailViewModel = koinInject()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -37,7 +34,7 @@ fun FoodDetailView(
 
     LaunchedEffect(isSaved) {
         if (isSaved && snackbarMessage == null) {
-            onBack()
+            viewModel.goBack()
         }
     }
 
@@ -47,7 +44,7 @@ fun FoodDetailView(
             snackbarHostState.showSnackbar(message)
             viewModel.clearSnackbar()
             if (isSaved) {
-                onBack()
+                viewModel.goBack()
             }
         }
     }
@@ -59,13 +56,13 @@ fun FoodDetailView(
                 title = {
                     Text(
                         stringResource(
-                            if (viewModel.navFoodId.foodId == null) Res.string.food_detail_title_add
+                            if (viewModel.navigationRoute.foodId == null) Res.string.food_detail_title_add
                             else Res.string.food_detail_title_edit
                         )
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = { viewModel.goBack() }) {
                         Icon(
                             painter = painterResource(Res.drawable.ic_back),
                             contentDescription = stringResource(Res.string.settings_content_description_back)
@@ -73,7 +70,7 @@ fun FoodDetailView(
                     }
                 },
                 actions = {
-                    if (viewModel.navFoodId.foodId != null) {
+                    if (viewModel.navigationRoute.foodId != null) {
                         IconButton(onClick = { viewModel.delete() }) {
                             Icon(
                                 painter = painterResource(Res.drawable.ic_delete),
@@ -204,7 +201,7 @@ fun FoodDetailView(
             )
 
             IconButton(
-                onClick = { onOpenCamera(viewModel.foodId.toString()) },
+                onClick = { viewModel.openCamera() },
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             ) {
                 Icon(

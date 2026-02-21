@@ -73,10 +73,8 @@ import com.kashif.imagesaverplugin.ImageSaverPlugin
 import com.kashif.imagesaverplugin.rememberImageSaverPlugin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
-import org.koin.compose.koinInject
 import pantrypal.composeapp.generated.resources.Res
 import pantrypal.composeapp.generated.resources.appName
 import pantrypal.composeapp.generated.resources.ic_camera
@@ -95,17 +93,13 @@ import pantrypal.composeapp.generated.resources.simple_camera_content_descriptio
 import pantrypal.composeapp.generated.resources.simple_camera_content_description_torch_toggle
 import pantrypal.composeapp.generated.resources.simple_camera_error_title
 import pantrypal.composeapp.generated.resources.simple_camera_initializing
-import kotlin.uuid.ExperimentalUuidApi
-import kotlin.uuid.Uuid
 
 private const val simpleCameraLoggerTag = "SimpleCamera"
 
-@OptIn(ExperimentalUuidApi::class)
 @Composable
 fun SimpleCameraView(
-    foodId: String,
-    onBack: () -> Unit,
-    foodRepository: FoodRepository = koinInject()
+    onCapture: (String) -> Unit,
+    onBack: () -> Unit
 ) {
     val permissions: Permissions = providePermissions()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -135,10 +129,9 @@ fun SimpleCameraView(
 
         if (cameraPermissionState.value && storagePermissionState.value) {
             CameraContent(
-                foodId = foodId,
+                onCapture = onCapture,
                 onBack = onBack,
                 imageSaverPlugin = imageSaverPlugin,
-                foodRepository = foodRepository,
             )
         }
     }
@@ -169,13 +162,11 @@ private fun PermissionsHandler(
     }
 }
 
-@OptIn(ExperimentalUuidApi::class)
 @Composable
 private fun CameraContent(
-    foodId: String,
+    onCapture: (String) -> Unit,
     onBack: () -> Unit,
     imageSaverPlugin: ImageSaverPlugin,
-    foodRepository: FoodRepository,
 ) {
     val cameraState by rememberCameraKState(
         config = CameraConfiguration(
@@ -247,21 +238,19 @@ private fun CameraContent(
         },
     ) { state ->
         EnhancedCameraScreen(
-            foodId = foodId,
+            onCapture = onCapture,
             onBack = onBack,
             cameraState = state,
-            foodRepository = foodRepository,
         )
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalUuidApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EnhancedCameraScreen(
-    foodId: String,
+    onCapture: (String) -> Unit,
     onBack: () -> Unit,
     cameraState: CameraKState.Ready,
-    foodRepository: FoodRepository,
 ) {
     val scope = rememberCoroutineScope()
     val cameraController = cameraState.controller
@@ -383,9 +372,8 @@ fun EnhancedCameraScreen(
                     isCapturing = true
                     scope.launch {
                         handleImageCapture(
-                            foodId = foodId,
                             cameraController = cameraController,
-                            foodRepository = foodRepository,
+                            onCapture = onCapture,
                         )
                         isCapturing = false
                         onBack()
@@ -397,6 +385,21 @@ fun EnhancedCameraScreen(
         // Captured image preview
         CapturedImagePreview(imageBitmap = imageBitmap) {
             imageBitmap = null
+        }
+
+        // Back button
+        IconButton(
+            onClick = onBack,
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(16.dp)
+                .background(Color.Black.copy(alpha = 0.4f), CircleShape)
+        ) {
+            Icon(
+                painter = painterResource(Res.drawable.ic_x),
+                contentDescription = stringResource(Res.string.simple_camera_content_description_close_preview),
+                tint = Color.White
+            )
         }
     }
 }
@@ -512,38 +515,15 @@ private fun CapturedImagePreview(imageBitmap: ImageBitmap?, onDismiss: () -> Uni
     }
 }
 
-@OptIn(ExperimentalResourceApi::class, ExperimentalUuidApi::class)
 private suspend fun handleImageCapture(
-    foodId: String,
     cameraController: CameraController,
-    foodRepository: FoodRepository,
+    onCapture: (String) -> Unit,
 ) {
-//    scope.launch {
-//        when (val result = controller.takePictureToFile()) {
-//            is ImageCaptureResult.SuccessWithFile -> {
-//                val file = File(result.filePath)
-//                val byteArray = file.readBytes()
-//                val text = ocrPlugin.recognizeText(byteArray)
-//            }
-//        }
-//    }
-
-
-
     when (val result = cameraController.takePictureToFile()) {
         is ImageCaptureResult.SuccessWithFile -> {
             // Image saved directly to file - significantly faster!
             Logger.withTag(simpleCameraLoggerTag).i { "Image saved to: ${result.filePath}" }
-
-            try {
-                val uuid = Uuid.parse(foodId)
-                val food = foodRepository.getById(uuid)
-                if (food != null) {
-                    foodRepository.upsert(food.copy(imagePath = result.filePath))
-                }
-            } catch (e: Exception) {
-                Logger.withTag(simpleCameraLoggerTag).e { "Error updating food image path: ${e.message}" }
-            }
+            onCapture(result.filePath)
         }
 
         is ImageCaptureResult.Success -> {

@@ -21,9 +21,7 @@ import pantrypal.composeapp.generated.resources.*
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalUuidApi::class)
 @Composable
 fun FoodListView(
-    onNavigateToDetail: (foodId: String?) -> Unit,
     foodListViewModel: FoodListViewModel = koinInject(),
-    onSettingsClick: () -> Unit = {}
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     val uiState by foodListViewModel.uiState.collectAsState()
@@ -35,7 +33,7 @@ fun FoodListView(
                 title = { Text(stringResource(Res.string.food_list_title)) },
                 actions = {
                     IconButton(
-                        onClick = onSettingsClick,
+                        onClick = { foodListViewModel.goToSettings() }
                     ) {
                         Icon(
                             painter = painterResource(Res.drawable.ic_settings),
@@ -46,7 +44,7 @@ fun FoodListView(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { onNavigateToDetail(null) }) {
+            FloatingActionButton(onClick = { foodListViewModel.goToFoodDetail(null) }) {
                 Icon(
                     painter = painterResource(Res.drawable.ic_add),
                     contentDescription = stringResource(Res.string.food_list_add_food)
@@ -79,7 +77,7 @@ fun FoodListView(
                         items(state.data) { food ->
                             FoodItem(
                                 food = food,
-                                onClick = { onNavigateToDetail(food.id.toString()) }
+                                onClick = { foodListViewModel.goToFoodDetail(food.id.toString()) }
                             )
                         }
                     }

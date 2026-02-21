@@ -19,8 +19,8 @@ class Navigator {
         _backStack?.add(NavRoute.FoodDetail(foodId))
     }
 
-    fun goToSimpleCamera(foodId: String) {
-        _backStack?.add(NavRoute.Camera(foodId))
+    fun goToSimpleCamera(onSuccess: (String) -> Unit) {
+        _backStack?.add(NavRoute.SimpleCamera(onSuccess))
     }
 
     fun goToSettings() {
