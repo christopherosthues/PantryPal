@@ -206,7 +206,7 @@ fun FoodDetailView(
             ) {
                 Icon(
                     painter = painterResource(Res.drawable.ic_camera),
-                    contentDescription = null //stringResource(Res.string.food_detail_open_camera)
+                    contentDescription = stringResource(Res.string.food_detail_content_description_open_camera)
                 )
             }
         }

@@ -56,6 +56,7 @@
     <string name="food_detail_error_saving">Fehler beim Speichern des Lebensmittels.</string>
     <string name="food_detail_delete_success">Lebensmittel erfolgreich gelöscht</string>
     <string name="food_detail_delete_error">Fehler beim Löschen des Lebensmittels</string>
+    <string name="food_detail_content_description_open_camera">Kamera öffnen</string>
 
     <!-- Simple Camera -->
     <string name="simple_camera_initializing">Kamera wird initialisiert…</string>

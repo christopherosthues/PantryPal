@@ -51,6 +51,8 @@ class FoodDetailViewModel(
     private val _snackbarMessage = MutableStateFlow<StringResource?>(null)
     val snackbarMessage: StateFlow<StringResource?> = _snackbarMessage.asStateFlow()
 
+    private val foodDetailLoggerTag = "FoodDetail"
+
     init {
         navigationRoute.foodId?.let {
             viewModelScope.launch {
@@ -72,11 +74,11 @@ class FoodDetailViewModel(
                         imagePath = food.imagePath
                         _uiState.value = UiState.success(null)
                     } else {
-                        Logger.withTag("FoodDetail").e { "Error loading food: $uuid" }
+                        Logger.withTag(foodDetailLoggerTag).e { "Error loading food: $uuid" }
                         _uiState.value = UiState.error(Res.string.food_detail_error_loading)
                     }
                 } catch (e: Exception) {
-                    Logger.withTag("FoodDetail").e { "Error loading food: ${e.message}" }
+                    Logger.withTag(foodDetailLoggerTag).e { "Error loading food: ${e.message}" }
                     _uiState.value = UiState.error(Res.string.food_detail_error_loading)
                 }
             }
@@ -107,7 +109,7 @@ class FoodDetailViewModel(
                 _isSaved.value = true
                 _uiState.value = UiState.success(null)
             } catch (e: Exception) {
-                Logger.withTag("FoodDetail").e { "Error saving food: ${e.message}" }
+                Logger.withTag(foodDetailLoggerTag).e { "Error saving food: ${e.message}" }
                 _uiState.value = UiState.error(Res.string.food_detail_error_saving)
             }
         }
@@ -122,7 +124,7 @@ class FoodDetailViewModel(
                 _isSaved.value = true
                 _uiState.value = UiState.success(null)
             } catch (e: Exception) {
-                Logger.withTag("FoodDetail").e { "Error deleting food: ${e.message}" }
+                Logger.withTag(foodDetailLoggerTag).e { "Error deleting food: ${e.message}" }
                 _uiState.value = UiState.error(Res.string.food_detail_error_loading)
                 _snackbarMessage.value = Res.string.food_detail_delete_error
             }

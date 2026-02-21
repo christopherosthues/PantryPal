@@ -97,7 +97,7 @@ import pantrypal.composeapp.generated.resources.simple_camera_initializing
 private const val simpleCameraLoggerTag = "SimpleCamera"
 
 @Composable
-fun SimpleCameraView(
+fun OcrCameraView(
     onCapture: (String) -> Unit,
     onBack: () -> Unit
 ) {

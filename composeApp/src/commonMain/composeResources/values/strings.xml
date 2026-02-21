@@ -57,6 +57,7 @@
     <string name="food_detail_error_saving">Failed to save food.</string>
     <string name="food_detail_delete_success">Food deleted successfully</string>
     <string name="food_detail_delete_error">Failed to delete food</string>
+    <string name="food_detail_content_description_open_camera">Open camera</string>
 
     <!-- Simple Camera -->
     <string name="simple_camera_initializing">Initializing Camera...</string>
