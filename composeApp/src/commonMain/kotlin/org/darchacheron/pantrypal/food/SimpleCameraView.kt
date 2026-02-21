@@ -86,6 +86,15 @@ import pantrypal.composeapp.generated.resources.ic_flash_on
 import pantrypal.composeapp.generated.resources.ic_flashlight_off
 import pantrypal.composeapp.generated.resources.ic_flashlight_on
 import pantrypal.composeapp.generated.resources.ic_x
+import pantrypal.composeapp.generated.resources.simple_camera_content_description_capture_button
+import pantrypal.composeapp.generated.resources.simple_camera_content_description_captured_image_preview
+import pantrypal.composeapp.generated.resources.simple_camera_content_description_close_preview
+import pantrypal.composeapp.generated.resources.simple_camera_content_description_error_icon
+import pantrypal.composeapp.generated.resources.simple_camera_content_description_flash_toggle
+import pantrypal.composeapp.generated.resources.simple_camera_content_description_switch_lens
+import pantrypal.composeapp.generated.resources.simple_camera_content_description_torch_toggle
+import pantrypal.composeapp.generated.resources.simple_camera_error_title
+import pantrypal.composeapp.generated.resources.simple_camera_initializing
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -193,7 +202,7 @@ private fun CameraContent(
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
                     Text(
-                        "Initializing Camera...",
+                        stringResource(Res.string.simple_camera_initializing),
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurface,
                     )
@@ -212,12 +221,12 @@ private fun CameraContent(
                 ) {
                     Icon(
                         painter = painterResource(Res.drawable.ic_x),
-                        contentDescription = "Error",
+                        contentDescription = stringResource(Res.string.simple_camera_content_description_error_icon),
                         tint = MaterialTheme.colorScheme.error,
                         modifier = Modifier.size(48.dp),
                     )
                     Text(
-                        "Camera Error",
+                        stringResource(Res.string.simple_camera_error_title),
                         style = MaterialTheme.typography.titleLarge,
                         color = MaterialTheme.colorScheme.error,
                     )
@@ -260,7 +269,15 @@ fun EnhancedCameraScreen(
     var maxZoom by remember { mutableFloatStateOf(1f) }
 
     LaunchedEffect(cameraController) {
-        maxZoom = cameraController.getMaxZoom()
+        // Poll for max zoom as it might not be ready immediately after state is Ready
+        var tries = 0
+        while (maxZoom <= 1f && tries < 10) {
+            maxZoom = cameraController.getMaxZoom()
+            if (maxZoom <= 1f) {
+                delay(100)
+            }
+            tries++
+        }
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -285,66 +302,69 @@ fun EnhancedCameraScreen(
         )
 
         // Zoom Slider (Left side)
-        Box(
-            modifier = Modifier
-                .align(Alignment.CenterStart)
-                .padding(start = 16.dp)
-                .fillMaxHeight(0.5f),
-            contentAlignment = Alignment.Center
-        ) {
-            Column(
-                horizontalAlignment = Alignment.Start,
-                verticalArrangement = Arrangement.Center
+        if (maxZoom > 1f) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.CenterStart)
+                    .padding(start = 8.dp)
+                    .fillMaxHeight(0.5f),
+                contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = "${(maxZoom * 10).toInt() / 10f}x",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = Color.White,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-
-                Slider(
-                    value = zoomLevel,
-                    onValueChange = {
-                        zoomLevel = it
-                        cameraController.setZoom(it)
-                    },
-                    valueRange = 1f..maxZoom,
-                    modifier = Modifier
-                        .graphicsLayer {
-                            rotationZ = 270f
-                            transformOrigin = androidx.compose.ui.graphics.TransformOrigin.Center
-                        }
-                        .width(20.dp) // Fixed width for the rotated slider
-                        .layout { measurable, constraints ->
-                            val placeable = measurable.measure(
-                                Constraints(
-                                    minWidth = constraints.minHeight,
-                                    maxWidth = constraints.maxHeight,
-                                    minHeight = constraints.minWidth,
-                                    maxHeight = constraints.maxWidth
-                                )
-                            )
-                            layout(placeable.height, placeable.width) {
-                                placeable.place(
-                                    -((placeable.width - placeable.height) / 2),
-                                    -((placeable.height - placeable.width) / 2)
-                                )
-                            }
-                        },
-                    colors = SliderDefaults.colors(
-                        thumbColor = Color.White,
-                        activeTrackColor = Color.White,
-                        inactiveTrackColor = Color.White.copy(alpha = 0.3f)
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = "${(maxZoom * 10).toInt() / 10f}x",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.White,
+                        modifier = Modifier.padding(bottom = 8.dp)
                     )
-                )
 
-                Text(
-                    text = "1x",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = Color.White,
-                    modifier = Modifier.padding(top = 8.dp)
-                )
+                    Slider(
+                        value = zoomLevel,
+                        onValueChange = {
+                            zoomLevel = it
+                            cameraController.setZoom(it)
+                        },
+                        valueRange = 1f..maxZoom,
+                        modifier = Modifier
+                            .graphicsLayer {
+                                rotationZ = 270f
+                                transformOrigin = androidx.compose.ui.graphics.TransformOrigin.Center
+                            }
+                            .width(16.dp) // Maintain width for sliding distance
+                            .height(200.dp) // Provide enough height for the rotated slider to not overlap labels
+                            .layout { measurable, constraints ->
+                                val placeable = measurable.measure(
+                                    Constraints(
+                                        minWidth = constraints.minHeight,
+                                        maxWidth = constraints.maxHeight,
+                                        minHeight = constraints.minWidth,
+                                        maxHeight = constraints.maxWidth
+                                    )
+                                )
+                                layout(placeable.height, placeable.width) {
+                                    placeable.place(
+                                        -((placeable.width - placeable.height) / 2),
+                                        -((placeable.height - placeable.width) / 2)
+                                    )
+                                }
+                            },
+                        colors = SliderDefaults.colors(
+                            thumbColor = Color.White,
+                            activeTrackColor = Color.White,
+                            inactiveTrackColor = Color.White.copy(alpha = 0.3f)
+                        )
+                    )
+
+                    Text(
+                        text = "1x",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.White,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                }
             }
         }
 
@@ -398,7 +418,7 @@ private fun QuickControlsOverlay(
                     painter = painterResource(
                         if (flashMode == FlashMode.OFF) Res.drawable.ic_flash_off else Res.drawable.ic_flash_on
                     ),
-                    contentDescription = "Flash: $flashMode",
+                    contentDescription = stringResource(Res.string.simple_camera_content_description_flash_toggle),
                     tint = Color.White,
                 )
             }
@@ -407,14 +427,14 @@ private fun QuickControlsOverlay(
                     painter = painterResource(
                         if (torchMode == TorchMode.OFF) Res.drawable.ic_flashlight_off else Res.drawable.ic_flashlight_on
                     ),
-                    contentDescription = "Torch: $torchMode",
+                    contentDescription = stringResource(Res.string.simple_camera_content_description_torch_toggle),
                     tint = Color.White,
                 )
             }
             IconButton(onClick = onLensSwitch) {
                 Icon(
                     painter = painterResource(Res.drawable.ic_cameraswitch),
-                    contentDescription = "Switch Camera",
+                    contentDescription = stringResource(Res.string.simple_camera_content_description_switch_lens),
                     tint = Color.White,
                 )
             }
@@ -435,7 +455,7 @@ private fun CaptureButton(modifier: Modifier = Modifier, isCapturing: Boolean, o
     ) {
         Icon(
             painter = painterResource(Res.drawable.ic_camera),
-            contentDescription = "Capture",
+            contentDescription = stringResource(Res.string.simple_camera_content_description_capture_button),
             tint = if (isCapturing) Color.White.copy(alpha = 0.5f) else Color.White,
             modifier = Modifier.size(32.dp),
         )
@@ -452,7 +472,7 @@ private fun CapturedImagePreview(imageBitmap: ImageBitmap?, onDismiss: () -> Uni
             Box(modifier = Modifier.fillMaxSize()) {
                 Image(
                     bitmap = bitmap,
-                    contentDescription = "Captured Image",
+                    contentDescription = stringResource(Res.string.simple_camera_content_description_captured_image_preview),
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(16.dp),
@@ -471,7 +491,7 @@ private fun CapturedImagePreview(imageBitmap: ImageBitmap?, onDismiss: () -> Uni
                 ) {
                     Icon(
                         painter = painterResource(Res.drawable.ic_x),
-                        contentDescription = "Close Preview",
+                        contentDescription = stringResource(Res.string.simple_camera_content_description_close_preview),
                         tint = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.rotate(120f),
                     )

@@ -60,22 +60,23 @@ fun FoodListView(
                 .padding(padding),
             contentAlignment = Alignment.Center
         ) {
+            val state = uiState
             when {
-                uiState.isLoading -> {
+                state.isLoading -> {
                     CircularProgressIndicator()
                 }
-                uiState.hasError -> {
-                    val errorMessage = stringResource(uiState.error!!)
+                state.hasError -> {
+                    val errorMessage = stringResource(state.error!!)
                     LaunchedEffect(errorMessage) {
                         snackbarHostState.showSnackbar(message = errorMessage)
                     }
                 }
-                uiState.data.isNullOrEmpty() -> {
+                state.data.isNullOrEmpty() && !state.isLoading -> {
                     Text(stringResource(Res.string.food_list_empty))
                 }
-                else -> {
+                state.data != null -> {
                     LazyColumn(modifier = Modifier.fillMaxSize()) {
-                        items(uiState.data!!) { food ->
+                        items(state.data) { food ->
                             FoodItem(
                                 food = food,
                                 onClick = { onNavigateToDetail(food.id.toString()) }

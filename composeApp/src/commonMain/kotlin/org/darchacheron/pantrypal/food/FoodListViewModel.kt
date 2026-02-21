@@ -12,7 +12,7 @@ import org.darchacheron.pantrypal.ui.UiState
 import pantrypal.composeapp.generated.resources.Res
 import pantrypal.composeapp.generated.resources.food_list_error_loading
 
-class FoodListViewModel(private val foodRepository: FoodRepository) : ViewModel() {
+class FoodListViewModel(foodRepository: FoodRepository) : ViewModel() {
 
     val uiState: StateFlow<UiState<List<Food>>> = foodRepository.getAll()
         .map { foods -> UiState.success(foods) }

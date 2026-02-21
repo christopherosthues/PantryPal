@@ -55,4 +55,18 @@
     <string name="food_detail_delete">Delete</string>
     <string name="food_detail_error_loading">Failed to load food details.</string>
     <string name="food_detail_error_saving">Failed to save food.</string>
+    <string name="food_detail_delete_success">Food deleted successfully</string>
+    <string name="food_detail_delete_error">Failed to delete food</string>
+
+    <!-- Simple Camera -->
+    <string name="simple_camera_initializing">Initializing Camera...</string>
+    <string name="simple_camera_error_title">Camera Error</string>
+    <string name="simple_camera_content_description_error_icon">Error icon</string>
+    <string name="simple_camera_content_description_flash_toggle">Toggle flash</string>
+    <string name="simple_camera_content_description_torch_toggle">Toggle torch</string>
+    <string name="simple_camera_content_description_switch_lens">Switch camera</string>
+    <string name="simple_camera_content_description_capture_button">Capture photo</string>
+    <string name="simple_camera_content_description_captured_image_preview">Captured image preview</string>
+    <string name="simple_camera_content_description_close_preview">Close preview</string>
+
 </resources>

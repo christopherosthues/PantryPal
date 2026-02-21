@@ -16,6 +16,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import kotlinx.datetime.LocalDate
+import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
@@ -25,22 +26,29 @@ import kotlin.uuid.ExperimentalUuidApi
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalUuidApi::class)
 @Composable
 fun FoodDetailView(
-    foodId: String?,
     onBack: () -> Unit,
     onOpenCamera: (String) -> Unit,
     viewModel: FoodDetailViewModel = koinInject()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val isSaved by viewModel.isSaved.collectAsState()
+    val snackbarMessage by viewModel.snackbarMessage.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    LaunchedEffect(foodId) {
-        viewModel.loadFood(foodId)
+    LaunchedEffect(isSaved) {
+        if (isSaved && snackbarMessage == null) {
+            onBack()
+        }
     }
 
-    LaunchedEffect(isSaved) {
-        if (isSaved) {
-            onBack()
+    LaunchedEffect(snackbarMessage) {
+        snackbarMessage?.let { resource ->
+            val message = getString(resource)
+            snackbarHostState.showSnackbar(message)
+            viewModel.clearSnackbar()
+            if (isSaved) {
+                onBack()
+            }
         }
     }
 
@@ -51,7 +59,7 @@ fun FoodDetailView(
                 title = {
                     Text(
                         stringResource(
-                            if (foodId == null) Res.string.food_detail_title_add
+                            if (viewModel.navFoodId.foodId == null) Res.string.food_detail_title_add
                             else Res.string.food_detail_title_edit
                         )
                     )
@@ -65,7 +73,7 @@ fun FoodDetailView(
                     }
                 },
                 actions = {
-                    if (foodId != null) {
+                    if (viewModel.navFoodId.foodId != null) {
                         IconButton(onClick = { viewModel.delete() }) {
                             Icon(
                                 painter = painterResource(Res.drawable.ic_delete),
@@ -235,7 +243,7 @@ fun DatePickerField(
 
     if (showDialog) {
         val datePickerState = rememberDatePickerState(
-            initialSelectedDateMillis = selectedDate?.toEpochDays()?.toLong()?.times(86400000L)
+            initialSelectedDateMillis = selectedDate?.toEpochDays()?.times(86400000L)
         )
         DatePickerDialog(
             onDismissRequest = { showDialog = false },

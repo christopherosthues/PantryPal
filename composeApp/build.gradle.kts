@@ -93,6 +93,7 @@ kotlin {
             implementation(libs.koin.compose)
             implementation(libs.koin.compose.viewmodel)
             implementation(libs.koin.compose.viewmodel.navigation)
+            implementation(libs.koin.navigation3)
             implementation(libs.kotlinx.serialization.json)
 
             implementation(libs.androidx.room.runtime)

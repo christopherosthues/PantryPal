@@ -10,8 +10,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
+import org.darchacheron.pantrypal.navigation.NavRoute
 import org.darchacheron.pantrypal.ui.UiState
+import org.jetbrains.compose.resources.StringResource
 import pantrypal.composeapp.generated.resources.Res
+import pantrypal.composeapp.generated.resources.food_detail_delete_error
+import pantrypal.composeapp.generated.resources.food_detail_delete_success
 import pantrypal.composeapp.generated.resources.food_detail_error_loading
 import pantrypal.composeapp.generated.resources.food_detail_error_saving
 import kotlin.time.Clock
@@ -19,11 +23,11 @@ import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 @OptIn(ExperimentalUuidApi::class)
-class FoodDetailViewModel(private val foodRepository: FoodRepository) : ViewModel() {
-
-    var foodId by mutableStateOf(Uuid.generateV7())
-        private set
-
+class FoodDetailViewModel(
+    val navFoodId: NavRoute.FoodDetail,
+    private val foodRepository: FoodRepository
+) : ViewModel() {
+    var foodId by mutableStateOf(if (navFoodId.foodId != null) Uuid.parse(navFoodId.foodId) else Uuid.generateV7())
     var name by mutableStateOf("")
     var calories by mutableStateOf("")
     var carbs by mutableStateOf("")
@@ -41,16 +45,19 @@ class FoodDetailViewModel(private val foodRepository: FoodRepository) : ViewMode
     private val _isSaved = MutableStateFlow(false)
     val isSaved: StateFlow<Boolean> = _isSaved.asStateFlow()
 
-    fun loadFood(id: String?) {
-        if (id == null) {
-            resetFields()
-            return
-        }
+    private val _snackbarMessage = MutableStateFlow<StringResource?>(null)
+    val snackbarMessage: StateFlow<StringResource?> = _snackbarMessage.asStateFlow()
+
+    init {
+//        if (id == null) {
+//            resetFields()
+//            return
+//        }
 
         viewModelScope.launch {
             _uiState.value = UiState.loading()
             try {
-                val uuid = Uuid.parse(id)
+                val uuid = foodId
                 val food = foodRepository.getById(uuid)
                 if (food != null) {
                     foodId = food.id
@@ -74,20 +81,6 @@ class FoodDetailViewModel(private val foodRepository: FoodRepository) : ViewMode
         }
     }
 
-    private fun resetFields() {
-        foodId = Uuid.generateV7()
-        name = ""
-        calories = ""
-        carbs = ""
-        fat = ""
-        protein = ""
-        weight = ""
-        bestBeforeDate = null
-        useByDate = null
-        openedAt = null
-        imagePath = null
-    }
-
     fun save() {
         viewModelScope.launch {
             _uiState.value = UiState.loading()
@@ -96,11 +89,11 @@ class FoodDetailViewModel(private val foodRepository: FoodRepository) : ViewMode
                 val food = Food(
                     id = foodId,
                     name = name,
-                    calories = calories.toIntOrNull(),
-                    carbs = carbs.toIntOrNull(),
-                    fat = fat.toIntOrNull(),
-                    protein = protein.toIntOrNull(),
-                    weightInGrams = weight.toIntOrNull(),
+                    calories = calories.toIntOrNull() ?: 0,
+                    carbs = carbs.toIntOrNull() ?: 0,
+                    fat = fat.toIntOrNull() ?: 0,
+                    protein = protein.toIntOrNull() ?: 0,
+                    weightInGrams = weight.toIntOrNull() ?: 0,
                     bestBeforeDate = bestBeforeDate,
                     useByDate = useByDate,
                     openedAt = openedAt,
@@ -122,11 +115,17 @@ class FoodDetailViewModel(private val foodRepository: FoodRepository) : ViewMode
             _uiState.value = UiState.loading()
             try {
                 foodRepository.delete(foodId)
+                _snackbarMessage.value = Res.string.food_detail_delete_success
                 _isSaved.value = true
                 _uiState.value = UiState.success(null)
             } catch (e: Exception) {
                 _uiState.value = UiState.error(Res.string.food_detail_error_loading)
+                _snackbarMessage.value = Res.string.food_detail_delete_error
             }
         }
+    }
+
+    fun clearSnackbar() {
+        _snackbarMessage.value = null
     }
 }
