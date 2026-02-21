@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import co.touchlab.kermit.Logger
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -49,34 +50,33 @@ class FoodDetailViewModel(
     val snackbarMessage: StateFlow<StringResource?> = _snackbarMessage.asStateFlow()
 
     init {
-//        if (id == null) {
-//            resetFields()
-//            return
-//        }
-
-        viewModelScope.launch {
-            _uiState.value = UiState.loading()
-            try {
-                val uuid = foodId
-                val food = foodRepository.getById(uuid)
-                if (food != null) {
-                    foodId = food.id
-                    name = food.name
-                    calories = food.calories.toString()
-                    carbs = food.carbs.toString()
-                    fat = food.fat.toString()
-                    protein = food.protein.toString()
-                    weight = food.weightInGrams.toString()
-                    bestBeforeDate = food.bestBeforeDate
-                    useByDate = food.useByDate
-                    openedAt = food.openedAt
-                    imagePath = food.imagePath
-                    _uiState.value = UiState.success(null)
-                } else {
+        navFoodId.foodId?.let {
+            viewModelScope.launch {
+                _uiState.value = UiState.loading()
+                try {
+                    val uuid = foodId
+                    val food = foodRepository.getById(uuid)
+                    if (food != null) {
+                        foodId = food.id
+                        name = food.name
+                        calories = food.calories.toString()
+                        carbs = food.carbs.toString()
+                        fat = food.fat.toString()
+                        protein = food.protein.toString()
+                        weight = food.weightInGrams.toString()
+                        bestBeforeDate = food.bestBeforeDate
+                        useByDate = food.useByDate
+                        openedAt = food.openedAt
+                        imagePath = food.imagePath
+                        _uiState.value = UiState.success(null)
+                    } else {
+                        Logger.withTag("FoodDetail").e { "Error loading food: $uuid" }
+                        _uiState.value = UiState.error(Res.string.food_detail_error_loading)
+                    }
+                } catch (e: Exception) {
+                    Logger.withTag("FoodDetail").e { "Error loading food: ${e.message}" }
                     _uiState.value = UiState.error(Res.string.food_detail_error_loading)
                 }
-            } catch (e: Exception) {
-                _uiState.value = UiState.error(Res.string.food_detail_error_loading)
             }
         }
     }
@@ -89,11 +89,11 @@ class FoodDetailViewModel(
                 val food = Food(
                     id = foodId,
                     name = name,
-                    calories = calories.toIntOrNull() ?: 0,
-                    carbs = carbs.toIntOrNull() ?: 0,
-                    fat = fat.toIntOrNull() ?: 0,
-                    protein = protein.toIntOrNull() ?: 0,
-                    weightInGrams = weight.toIntOrNull() ?: 0,
+                    calories = calories.toIntOrNull(),
+                    carbs = carbs.toIntOrNull(),
+                    fat = fat.toIntOrNull(),
+                    protein = protein.toIntOrNull(),
+                    weightInGrams = weight.toIntOrNull(),
                     bestBeforeDate = bestBeforeDate,
                     useByDate = useByDate,
                     openedAt = openedAt,
@@ -105,6 +105,7 @@ class FoodDetailViewModel(
                 _isSaved.value = true
                 _uiState.value = UiState.success(null)
             } catch (e: Exception) {
+                Logger.withTag("FoodDetail").e { "Error saving food: ${e.message}" }
                 _uiState.value = UiState.error(Res.string.food_detail_error_saving)
             }
         }
@@ -119,6 +120,7 @@ class FoodDetailViewModel(
                 _isSaved.value = true
                 _uiState.value = UiState.success(null)
             } catch (e: Exception) {
+                Logger.withTag("FoodDetail").e { "Error deleting food: ${e.message}" }
                 _uiState.value = UiState.error(Res.string.food_detail_error_loading)
                 _snackbarMessage.value = Res.string.food_detail_delete_error
             }

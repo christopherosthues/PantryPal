@@ -37,7 +37,7 @@ fun App(
         }
 
         AppTheme(themeMode = settings.themeMode) {
-            navigator.initialize()
+            navigator.Initialize()
 
             NavDisplay(
                 backStack = navigator.backStack!!,

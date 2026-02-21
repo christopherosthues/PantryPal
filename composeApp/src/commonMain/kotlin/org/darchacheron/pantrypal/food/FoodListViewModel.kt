@@ -2,6 +2,7 @@ package org.darchacheron.pantrypal.food
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import co.touchlab.kermit.Logger
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
@@ -17,7 +18,10 @@ class FoodListViewModel(foodRepository: FoodRepository) : ViewModel() {
     val uiState: StateFlow<UiState<List<Food>>> = foodRepository.getAll()
         .map { foods -> UiState.success(foods) }
         .onStart { emit(UiState.loading()) }
-        .catch { emit(UiState.error(Res.string.food_list_error_loading)) }
+        .catch {
+            Logger.withTag("FoodList").e { "Error loading foods: ${it.message}" }
+            emit(UiState.error(Res.string.food_list_error_loading))
+        }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),

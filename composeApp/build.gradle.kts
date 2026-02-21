@@ -111,6 +111,8 @@ kotlin {
 
             implementation(libs.coil.compose)
             implementation(libs.coil.network.ktor)
+
+            runtimeOnly(libs.kermit.logger)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

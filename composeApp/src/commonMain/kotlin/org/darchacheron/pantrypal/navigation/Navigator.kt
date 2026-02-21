@@ -11,7 +11,7 @@ class Navigator {
     val backStack get() = _backStack
 
     @Composable
-    fun initialize() {
+    fun Initialize() {
         _backStack = rememberNavBackStack(navConfig, NavRoute.FoodList)
     }
 
@@ -20,7 +20,7 @@ class Navigator {
     }
 
     fun goToSimpleCamera(foodId: String) {
-        _backStack?.add(NavRoute.SimpleCamera(foodId))
+        _backStack?.add(NavRoute.Camera(foodId))
     }
 
     fun goToSettings() {

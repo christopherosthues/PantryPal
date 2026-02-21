@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -52,6 +51,7 @@ import androidx.compose.ui.layout.layout
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
+import co.touchlab.kermit.Logger
 import com.kashif.cameraK.compose.CameraKScreen
 import com.kashif.cameraK.compose.rememberCameraKState
 import com.kashif.cameraK.controller.CameraController
@@ -97,6 +97,8 @@ import pantrypal.composeapp.generated.resources.simple_camera_error_title
 import pantrypal.composeapp.generated.resources.simple_camera_initializing
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
+
+private const val simpleCameraLoggerTag = "SimpleCamera"
 
 @OptIn(ExperimentalUuidApi::class)
 @Composable
@@ -151,14 +153,18 @@ private fun PermissionsHandler(
     if (!cameraPermissionState.value) {
         permissions.RequestCameraPermission(
             onGranted = { cameraPermissionState.value = true },
-            onDenied = { println("Camera Permission Denied") },
+            onDenied = {
+                Logger.withTag(simpleCameraLoggerTag).w { "Camera Permission Denied" }
+            }
         )
     }
 
     if (!storagePermissionState.value) {
         permissions.RequestStoragePermission(
             onGranted = { storagePermissionState.value = true },
-            onDenied = { println("Storage Permission Denied") },
+            onDenied = {
+                Logger.withTag(simpleCameraLoggerTag).w { "Storage Permission Denied" }
+            }
         )
     }
 }
@@ -512,10 +518,22 @@ private suspend fun handleImageCapture(
     cameraController: CameraController,
     foodRepository: FoodRepository,
 ) {
+//    scope.launch {
+//        when (val result = controller.takePictureToFile()) {
+//            is ImageCaptureResult.SuccessWithFile -> {
+//                val file = File(result.filePath)
+//                val byteArray = file.readBytes()
+//                val text = ocrPlugin.recognizeText(byteArray)
+//            }
+//        }
+//    }
+
+
+
     when (val result = cameraController.takePictureToFile()) {
         is ImageCaptureResult.SuccessWithFile -> {
             // Image saved directly to file - significantly faster!
-            println("Image captured and saved at: ${result.filePath}")
+            Logger.withTag(simpleCameraLoggerTag).i { "Image saved to: ${result.filePath}" }
 
             try {
                 val uuid = Uuid.parse(foodId)
@@ -524,17 +542,17 @@ private suspend fun handleImageCapture(
                     foodRepository.upsert(food.copy(imagePath = result.filePath))
                 }
             } catch (e: Exception) {
-                println("Error updating food image path: ${e.message}")
+                Logger.withTag(simpleCameraLoggerTag).e { "Error updating food image path: ${e.message}" }
             }
         }
 
         is ImageCaptureResult.Success -> {
             // Fallback for platforms that don't support direct file capture
-            println("Image captured successfully (${result.byteArray.size} bytes)")
+            Logger.withTag(simpleCameraLoggerTag).i { "Image captured successfully (${result.byteArray.size} bytes)" }
         }
 
         is ImageCaptureResult.Error -> {
-            println("Image Capture Error: ${result.exception.message}")
+            Logger.withTag(simpleCameraLoggerTag).e { "Image Capture Error: ${result.exception.message}" }
         }
     }
 }

@@ -2,6 +2,7 @@ package org.darchacheron.pantrypal.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import co.touchlab.kermit.Logger
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -27,7 +28,10 @@ class SettingsViewModel(
         viewModelScope.launch {
             settingsRepository.getSettingsFlow()
                 .onStart { _settingsFlow.value = UiState.loading() }
-                .catch { _settingsFlow.value = UiState.error(Res.string.settings_error_loading) }
+                .catch {
+                    Logger.withTag("Settings").e { "Error loading settings: ${it.message}" }
+                    _settingsFlow.value = UiState.error(Res.string.settings_error_loading)
+                }
                 .collect { settings ->
                     _originalSettings = settings
                     _settingsFlow.value = UiState.success(settings)
@@ -54,6 +58,7 @@ class SettingsViewModel(
                 settingsRepository.saveSettings(currentSettings)
                 onSuccess()
             } catch (e: Exception) {
+                Logger.withTag("Settings").e { "Error saving settings: ${e.message}" }
                 _settingsFlow.update { it.copy(error = Res.string.settings_error_saving) }
             }
         }
