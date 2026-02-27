@@ -111,8 +111,12 @@ class FoodDetailViewModel(
                 foodRepository.upsert(food.copy(createdAt = createdAt, lastModifiedAt = lastModifiedAt))
                 _isSaved.value = true
                 setIsEditing(false)
-                originalFood = foodRepository.getById(foodId)
-                _uiState.value = UiState.success(food)
+                if (originalFood == null) {
+                    navigator.goToFoodDetail(foodId.toString())
+                } else {
+                    originalFood = foodRepository.getById(foodId)
+                    _uiState.value = UiState.success(food)
+                }
             } catch (e: Exception) {
                 Logger.withTag(foodDetailLoggerTag).e { "Error saving food: ${e.message}" }
                 _uiState.value = UiState.error(Res.string.food_detail_error_saving)
