@@ -80,6 +80,7 @@
     <string name="food_detail_delete_success">Food deleted successfully</string>
     <string name="food_detail_delete_error">Failed to delete food</string>
     <string name="food_detail_content_description_open_camera">Open camera</string>
+    <string name="food_detail_nutritional_header">Nutritional values (per 100g)</string>
 
     <!-- Simple Camera -->
     <string name="simple_camera_initializing">Initializing Camera...</string>

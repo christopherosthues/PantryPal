@@ -255,6 +255,13 @@ fun FoodDetailView(
                 }
             )
 
+            Text(
+                text = stringResource(Res.string.food_detail_nutritional_header),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.secondary,
+                modifier = Modifier.padding(top = 8.dp)
+            )
+
             AdaptiveRow(
                 useTwoColumns = useTwoColumns,
                 leftContent = {

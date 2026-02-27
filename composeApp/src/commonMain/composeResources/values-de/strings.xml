@@ -79,6 +79,7 @@
     <string name="food_detail_delete_success">Lebensmittel erfolgreich gelöscht</string>
     <string name="food_detail_delete_error">Fehler beim Löschen des Lebensmittels</string>
     <string name="food_detail_content_description_open_camera">Kamera öffnen</string>
+    <string name="food_detail_nutritional_header">Nährwerte pro 100g</string>
 
     <!-- Simple Camera -->
     <string name="simple_camera_initializing">Kamera wird initialisiert…</string>

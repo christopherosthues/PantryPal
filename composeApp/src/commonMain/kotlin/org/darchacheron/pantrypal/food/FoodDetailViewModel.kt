@@ -35,7 +35,6 @@ class FoodDetailViewModel(
 
     val isAdding by derivedStateOf { originalFood == null }
 
-
     private var food by mutableStateOf(
         Food(
             id = foodId,
