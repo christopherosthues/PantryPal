@@ -1,0 +1,95 @@
+<resources>
+    <string name="appName">Pantry Pal</string>
+
+    <string name="settings_title">Settings</string>
+    <string name="settings_measurement_unit">Measurement Unit</string>
+    <string name="settings_default_unit">Default Unit</string>
+    <string name="settings_select_unit">Select unit</string>
+    <string name="settings_theme">Theme</string>
+    <string name="settings_error_loading">Failed to load settings</string>
+    <string name="settings_error_saving">Failed to save settings</string>
+    <string name="settings_content_description_back">Go back</string>
+    <string name="settings_content_description_reset">Reset to defaults</string>
+    <string name="settings_content_description_save">Save</string>
+
+    <!-- Weight Units -->
+    <string name="measure_unit_g">Gram</string>
+    <string name="measure_unit_kg">Kilogram</string>
+    <string name="measure_unit_oz">Ounce</string>
+    <string name="measure_unit_lb">Pound</string>
+
+    <!-- Volume Units -->
+    <string name="measure_unit_ml">Milliliter</string>
+    <string name="measure_unit_l">Liter</string>
+    <string name="measure_unit_tsp">Teaspoon</string>
+    <string name="measure_unit_tbsp">Tablespoon</string>
+    <string name="measure_unit_cup">Cup</string>
+
+    <!-- Other Units -->
+    <string name="measure_unit_piece">Piece</string>
+
+    <!-- Theme -->
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <string name="theme_system">System</string>
+
+    <!-- Food -->
+    <string name="food_list_title">Food Pantry</string>
+    <string name="food_list_empty">No food found. Add some!</string>
+    <string name="food_list_error_loading">Failed to load food list.</string>
+    <string name="food_list_add_food">Add Food</string>
+    <string name="food_list_content_description_settings">Open settings</string>
+    <string name="food_list_best_before_label">Best Before</string>
+    <string name="food_list_use_by_label">Use By</string>
+    <string name="food_list_opened_at">Opened at</string>
+    <string name="food_list_sort_name_asc">Name (A-Z)</string>
+    <string name="food_list_sort_name_desc">Name (Z-A)</string>
+    <string name="food_list_sort_date_asc">Date (Oldest first)</string>
+    <string name="food_list_sort_date_desc">Date (Newest first)</string>
+    <string name="food_list_content_description_sort">Sort items</string>
+    <string name="food_list_filter_all">All</string>
+    <string name="food_list_filter_opened">Opened</string>
+    <string name="food_list_filter_unopened">Unopened</string>
+    <string name="food_list_filter_overdue">Overdue</string>
+    <string name="food_list_search_placeholder">Search food...</string>
+    <string name="food_list_empty_selection">Select a food item to see details</string>
+
+    <!-- Food Detail -->
+    <string name="food_detail_title_add">Add Food</string>
+    <string name="food_detail_title_edit">Edit Food</string>
+    <string name="food_detail_name">Name</string>
+    <string name="food_detail_calories">Calories (kcal)</string>
+    <string name="food_detail_kj">Joule (kJ)</string>
+    <string name="food_detail_carbs">Carbs (g)</string>
+    <string name="food_detail_sugar">Sugar (g)</string>
+    <string name="food_detail_fat">Fat (g)</string>
+    <string name="food_detail_saturated_fat">Saturated Fat (g)</string>
+    <string name="food_detail_protein">Protein (g)</string>
+    <string name="food_detail_fiber">Fiber (g)</string>
+    <string name="food_detail_salt">Salt (g)</string>
+    <string name="food_detail_weight">Weight (g)</string>
+    <string name="food_detail_best_before">Best Before</string>
+    <string name="food_detail_use_by">Use By</string>
+    <string name="food_detail_opened_at">Opened At</string>
+    <string name="food_detail_content_description_save">Save</string>
+    <string name="food_detail_content_description_edit">Edit</string>
+    <string name="food_detail_content_description_cancel_editing">Cancel editing</string>
+    <string name="food_detail_content_description_delete">Delete</string>
+    <string name="food_detail_error_loading">Failed to load food details.</string>
+    <string name="food_detail_error_saving">Failed to save food.</string>
+    <string name="food_detail_delete_success">Food deleted successfully</string>
+    <string name="food_detail_delete_error">Failed to delete food</string>
+    <string name="food_detail_content_description_open_camera">Open camera</string>
+
+    <!-- Simple Camera -->
+    <string name="simple_camera_initializing">Initializing Camera...</string>
+    <string name="simple_camera_error_title">Camera Error</string>
+    <string name="simple_camera_content_description_error_icon">Error icon</string>
+    <string name="simple_camera_content_description_flash_toggle">Toggle flash</string>
+    <string name="simple_camera_content_description_torch_toggle">Toggle torch</string>
+    <string name="simple_camera_content_description_switch_lens">Switch camera</string>
+    <string name="simple_camera_content_description_capture_button">Capture photo</string>
+    <string name="simple_camera_content_description_captured_image_preview">Captured image preview</string>
+    <string name="simple_camera_content_description_close_preview">Close preview</string>
+
+</resources>

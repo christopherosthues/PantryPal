@@ -1,0 +1,94 @@
+<resources>
+    <string name="settings_title">Einstellungen</string>
+    <string name="settings_measurement_unit">Maßeinheit</string>
+    <string name="settings_default_unit">Standardeinheit</string>
+    <string name="settings_select_unit">Einheit auswählen</string>
+    <string name="settings_theme">Design</string>
+    <string name="settings_error_loading">Fehler beim Laden der Einstellungen</string>
+    <string name="settings_error_saving">Fehler beim Speichern der Einstellungen</string>
+    <string name="settings_content_description_back">Zurück</string>
+    <string name="settings_content_description_reset">Zurücksetzen</string>
+    <string name="settings_content_description_save">Speichern</string>
+
+
+    <!-- Weight Units -->
+    <string name="measure_unit_g">Gramm</string>
+    <string name="measure_unit_kg">Kilogramm</string>
+    <string name="measure_unit_oz">Unze</string>
+    <string name="measure_unit_lb">Pfund</string>
+
+    <!-- Volume Units -->
+    <string name="measure_unit_ml">Milliliter</string>
+    <string name="measure_unit_l">Liter</string>
+    <string name="measure_unit_tbsp">Esslöffel</string>
+    <string name="measure_unit_tsp">Teelöffel</string>
+    <string name="measure_unit_cup">Tasse</string>
+
+    <!-- Other Units -->
+    <string name="measure_unit_piece">Stück</string>
+
+    <!-- Theme -->
+    <string name="theme_light">Hell</string>
+    <string name="theme_dark">Dunkel</string>
+    <string name="theme_system">System</string>
+
+    <!-- Food -->
+    <string name="food_list_title">Lebensmittelvorrat</string>
+    <string name="food_list_empty">Keine Lebensmittel gefunden. Füge welche hinzu!</string>
+    <string name="food_list_error_loading">Fehler beim Laden der Lebensmittelliste.</string>
+    <string name="food_list_add_food">Lebensmittel hinzufügen</string>
+    <string name="food_list_content_description_settings">Einstellungen öffnen</string>
+    <string name="food_list_best_before_label">MHD</string>
+    <string name="food_list_use_by_label">Verbr. bis</string>
+    <string name="food_list_opened_at">Geöffnet am</string>
+    <string name="food_list_sort_name_asc">Name (A-Z)</string>
+    <string name="food_list_sort_name_desc">Name (Z-A)</string>
+    <string name="food_list_sort_date_asc">Datum (Älteste zuerst)</string>
+    <string name="food_list_sort_date_desc">Datum (Neueste zuerst)</string>
+    <string name="food_list_content_description_sort">Elemente sortieren</string>
+    <string name="food_list_filter_all">Alle</string>
+    <string name="food_list_filter_opened">Geöffnet</string>
+    <string name="food_list_filter_unopened">Ungeöffnet</string>
+    <string name="food_list_filter_overdue">Abgelaufen</string>
+    <string name="food_list_search_placeholder">Lebensmittel suchen...</string>
+    <string name="food_list_empty_selection">Wähle ein Lebensmittel aus, um die Details anzuzeigen</string>
+
+    <!-- Food Detail -->
+    <string name="food_detail_title_add">Lebensmittel hinzufügen</string>
+    <string name="food_detail_title_edit">Lebensmittel bearbeiten</string>
+    <string name="food_detail_name">Name</string>
+    <string name="food_detail_calories">Kalorien (kcal)</string>
+    <string name="food_detail_kj">Joule (kJ)</string>
+    <string name="food_detail_carbs">Kohlenhydrate (g)</string>
+    <string name="food_detail_sugar">davon Zucker (g)</string>
+    <string name="food_detail_fat">Fett (g)</string>
+    <string name="food_detail_saturated_fat">davon gesättigte Fettsäuren (g)</string>
+    <string name="food_detail_protein">Proteine (g)</string>
+    <string name="food_detail_fiber">Ballaststoffe (g)</string>
+    <string name="food_detail_salt">Salz (g)</string>
+    <string name="food_detail_weight">Gewicht (g)</string>
+    <string name="food_detail_best_before">Mindestens haltbar bis</string>
+    <string name="food_detail_use_by">Zu verbrauchen bis</string>
+    <string name="food_detail_opened_at">Geöffnet am</string>
+    <string name="food_detail_content_description_save">Speichern</string>
+    <string name="food_detail_content_description_edit">Bearbeiten</string>
+    <string name="food_detail_content_description_cancel_editing">Bearbeiten abbrechen</string>
+    <string name="food_detail_content_description_delete">Löschen</string>
+    <string name="food_detail_error_loading">Fehler beim Laden der Lebensmitteldetails.</string>
+    <string name="food_detail_error_saving">Fehler beim Speichern des Lebensmittels.</string>
+    <string name="food_detail_delete_success">Lebensmittel erfolgreich gelöscht</string>
+    <string name="food_detail_delete_error">Fehler beim Löschen des Lebensmittels</string>
+    <string name="food_detail_content_description_open_camera">Kamera öffnen</string>
+
+    <!-- Simple Camera -->
+    <string name="simple_camera_initializing">Kamera wird initialisiert…</string>
+    <string name="simple_camera_error_title">Kamerafehler</string>
+    <string name="simple_camera_content_description_error_icon">Fehlersymbol</string>
+    <string name="simple_camera_content_description_flash_toggle">Blitz umschalten</string>
+    <string name="simple_camera_content_description_torch_toggle">Taschenlampe umschalten</string>
+    <string name="simple_camera_content_description_switch_lens">Kamera wechseln</string>
+    <string name="simple_camera_content_description_capture_button">Foto aufnehmen</string>
+    <string name="simple_camera_content_description_captured_image_preview">Vorschau des aufgenommenen Bildes</string>
+    <string name="simple_camera_content_description_close_preview">Vorschau schließen</string>
+
+</resources>
