@@ -13,6 +13,7 @@ data class UiState<T>(
     companion object {
         fun <T> loading() = UiState<T>(isLoading = true)
         fun <T> error(error: StringResource) = UiState<T>(error = error)
+        fun <T> error(state: UiState<T>, error: StringResource) = state.copy(error = error)
         fun <T> success(data: T) = UiState(data = data)
     }
 }

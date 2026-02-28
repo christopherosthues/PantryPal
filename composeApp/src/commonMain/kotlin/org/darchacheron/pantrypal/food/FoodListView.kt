@@ -1,28 +1,91 @@
 package org.darchacheron.pantrypal.food
 
-import androidx.compose.animation.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedCard
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SecondaryScrollableTabRow
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
-import io.ktor.client.request.invoke
 import org.darchacheron.pantrypal.ui.PantryPalTheme
 import org.jetbrains.compose.resources.painterResource
-import kotlin.uuid.ExperimentalUuidApi
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
-import pantrypal.composeapp.generated.resources.*
+import pantrypal.composeapp.generated.resources.Res
+import pantrypal.composeapp.generated.resources.food_list_add_food
+import pantrypal.composeapp.generated.resources.food_list_best_before_label
+import pantrypal.composeapp.generated.resources.food_list_content_description_settings
+import pantrypal.composeapp.generated.resources.food_list_empty
+import pantrypal.composeapp.generated.resources.food_list_filter_all
+import pantrypal.composeapp.generated.resources.food_list_filter_opened
+import pantrypal.composeapp.generated.resources.food_list_filter_overdue
+import pantrypal.composeapp.generated.resources.food_list_filter_unopened
+import pantrypal.composeapp.generated.resources.food_list_opened_at
+import pantrypal.composeapp.generated.resources.food_list_search_placeholder
+import pantrypal.composeapp.generated.resources.food_list_sort_date_asc
+import pantrypal.composeapp.generated.resources.food_list_sort_date_desc
+import pantrypal.composeapp.generated.resources.food_list_sort_name_asc
+import pantrypal.composeapp.generated.resources.food_list_sort_name_desc
+import pantrypal.composeapp.generated.resources.food_list_title
+import pantrypal.composeapp.generated.resources.food_list_use_by_label
+import pantrypal.composeapp.generated.resources.ic_add
+import pantrypal.composeapp.generated.resources.ic_arrow_downward
+import pantrypal.composeapp.generated.resources.ic_arrow_upward
+import pantrypal.composeapp.generated.resources.ic_check
+import pantrypal.composeapp.generated.resources.ic_fridge
+import pantrypal.composeapp.generated.resources.ic_opened_can
+import pantrypal.composeapp.generated.resources.ic_search
+import pantrypal.composeapp.generated.resources.ic_settings
+import pantrypal.composeapp.generated.resources.ic_sort
+import pantrypal.composeapp.generated.resources.ic_stop_sign
+import pantrypal.composeapp.generated.resources.ic_warning
+import pantrypal.composeapp.generated.resources.ic_x
+import kotlin.uuid.ExperimentalUuidApi
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalUuidApi::class)
 @Composable
@@ -91,7 +154,10 @@ fun FoodListView(
                         }
                     }
                     state.data.isNullOrEmpty() && !state.isLoading -> {
-                        Text(stringResource(Res.string.food_list_empty))
+                        Text(
+                            text = stringResource(Res.string.food_list_empty),
+                            textAlign = TextAlign.Center
+                        )
                     }
                     state.data != null -> {
                         LazyColumn(

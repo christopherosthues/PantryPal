@@ -121,7 +121,7 @@ class FoodDetailViewModel(
                 }
             } catch (e: Exception) {
                 Logger.withTag(foodDetailLoggerTag).e { "Error saving food: ${e.message}" }
-                _uiState.value = UiState.error(Res.string.food_detail_error_saving)
+                _uiState.value = UiState.error(_uiState.value, Res.string.food_detail_error_saving)
             }
         }
     }
@@ -136,7 +136,7 @@ class FoodDetailViewModel(
                 _uiState.value = UiState.success(null)
             } catch (e: Exception) {
                 Logger.withTag(foodDetailLoggerTag).e { "Error deleting food: ${e.message}" }
-                _uiState.value = UiState.error(Res.string.food_detail_error_loading)
+                _uiState.value = UiState.error(_uiState.value, Res.string.food_detail_error_loading)
                 _snackbarMessage.value = Res.string.food_detail_delete_error
             }
         }

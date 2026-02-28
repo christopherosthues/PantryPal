@@ -9,6 +9,8 @@ import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.navigation3.ListDetailSceneStrategy
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import org.darchacheron.pantrypal.database.PantryPalDatabase
 import org.darchacheron.pantrypal.database.PantryPalDatabaseFactory
@@ -24,6 +26,7 @@ import org.darchacheron.pantrypal.navigation.Navigator
 import org.darchacheron.pantrypal.navigation.OcrType
 import org.darchacheron.pantrypal.settings.SettingsView
 import org.darchacheron.pantrypal.settings.SettingsViewModel
+import org.darchacheron.pantrypal.ui.PantryPalTheme
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.module.Module
@@ -44,7 +47,10 @@ val navigationModule = module {
         metadata = ListDetailSceneStrategy.listPane(
             detailPlaceholder = {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(stringResource(Res.string.food_list_empty_selection))
+                    Text(
+                        text = stringResource(Res.string.food_list_empty_selection),
+                        textAlign = TextAlign.Center
+                    )
                 }
             }
         )
