@@ -10,6 +10,9 @@ class Navigator {
 
     val backStack get() = _backStack
 
+    private var simpleCameraCallback: ((String) -> Unit)? = null
+    private var ocrCameraCallback: ((String) -> Unit)? = null
+
     @Composable
     fun Initialize() {
         _backStack = rememberNavBackStack(navConfig, NavRoute.FoodList)
@@ -21,11 +24,23 @@ class Navigator {
     }
 
     fun goToSimpleCamera(onSuccess: (String) -> Unit) {
-        _backStack?.add(NavRoute.SimpleCamera(onSuccess))
+        simpleCameraCallback = onSuccess
+        _backStack?.add(NavRoute.SimpleCamera)
     }
 
     fun goToOcrCamera(type: OcrType, onRecognized: (String) -> Unit) {
-        _backStack?.add(NavRoute.OcrCamera(type, onRecognized))
+        ocrCameraCallback = onRecognized
+        _backStack?.add(NavRoute.OcrCamera(type))
+    }
+
+    fun onSimpleCameraResult(result: String) {
+        simpleCameraCallback?.invoke(result)
+        simpleCameraCallback = null
+    }
+
+    fun onOcrCameraResult(result: String) {
+        ocrCameraCallback?.invoke(result)
+        ocrCameraCallback = null
     }
 
     fun goToSettings() {

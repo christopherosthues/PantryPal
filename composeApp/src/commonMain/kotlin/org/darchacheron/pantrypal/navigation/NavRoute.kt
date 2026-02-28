@@ -12,10 +12,10 @@ sealed interface NavRoute : NavKey {
     data class FoodDetail(val foodId: String? = null) : NavRoute
 
     @Serializable
-    data class SimpleCamera(val onCapture: (String) -> Unit) : NavRoute
+    data object SimpleCamera : NavRoute
 
     @Serializable
-    data class OcrCamera(val type: OcrType, val onRecognized: (String) -> Unit) : NavRoute
+    data class OcrCamera(val type: OcrType) : NavRoute
 
     @Serializable
     data object Settings : NavRoute
