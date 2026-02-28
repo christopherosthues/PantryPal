@@ -1,0 +1,641 @@
+# GitHub Actions Workflow: Package installers and create a draft release
+# - Runs only on pushes to all branches
+# - Builds APK (Android) and native installers (DEB/DMG/MSI)
+# - Uploads artifacts
+# - Creates a draft GitHub Release with attached assets (release branches and manual triggered runs)
+
+name: Build & Package
+
+on:
+  push:
+    branches: [ '**' ]
+  workflow_dispatch:
+    inputs:
+      run_tests:
+        description: 'Run tests'
+        required: true
+        type: boolean
+        default: true
+      build_android_apk:
+        description: 'Build Android (APK)'
+        required: true
+        type: boolean
+        default: true
+      build_android_aab:
+        description: 'Build Android (AAB)'
+        required: true
+        type: boolean
+        default: true
+      sign_android:
+        description: 'Sign Android Artifacts'
+        required: true
+        type: boolean
+        default: true
+      build_ubuntu:
+        description: 'Build Ubuntu (DEB)'
+        required: true
+        type: boolean
+        default: true
+      sign_ubuntu:
+        description: 'Sign Ubuntu DEB'
+        required: true
+        type: boolean
+        default: false
+      build_macos:
+        description: 'Build macOS (DMG)'
+        required: true
+        type: boolean
+        default: true
+      sign_macos:
+        description: 'Sign macOS DMG'
+        required: true
+        type: boolean
+        default: false
+      build_windows:
+        description: 'Build Windows (MSI)'
+        required: true
+        type: boolean
+        default: true
+      sign_windows:
+        description: 'Sign Windows MSI'
+        required: true
+        type: boolean
+        default: false
+      draft_release:
+        description: 'Draft release'
+        required: false
+        type: boolean
+        default: false
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GRADLE_OPTS: "-Dorg.gradle.daemon=false"
+
+jobs:
+  run_tests:
+    name: Test
+    if: github.event_name == 'push' || github.event.inputs.run_tests == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      artifacts-path: artifacts
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: zulu
+          java-version: 25
+
+      - name: Cache Gradle
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-ubuntu-${{ hashFiles('**/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-test-
+
+      - name: Execute tests
+        run: |
+          chmod +x gradlew || true
+          ./gradlew --no-daemon --stacktrace :composeApp:jvmTest :composeApp:testAndroid
+
+      - name: Upload test artifacts
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: test-artifacts
+          path: |
+            composeApp/build/reports/tests/**
+          retention-days: 14
+
+  package-ubuntu:
+    name: Package (Ubuntu) - DEB
+    if: github.event_name == 'push' || github.event.inputs.build_ubuntu == 'true'
+    needs: [ run_tests ]
+    runs-on: ubuntu-latest
+    outputs:
+      artifacts-path: artifacts
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: zulu
+          java-version: 25
+
+      - name: Cache Gradle
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-ubuntu-${{ hashFiles('**/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-ubuntu-
+
+      - name: Build DEB (Ubuntu)
+        run: |
+          chmod +x gradlew || true
+          ./gradlew --no-daemon --stacktrace :composeApp:packageDeb
+
+      - name: Name DEB (Ubuntu)
+        run: |
+          DEB=$(find composeApp/build/compose/binaries -name "*.deb" | head -n 1)
+          if [ -n "$DEB" ]; then
+            if [[ "${{ github.event_name == 'push' || github.event.inputs.sign_ubuntu == 'true' }}" != "true" || -z "${{ secrets.GPG_PRIVATE_KEY }}" ]]; then
+               DEST_FILE="${DEB%.deb}-unsigned.deb"
+               mv "$DEB" "$DEST_FILE"
+               echo "Renamed $DEB -> $DEST_FILE"
+            fi
+          fi
+
+      - name: Sign DEB (Ubuntu)
+        if: github.event_name == 'push' || github.event.inputs.sign_ubuntu == 'true'
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: |
+          if [ -n "$GPG_PRIVATE_KEY" ]; then
+            echo "$GPG_PRIVATE_KEY" | gpg --batch --import
+            # Find the deb file
+            DEB_FILE=$(find composeApp/build/compose/binaries -name "*.deb" | head -n 1)
+            if [ -n "$DEB_FILE" ]; then
+              echo "Signing $DEB_FILE"
+              gpg --batch --yes --passphrase "$PASSPHRASE" --detach-sign -a "$DEB_FILE"
+            fi
+          else
+            echo "GPG_PRIVATE_KEY not found, skipping signing"
+          fi
+
+      - name: Upload Ubuntu artifacts
+        uses: actions/upload-artifact@v6
+        with:
+          name: ubuntu-artifacts
+          path: |
+            composeApp/build/compose/binaries/**/*.deb
+            composeApp/build/compose/binaries/**/*.asc
+          retention-days: 14
+
+  package-android-apk:
+    name: Package (Android) - APK
+    if: github.event_name == 'push' || github.event.inputs.build_android_apk == 'true'
+    needs: [ run_tests ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: zulu
+          java-version: 25
+
+      - name: Cache Gradle
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-android-apk-${{ hashFiles('**/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-android-apk-
+
+      - name: Prepare signing key (if provided)
+        if: github.event_name == 'push' || github.event.inputs.sign_android == 'true'
+        run: |
+          if [ -n "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" ]; then
+            echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android.jks
+            echo "Keystore created at android.jks"
+          else
+            echo "No keystore secret found; building unsigned APK"
+          fi
+
+      - name: Build APK
+        run: |
+          chmod +x gradlew || true
+          SIGN_ARGS=""
+          if [ -f android.jks ]; then
+            echo "Signing APK with keystore android.jks"
+            KEYSTORE_FILE="$(pwd)/android.jks"
+            echo "Using keystore at $KEYSTORE_FILE"
+            SIGN_ARGS="-Pandroid.injected.signing.store.file=$KEYSTORE_FILE \
+                       -Pandroid.injected.signing.store.password=${{ secrets.ANDROID_KEYSTORE_PASSWORD }} \
+                       -Pandroid.injected.signing.key.alias=${{ secrets.ANDROID_KEY_ALIAS }} \
+                       -Pandroid.injected.signing.key.password=${{ secrets.ANDROID_KEY_PASSWORD }}"
+          else
+            echo "No keystore found; building unsigned APK"
+          fi
+          ./gradlew --no-daemon --stacktrace :androidApp:assembleRelease $SIGN_ARGS
+
+      - name: Name APK
+        run: |
+          APP_NAME=$(./gradlew properties --property appName --quiet --console=plain | tail -n 1 | cut -f2- -d ' ')
+          VERSION=$(./gradlew properties --property appVersionName --quiet --console=plain | tail -n 1 | cut -f2- -d ' ')
+          APK=$(ls androidApp/build/outputs/apk/release/*.apk 2>/dev/null | head -n 1 || true)
+          if [ -n "$APK" ]; then
+            DEST_DIR=$(dirname "$APK")
+            if [ -f android.jks ]; then
+              DEST_FILE=$DEST_DIR/$APP_NAME-$VERSION.apk
+            else
+              DEST_FILE=$DEST_DIR/$APP_NAME-$VERSION-unsigned.apk
+            fi
+            mv "$APK" "$DEST_FILE"
+            echo "Renamed $APK -> $DEST_FILE"
+          else
+            echo "No APK found to rename"
+          fi
+
+      - name: Upload Android APK artifacts
+        uses: actions/upload-artifact@v6
+        with:
+          name: android-apk-artifacts
+          path: |
+            androidApp/build/outputs/apk/release/*.apk
+          retention-days: 14
+
+  package-android-aab:
+    name: Package (Android) - AAB
+    if: github.event_name == 'push' || github.event.inputs.build_android_aab == 'true'
+    needs: [ run_tests ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: zulu
+          java-version: 25
+
+      - name: Cache Gradle
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-android-aab-${{ hashFiles('**/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-android-aab-
+
+      - name: Prepare signing key (if provided)
+        if: github.event_name == 'push' || github.event.inputs.sign_android == 'true'
+        run: |
+          if [ -n "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" ]; then
+            echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android.jks
+            echo "Keystore created at android.jks"
+          else
+            echo "No keystore secret found; building unsigned AAB"
+          fi
+
+      - name: Build AAB
+        run: |
+          chmod +x gradlew || true
+          SIGN_ARGS=""
+          if [ -f android.jks ]; then
+            echo "Signing AAB with keystore android.jks"
+            KEYSTORE_FILE="$(pwd)/android.jks"
+            SIGN_ARGS="-Pandroid.injected.signing.store.file=$KEYSTORE_FILE \
+                       -Pandroid.injected.signing.store.password=${{ secrets.ANDROID_KEYSTORE_PASSWORD }} \
+                       -Pandroid.injected.signing.key.alias=${{ secrets.ANDROID_KEY_ALIAS }} \
+                       -Pandroid.injected.signing.key.password=${{ secrets.ANDROID_KEY_PASSWORD }}"
+          else
+            echo "No keystore found; building unsigned AAB"
+          fi
+          ./gradlew --no-daemon --stacktrace :androidApp:bundleRelease $SIGN_ARGS
+
+      - name: Name AAB
+        run: |
+          APP_NAME=$(./gradlew properties --property appName --quiet --console=plain | tail -n 1 | cut -f2- -d ' ')
+          VERSION=$(./gradlew properties --property appVersionName --quiet --console=plain | tail -n 1 | cut -f2- -d ' ')
+          AAB=$(ls androidApp/build/outputs/bundle/release/*.aab 2>/dev/null | head -n 1 || true)
+          if [ -n "$AAB" ]; then
+            DEST_DIR=$(dirname "$AAB")
+            if [ -f android.jks ]; then
+              DEST_FILE=$DEST_DIR/$APP_NAME-$VERSION.aab
+            else
+              DEST_FILE=$DEST_DIR/$APP_NAME-$VERSION-unsigned.aab
+            fi
+            mv "$AAB" "$DEST_FILE"
+            echo "Renamed $AAB -> $DEST_FILE"
+          else
+            echo "No AAB found to rename"
+          fi
+
+      - name: Upload Android AAB artifacts
+        uses: actions/upload-artifact@v6
+        with:
+          name: android-aab-artifacts
+          path: |
+            androidApp/build/outputs/bundle/release/*.aab
+          retention-days: 14
+
+#  package-js:
+#    name: Package (JS) - ZIP
+#    needs: [ run_tests ]
+#    runs-on: ubuntu-latest
+#    outputs:
+#      artifacts-path: artifacts
+#    steps:
+#      - name: Checkout
+#        uses: actions/checkout@v6
+#
+#      - name: Setup Java
+#        uses: actions/setup-java@v5
+#        with:
+#          distribution: zulu
+#          java-version: 25
+#
+#      - name: Cache Gradle
+#        uses: actions/cache@v5
+#        with:
+#          path: |
+#            ~/.gradle/caches
+#            ~/.gradle/wrapper
+#          key: ${{ runner.os }}-gradle-js-${{ hashFiles('**/gradle/wrapper/gradle-wrapper.properties') }}
+#          restore-keys: |
+#            ${{ runner.os }}-gradle-js-
+#
+#      - name: Build JS
+#        run: |
+#          chmod +x gradlew || true
+#          ./gradlew --no-daemon --stacktrace :composeApp:jsBrowserDistribution
+#
+#      - name: Upload JS artifacts
+#        uses: actions/upload-artifact@v6
+#        with:
+#          name: js-artifacts
+#          path: |
+#            composeApp/build/dist/js/productionExecutable/**
+#          retention-days: 14
+#
+#  package-js-wasm:
+#    name: Package (WASM) - ZIP
+#    needs: [ run_tests ]
+#    runs-on: ubuntu-latest
+#    outputs:
+#      artifacts-path: artifacts
+#    steps:
+#      - name: Checkout
+#        uses: actions/checkout@v6
+#
+#      - name: Setup Java
+#        uses: actions/setup-java@v5
+#        with:
+#          distribution: zulu
+#          java-version: 25
+#
+#      - name: Cache Gradle
+#        uses: actions/cache@v5
+#        with:
+#          path: |
+#            ~/.gradle/caches
+#            ~/.gradle/wrapper
+#          key: ${{ runner.os }}-gradle-wasm-${{ hashFiles('**/gradle/wrapper/gradle-wrapper.properties') }}
+#          restore-keys: |
+#            ${{ runner.os }}-gradle-wasm-
+#
+#      - name: Build WASM
+#        run: |
+#          chmod +x gradlew || true
+#          ./gradlew --no-daemon --stacktrace :composeApp:wasmJsBrowserDistribution
+#
+#      - name: Upload WASM artifacts
+#        uses: actions/upload-artifact@v6
+#        with:
+#          name: wasm-artifacts
+#          path: |
+#            composeApp/build/dist/wasmJs/productionExecutable/**
+#          retention-days: 14
+
+  package-macos:
+    name: Package (macOS) - DMG
+    if: github.event_name == 'push' || github.event.inputs.build_macos == 'true'
+    needs: [ run_tests ]
+    runs-on: macos-latest
+    outputs:
+      artifacts-path: artifacts
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: zulu
+          java-version: 25
+
+      - name: Cache Gradle
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Build DMG (macOS)
+        run: |
+          chmod +x gradlew || true
+          ./gradlew --no-daemon --stacktrace :composeApp:packageDmg
+
+      - name: Name DMG (macOS)
+        run: |
+          DMG=$(find composeApp/build/compose/binaries -name "*.dmg" | head -n 1)
+          if [ -n "$DMG" ]; then
+            if [[ "${{ github.event_name == 'push' || github.event.inputs.sign_macos == 'true' }}" != "true" || -z "${{ secrets.MACOS_CERTIFICATE }}" ]]; then
+              DEST_FILE="${DMG%.dmg}-unsigned.dmg"
+              mv "$DMG" "$DEST_FILE"
+              echo "Renamed $DMG -> $DEST_FILE"
+            fi
+          fi
+
+      - name: Sign DMG (macOS)
+        if: github.event_name == 'push' || github.event.inputs.sign_macos == 'true'
+        env:
+          MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
+          MACOS_CERTIFICATE_PWD: ${{ secrets.MACOS_CERTIFICATE_PWD }}
+          MACOS_KEYCHAIN_PWD: ${{ secrets.MACOS_KEYCHAIN_PWD }}
+        run: |
+          if [ -n "$MACOS_CERTIFICATE" ]; then
+            echo "$MACOS_CERTIFICATE" | base64 --decode > certificate.p12
+            KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+            security create-keychain -p "$MACOS_KEYCHAIN_PWD" $KEYCHAIN_PATH
+            security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
+            security unlock-keychain -p "$MACOS_KEYCHAIN_PWD" $KEYCHAIN_PATH
+            security import certificate.p12 -k $KEYCHAIN_PATH -P "$MACOS_CERTIFICATE_PWD" -A -t cert -f pkcs12
+            security list-keychain -d user -s $KEYCHAIN_PATH
+            
+            DMG_FILE=$(find composeApp/build/compose/binaries -name "*.dmg" | head -n 1)
+            if [ -n "$DMG_FILE" ]; then
+              echo "Signing $DMG_FILE"
+              # Identity name can be extracted or provided as a secret
+              codesign --deep --force --options runtime --sign "Developer ID Application" "$DMG_FILE"
+            fi
+          else
+            echo "MACOS_CERTIFICATE not found, skipping signing"
+          fi
+
+      - name: Upload macOS artifacts
+        uses: actions/upload-artifact@v6
+        with:
+          name: macos-artifacts
+          path: |
+            composeApp/build/compose/binaries/**/*.dmg
+          retention-days: 14
+
+  package-windows:
+    name: Package (Windows) - MSI
+    if: github.event_name == 'push' || github.event.inputs.build_windows == 'true'
+    needs: [ run_tests ]
+    runs-on: windows-latest
+    outputs:
+      artifacts-path: artifacts
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: zulu
+          java-version: 25
+
+      - name: Cache Gradle
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Build MSI (Windows)
+        shell: powershell
+        run: |
+          .\gradlew.bat --no-daemon --stacktrace :composeApp:packageMsi
+
+      - name: Name MSI (Windows)
+        shell: powershell
+        run: |
+          $msi = Get-ChildItem -Path "composeApp/build/compose/binaries" -Filter "*.msi" -Recurse | Select-Object -First 1
+          if ($msi) {
+            if ("${{ github.event_name == 'push' || github.event.inputs.sign_windows == 'true' }}" -ne "true" -or -not "${{ secrets.WINDOWS_PFX_BASE64 }}") {
+              $destFile = $msi.FullName.Replace(".msi", "-unsigned.msi")
+              Move-Item $msi.FullName $destFile
+              Write-Host "Renamed $($msi.FullName) -> $destFile"
+            }
+          }
+
+      - name: Sign MSI (Windows)
+        if: github.event_name == 'push' || github.event.inputs.sign_windows == 'true'
+        shell: powershell
+        env:
+          PFX_BASE64: ${{ secrets.WINDOWS_PFX_BASE64 }}
+          PFX_PASSWORD: ${{ secrets.WINDOWS_PFX_PASSWORD }}
+        run: |
+          if (-not $env:PFX_BASE64) {
+            Write-Host "WINDOWS_PFX_BASE64 not found, skipping signing"
+            return
+          }
+          $pfxPath = Join-Path $pwd "cert.pfx"
+          [System.Convert]::FromBase64String($env:PFX_BASE64) | Set-Content -Path $pfxPath -Encoding Byte
+          
+          $msiFile = Get-ChildItem -Path "composeApp/build/compose/binaries" -Filter "*.msi" -Recurse | Select-Object -First 1
+          if ($msiFile) {
+            Write-Host "Signing $($msiFile.FullName)"
+            # signtool is usually in the path on GHA windows runners
+            signtool sign /f $pfxPath /p $env:PFX_PASSWORD /tr http://timestamp.digicert.com /td sha256 /fd sha256 $msiFile.FullName
+          }
+          if (Test-Path $pfxPath) { Remove-Item $pfxPath }
+
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v6
+        with:
+          name: windows-artifacts
+          path: |
+            composeApp/build/compose/binaries/**/*.msi
+          retention-days: 14
+
+  # Prepare a draft release for GitHub Releases page for the manual verification
+  # If accepted and published, the release workflow would be triggered
+  releaseDraft:
+    name: Release draft
+    if: (startsWith(github.ref, 'refs/heads/release/') || github.event_name == 'workflow_dispatch') && github.event_name != 'pull_request' || github.event.inputs.draft_release == 'true'
+    needs: [ package-android-apk, package-android-aab, package-ubuntu, package-macos, package-windows ]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+
+      # Check out the current repository
+      - name: Fetch Sources
+        uses: actions/checkout@v6
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v7
+        with:
+          path: artifacts
+        continue-on-error: true # Allow if some platforms were skipped
+
+      - name: Prepare release assets
+        run: |
+          # Create a release directory under the downloaded artifacts
+          mkdir -p release
+
+          # Move installer/artifact files (apk, aab, msi, dmg, deb, zip) into the release dir
+          if [ -d artifacts ]; then
+            find artifacts -type f \( -iname '*.apk' -o -iname '*.aab' -o -iname '*.msi' -o -iname '*.dmg' -o -iname '*.deb' -o -iname '*.zip' -o -iname '*.asc' \) -exec mv -t release {} + || true
+          fi
+
+      # Remove old release drafts by using the curl request for the available releases with a draft flag
+      - name: Remove Old Release Drafts
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api repos/{owner}/{repo}/releases \
+            --jq '.[] | select(.draft == true) | .id' \
+            | xargs -I '{}' gh api -X DELETE repos/{owner}/{repo}/releases/{}
+
+      - name: Make gradlew executable
+        run: chmod +x gradlew || true
+
+      # Create a new release draft - which is not publicly visible and requires manual acceptance
+      - name: Create Release Draft
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION=$(./gradlew properties --property appVersionName --quiet --console=plain | tail -n 1 | cut -f2- -d ' ')
+          # Requested output file name for getChangelog
+          REQUESTED_RELEASE_NOTE="release_note.txt"
+
+          # Generate the changelog to the requested path (the task may place the file in a subdirectory)
+          ./gradlew getChangelog --unreleased --no-header --quiet --console=plain --output-file=$REQUESTED_RELEASE_NOTE
+
+          # Find the actual file path (it might be in a generated subdirectory). Prefer the first match.
+          FOUND_NOTE=$(find . -type f -name "$REQUESTED_RELEASE_NOTE" -print -quit || true)
+          if [ -z "$FOUND_NOTE" ]; then
+            echo "WARNING: release note file '$REQUESTED_RELEASE_NOTE' not found; falling back to requested name"
+            RELEASE_NOTE="$REQUESTED_RELEASE_NOTE"
+          else
+            # Use the discovered path (strip leading ./ if present)
+            RELEASE_NOTE="${FOUND_NOTE#./}"
+            echo "Using release notes file: $RELEASE_NOTE"
+          fi
+
+          gh release create $VERSION release/* \
+            --draft \
+            --title $VERSION \
+            --notes-file "$RELEASE_NOTE"
