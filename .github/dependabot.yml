@@ -18,6 +18,9 @@ updates:
       dev-dependencies:
         patterns:
           - "*"
+    ignore:
+      - dependency-name: "org.jetbrains.kotlinx:kotlinx-datetime"
+        version: "*.*.*-*.*.*-compat"
 
   # Maintain dependencies for GitHub Actions
   - package-ecosystem: "github-actions"
