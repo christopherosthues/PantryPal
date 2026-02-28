@@ -17,6 +17,7 @@ import org.darchacheron.pantrypal.food.FoodDetailViewModel
 import org.darchacheron.pantrypal.food.FoodListView
 import org.darchacheron.pantrypal.food.FoodListViewModel
 import org.darchacheron.pantrypal.food.FoodRepository
+import org.darchacheron.pantrypal.food.OcrCameraView
 import org.darchacheron.pantrypal.food.SimpleCameraView
 import org.darchacheron.pantrypal.navigation.NavRoute
 import org.darchacheron.pantrypal.navigation.Navigator
@@ -65,6 +66,19 @@ val navigationModule = module {
         SimpleCameraView(
             onCapture = {
                 route.onCapture(it)
+            },
+            onBack = {
+                navigator.goBack()
+            }
+        )
+    }
+
+    navigation<NavRoute.OcrCamera> { route ->
+        val navigator = get<Navigator>()
+        OcrCameraView(
+            ocrType = route.type,
+            onRecognized = {
+                route.onRecognized(it)
             },
             onBack = {
                 navigator.goBack()

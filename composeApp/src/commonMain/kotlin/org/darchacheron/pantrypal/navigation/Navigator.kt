@@ -24,6 +24,10 @@ class Navigator {
         _backStack?.add(NavRoute.SimpleCamera(onSuccess))
     }
 
+    fun goToOcrCamera(type: OcrType, onRecognized: (String) -> Unit) {
+        _backStack?.add(NavRoute.OcrCamera(type, onRecognized))
+    }
+
     fun goToSettings() {
         _backStack?.add(NavRoute.Settings)
     }

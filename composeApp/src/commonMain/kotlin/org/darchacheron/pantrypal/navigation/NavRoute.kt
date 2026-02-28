@@ -15,8 +15,13 @@ sealed interface NavRoute : NavKey {
     data class SimpleCamera(val onCapture: (String) -> Unit) : NavRoute
 
     @Serializable
-    data object OcrCamera : NavRoute
+    data class OcrCamera(val type: OcrType, val onRecognized: (String) -> Unit) : NavRoute
 
     @Serializable
     data object Settings : NavRoute
+}
+
+@Serializable
+enum class OcrType {
+    NAME, AMOUNT, NUTRIENTS
 }

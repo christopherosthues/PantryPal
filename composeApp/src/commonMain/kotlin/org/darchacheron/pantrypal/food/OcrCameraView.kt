@@ -48,6 +48,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
@@ -71,8 +72,16 @@ import com.kashif.cameraK.state.CameraKState
 import com.kashif.imagesaverplugin.ImageSaverConfig
 import com.kashif.imagesaverplugin.ImageSaverPlugin
 import com.kashif.imagesaverplugin.rememberImageSaverPlugin
+import com.kashif.ocrPlugin.OcrPlugin
+import com.kashif.ocrPlugin.extractTextFromBitmapImpl
+import com.kashif.ocrPlugin.rememberOcrPlugin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import okio.FileSystem
+import okio.Path.Companion.toPath
+import okio.SYSTEM
+import org.darchacheron.pantrypal.navigation.OcrType
+import org.jetbrains.compose.resources.decodeToImageBitmap
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import pantrypal.composeapp.generated.resources.Res
@@ -98,7 +107,8 @@ private const val simpleCameraLoggerTag = "SimpleCamera"
 
 @Composable
 fun OcrCameraView(
-    onCapture: (String) -> Unit,
+    ocrType: OcrType,
+    onRecognized: (String) -> Unit,
     onBack: () -> Unit
 ) {
     val permissions: Permissions = providePermissions()
@@ -121,6 +131,8 @@ fun OcrCameraView(
             ),
         )
 
+        val ocrPlugin = rememberOcrPlugin()
+
         PermissionsHandler(
             permissions = permissions,
             cameraPermissionState = cameraPermissionState,
@@ -129,9 +141,11 @@ fun OcrCameraView(
 
         if (cameraPermissionState.value && storagePermissionState.value) {
             CameraContent(
-                onCapture = onCapture,
+                ocrType = ocrType,
+                onRecognized = onRecognized,
                 onBack = onBack,
                 imageSaverPlugin = imageSaverPlugin,
+                ocrPlugin = ocrPlugin
             )
         }
     }
@@ -164,9 +178,11 @@ private fun PermissionsHandler(
 
 @Composable
 private fun CameraContent(
-    onCapture: (String) -> Unit,
+    ocrType: OcrType,
+    onRecognized: (String) -> Unit,
     onBack: () -> Unit,
     imageSaverPlugin: ImageSaverPlugin,
+    ocrPlugin: OcrPlugin
 ) {
     val cameraState by rememberCameraKState(
         config = CameraConfiguration(
@@ -183,6 +199,7 @@ private fun CameraContent(
         ),
         setupPlugins = { stateHolder ->
             stateHolder.attachPlugin(imageSaverPlugin)
+            stateHolder.attachPlugin(ocrPlugin)
         },
     )
 
@@ -238,9 +255,11 @@ private fun CameraContent(
         },
     ) { state ->
         EnhancedCameraScreen(
-            onCapture = onCapture,
+            ocrType = ocrType,
+            onRecognized = onRecognized,
             onBack = onBack,
             cameraState = state,
+            ocrPlugin = ocrPlugin
         )
     }
 }
@@ -248,9 +267,11 @@ private fun CameraContent(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun EnhancedCameraScreen(
-    onCapture: (String) -> Unit,
+    ocrType: OcrType,
+    onRecognized: (String) -> Unit,
     onBack: () -> Unit,
     cameraState: CameraKState.Ready,
+    ocrPlugin: OcrPlugin
 ) {
     val scope = rememberCoroutineScope()
     val cameraController = cameraState.controller
@@ -276,6 +297,26 @@ private fun EnhancedCameraScreen(
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
+        // OCR Hint
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = 80.dp)
+                .background(Color.Black.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+        ) {
+            Text(
+                text = when (ocrType) {
+                    OcrType.NAME -> "Scan product name"
+                    OcrType.AMOUNT -> "Scan weight or volume (e.g. 500g, 1L)"
+                    OcrType.NUTRIENTS -> "Scan nutrition table"
+                },
+                color = Color.White,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Bold
+            )
+        }
+
         // Quick controls overlay (Flash, Torch, Switch)
         QuickControlsOverlay(
             modifier = Modifier.align(Alignment.TopEnd),
@@ -371,9 +412,10 @@ private fun EnhancedCameraScreen(
                 if (!isCapturing) {
                     isCapturing = true
                     scope.launch {
-                        handleImageCapture(
+                        handleOcrCapture(
                             cameraController = cameraController,
-                            onCapture = onCapture,
+                            ocrPlugin = ocrPlugin,
+                            onRecognized = onRecognized,
                         )
                         isCapturing = false
                         onBack()
@@ -515,25 +557,32 @@ private fun CapturedImagePreview(imageBitmap: ImageBitmap?, onDismiss: () -> Uni
     }
 }
 
-private suspend fun handleImageCapture(
+private suspend fun handleOcrCapture(
     cameraController: CameraController,
-    onCapture: (String) -> Unit,
+    ocrPlugin: OcrPlugin,
+    onRecognized: (String) -> Unit,
 ) {
     when (val result = cameraController.takePictureToFile()) {
         is ImageCaptureResult.SuccessWithFile -> {
-            // Image saved directly to file - significantly faster!
-            Logger.withTag(simpleCameraLoggerTag).i { "Image saved to: ${result.filePath}" }
-            onCapture(result.filePath)
-        }
-
-        is ImageCaptureResult.Success -> {
-            // Fallback for platforms that don't support direct file capture
-            Logger.withTag(simpleCameraLoggerTag).i { "Image captured successfully (${result.byteArray.size} bytes)" }
+            Logger.withTag(simpleCameraLoggerTag).i { "Image captured for OCR: ${result.filePath}" }
+            try {
+                val path = result.filePath.toPath()
+                val bytes = FileSystem.SYSTEM.read(path) {
+                    readByteArray()
+                }
+                val bitmap = bytes.decodeToImageBitmap()
+                val recognizedText = extractTextFromBitmapImpl(bitmap)
+                onRecognized(recognizedText)
+            } catch (e: Exception) {
+                Logger.withTag(simpleCameraLoggerTag).e(e) { "OCR failed" }
+            }
         }
 
         is ImageCaptureResult.Error -> {
             Logger.withTag(simpleCameraLoggerTag).e { "Image Capture Error: ${result.exception.message}" }
         }
+
+        else -> {}
     }
 }
 

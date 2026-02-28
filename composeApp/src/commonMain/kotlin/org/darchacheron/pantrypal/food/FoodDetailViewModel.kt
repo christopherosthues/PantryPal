@@ -14,6 +14,7 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
 import org.darchacheron.pantrypal.navigation.NavRoute
 import org.darchacheron.pantrypal.navigation.Navigator
+import org.darchacheron.pantrypal.navigation.OcrType
 import org.darchacheron.pantrypal.ui.UiState
 import org.jetbrains.compose.resources.StringResource
 import pantrypal.composeapp.generated.resources.*
@@ -266,6 +267,66 @@ class FoodDetailViewModel(
                 _uiState.value = UiState.success(food)
             }
         )
+    }
+
+    fun openOcrCamera(type: OcrType) {
+        navigator.goToOcrCamera(
+            type = type,
+            onRecognized = { text ->
+                handleOcrResult(type, text)
+            }
+        )
+    }
+
+    private fun handleOcrResult(type: OcrType, text: String) {
+        when (type) {
+            OcrType.NAME -> updateName(text.trim())
+            OcrType.AMOUNT -> {
+                // Extract number from text like "500g" or "1.5L"
+                val amountRegex = """(\d+[,.]?\d*)""".toRegex()
+                val match = amountRegex.find(text)
+                match?.value?.replace(',', '.')?.let { updateAmount(it) }
+                
+                if (text.contains("l", ignoreCase = true) || text.contains("ml", ignoreCase = true)) {
+                    updateIsLiquid(true)
+                } else if (text.contains("g", ignoreCase = true) || text.contains("kg", ignoreCase = true)) {
+                    updateIsLiquid(false)
+                }
+            }
+            OcrType.NUTRIENTS -> {
+                // Heuristic for nutrition table parsing
+                val lines = text.lines()
+                lines.forEach { line ->
+                    val lowerLine = line.lowercase()
+                    val value = """(\d+[,.]?\d*)""".toRegex().find(line)?.value?.replace(',', '.') ?: ""
+                    
+                    when {
+                        lowerLine.contains("kcal") || lowerLine.contains("energy") || lowerLine.contains("brennwert") -> {
+                             // This might find kJ first or kcal. Usually kJ/kcal are both present.
+                             if (lowerLine.contains("kcal")) updateKiloCalories(value)
+                             else if (lowerLine.contains("kj")) updateKiloJoule(value)
+                        }
+                        lowerLine.contains("fat") || lowerLine.contains("fett") -> {
+                            if (lowerLine.contains("saturat") || lowerLine.contains("gesättigt")) {
+                                updateSaturatedFattyAcidsInGrams(value)
+                            } else {
+                                updateFatInGrams(value)
+                            }
+                        }
+                        lowerLine.contains("carb") || lowerLine.contains("kohlenhydrat") -> {
+                            if (lowerLine.contains("sugar") || lowerLine.contains("zucker")) {
+                                updateSugarInGrams(value)
+                            } else {
+                                updateCarbsInGrams(value)
+                            }
+                        }
+                        lowerLine.contains("protein") || lowerLine.contains("eiweiß") -> updateProteinInGrams(value)
+                        lowerLine.contains("salt") || lowerLine.contains("salz") -> updateSaltInGrams(value)
+                        lowerLine.contains("fiber") || lowerLine.contains("ballaststoff") -> updateDietaryFiberInGrams(value)
+                    }
+                }
+            }
+        }
     }
 
     fun addAdditionalImage() {

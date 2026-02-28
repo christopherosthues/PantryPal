@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import coil3.compose.AsyncImage
 import kotlinx.datetime.LocalDate
+import org.darchacheron.pantrypal.navigation.OcrType
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
@@ -300,7 +301,17 @@ fun FoodDetailView(
                 readOnly = !viewModel.isEditing,
                 label = { Text(stringResource(Res.string.food_detail_name)) },
                 modifier = Modifier.fillMaxWidth(),
-                singleLine = true
+                singleLine = true,
+                trailingIcon = {
+                    if (viewModel.isEditing) {
+                        IconButton(onClick = { viewModel.openOcrCamera(OcrType.NAME) }) {
+                            Icon(
+                                painter = painterResource(Res.drawable.ic_camera),
+                                contentDescription = "OCR Name"
+                            )
+                        }
+                    }
+                }
             )
 
             AdaptiveRow(
@@ -355,18 +366,49 @@ fun FoodDetailView(
                         onCheckedChange = { viewModel.updateIsLiquid(it) },
                         modifier = Modifier.scale(0.8f)
                     )
+                },
+                trailingIcon = {
+                    if (viewModel.isEditing) {
+                        IconButton(onClick = { viewModel.openOcrCamera(OcrType.AMOUNT) }) {
+                            Icon(
+                                painter = painterResource(Res.drawable.ic_camera),
+                                contentDescription = "OCR Amount"
+                            )
+                        }
+                    }
                 }
             )
 
-            Text(
-                text = stringResource(
-                    if (food.isLiquid) Res.string.food_detail_nutritional_header_volume
-                    else Res.string.food_detail_nutritional_header_weight
-                ),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.secondary,
-                modifier = Modifier.padding(top = 8.dp)
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = stringResource(
+                        if (food.isLiquid) Res.string.food_detail_nutritional_header_volume
+                        else Res.string.food_detail_nutritional_header_weight
+                    ),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.secondary,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+                
+                if (viewModel.isEditing) {
+                    TextButton(
+                        onClick = { viewModel.openOcrCamera(OcrType.NUTRIENTS) },
+                        contentPadding = PaddingValues(horizontal = 8.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(Res.drawable.ic_camera),
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text("Scan table", style = MaterialTheme.typography.labelMedium)
+                    }
+                }
+            }
 
             AdaptiveRow(
                 useTwoColumns = useTwoColumns,
