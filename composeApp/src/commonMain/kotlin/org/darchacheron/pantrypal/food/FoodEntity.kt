@@ -29,6 +29,7 @@ data class FoodEntity(
     val createdAt: Instant,
     val lastModifiedAt: Instant,
     val imagePath: String? = null,
+    val additionalImagePaths: List<String> = emptyList(),
 ) {
     fun toFood(): Food = Food(
         id = id,
@@ -49,7 +50,8 @@ data class FoodEntity(
         openedAt = openedAt,
         createdAt = createdAt,
         lastModifiedAt = lastModifiedAt,
-        imagePath = imagePath
+        imagePath = imagePath,
+        additionalImagePaths = additionalImagePaths
     )
 }
 
@@ -73,5 +75,6 @@ fun Food.toFoodEntity(): FoodEntity = FoodEntity(
     openedAt = openedAt,
     createdAt = createdAt,
     lastModifiedAt = lastModifiedAt,
-    imagePath = imagePath
+    imagePath = imagePath,
+    additionalImagePaths = additionalImagePaths
 )

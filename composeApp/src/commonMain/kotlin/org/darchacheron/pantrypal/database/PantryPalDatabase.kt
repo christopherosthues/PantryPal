@@ -6,6 +6,7 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import org.darchacheron.pantrypal.database.converters.InstantConverter
 import org.darchacheron.pantrypal.database.converters.LocalDateConverter
+import org.darchacheron.pantrypal.database.converters.StringListConverter
 import org.darchacheron.pantrypal.database.converters.UuidConverter
 import org.darchacheron.pantrypal.food.FoodDao
 import org.darchacheron.pantrypal.food.FoodEntity
@@ -19,7 +20,8 @@ import org.darchacheron.pantrypal.food.FoodEntity
 @TypeConverters(
     InstantConverter::class,
     LocalDateConverter::class,
-    UuidConverter::class
+    UuidConverter::class,
+    StringListConverter::class
 )
 @ConstructedBy(PantryPalDatabaseConstructor::class)
 abstract class PantryPalDatabase : RoomDatabase() {

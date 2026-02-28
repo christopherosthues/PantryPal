@@ -83,6 +83,9 @@
     <string name="food_detail_content_description_open_camera">Open camera</string>
     <string name="food_detail_nutritional_header_weight">Nutritional values (per 100g)</string>
     <string name="food_detail_nutritional_header_volume">Nutritional values (per 100ml)</string>
+    <string name="food_detail_additional_images">Additional Images</string>
+    <string name="food_detail_add_image">Add Image</string>
+    <string name="food_detail_content_description_remove_image">Remove image</string>
 
     <!-- Simple Camera -->
     <string name="simple_camera_initializing">Initializing Camera...</string>

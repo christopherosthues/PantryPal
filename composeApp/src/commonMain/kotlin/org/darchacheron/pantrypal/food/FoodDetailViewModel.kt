@@ -26,7 +26,7 @@ class FoodDetailViewModel(
     val navigationRoute: NavRoute.FoodDetail,
     private val foodRepository: FoodRepository,
     private val navigator: Navigator,
-    ) : ViewModel() {
+) : ViewModel() {
     var foodId by mutableStateOf(if (navigationRoute.foodId != null) Uuid.parse(navigationRoute.foodId) else Uuid.generateV7())
 
     var isEditing by mutableStateOf(navigationRoute.foodId == null)
@@ -55,8 +55,9 @@ class FoodDetailViewModel(
             openedAt = null,
             createdAt = Clock.System.now(),
             lastModifiedAt = Clock.System.now(),
-            imagePath = null
-            )
+            imagePath = null,
+            additionalImagePaths = emptyList()
+        )
     )
 
     private var originalFood by mutableStateOf<Food?>(null)
@@ -99,7 +100,7 @@ class FoodDetailViewModel(
     }
 
     fun save() {
-        if (!canSave){
+        if (!canSave) {
             return
         }
 
@@ -239,7 +240,8 @@ class FoodDetailViewModel(
             openedAt = null,
             createdAt = Clock.System.now(),
             lastModifiedAt = Clock.System.now(),
-            imagePath = null
+            imagePath = null,
+            additionalImagePaths = emptyList()
         )
         _uiState.value = UiState.success(food)
         if (navigationRoute.foodId != null) {
@@ -264,5 +266,19 @@ class FoodDetailViewModel(
                 _uiState.value = UiState.success(food)
             }
         )
+    }
+
+    fun addAdditionalImage() {
+        navigator.goToSimpleCamera(
+            onSuccess = { imagePath ->
+                food = food.copy(additionalImagePaths = food.additionalImagePaths + imagePath)
+                _uiState.value = UiState.success(food)
+            }
+        )
+    }
+
+    fun removeAdditionalImage(imagePath: String) {
+        food = food.copy(additionalImagePaths = food.additionalImagePaths - imagePath)
+        _uiState.value = UiState.success(food)
     }
 }

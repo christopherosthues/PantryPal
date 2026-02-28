@@ -29,6 +29,7 @@ data class Food(
     val createdAt: Instant,
     val lastModifiedAt: Instant,
     val imagePath: String? = null,
+    val additionalImagePaths: List<String> = emptyList(),
 ) {
     val isOverdue: Boolean
         get() = bestBeforeUsedByDate != null && bestBeforeUsedByDate < Clock.System.todayIn(TimeZone.currentSystemDefault())
