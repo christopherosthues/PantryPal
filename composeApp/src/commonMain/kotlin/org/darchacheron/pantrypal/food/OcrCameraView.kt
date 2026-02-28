@@ -9,14 +9,19 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
@@ -31,6 +36,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
@@ -93,6 +99,9 @@ import pantrypal.composeapp.generated.resources.ic_flash_on
 import pantrypal.composeapp.generated.resources.ic_flashlight_off
 import pantrypal.composeapp.generated.resources.ic_flashlight_on
 import pantrypal.composeapp.generated.resources.ic_x
+import pantrypal.composeapp.generated.resources.ocr_camera_accept
+import pantrypal.composeapp.generated.resources.ocr_camera_no_text_detected
+import pantrypal.composeapp.generated.resources.ocr_camera_retry
 import pantrypal.composeapp.generated.resources.simple_camera_content_description_capture_button
 import pantrypal.composeapp.generated.resources.simple_camera_content_description_captured_image_preview
 import pantrypal.composeapp.generated.resources.simple_camera_content_description_close_preview
@@ -275,8 +284,24 @@ private fun EnhancedCameraScreen(
 ) {
     val scope = rememberCoroutineScope()
     val cameraController = cameraState.controller
-    var imageBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
+    var capturedImage by remember { mutableStateOf<ImageBitmap?>(null) }
+    var capturedText by remember { mutableStateOf<String?>(null) }
     var isCapturing by remember { mutableStateOf(false) }
+
+    val sessionFilePaths = remember { mutableListOf<String>() }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            sessionFilePaths.forEach { path ->
+                try {
+                    FileSystem.SYSTEM.delete(path.toPath())
+                    Logger.withTag(simpleCameraLoggerTag).i { "Deleted session file: $path" }
+                } catch (e: Exception) {
+                    Logger.withTag(simpleCameraLoggerTag).e(e) { "Failed to delete session file: $path" }
+                }
+            }
+        }
+    }
 
     // Camera settings state
     var flashMode by remember { mutableStateOf(FlashMode.OFF) }
@@ -297,150 +322,164 @@ private fun EnhancedCameraScreen(
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        // OCR Hint
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(top = 80.dp)
-                .background(Color.Black.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
-                .padding(horizontal = 16.dp, vertical = 8.dp)
-        ) {
-            Text(
-                text = when (ocrType) {
-                    OcrType.NAME -> "Scan product name"
-                    OcrType.AMOUNT -> "Scan weight or volume (e.g. 500g, 1L)"
-                    OcrType.NUTRIENTS -> "Scan nutrition table"
-                },
-                color = Color.White,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Bold
-            )
-        }
-
-        // Quick controls overlay (Flash, Torch, Switch)
-        QuickControlsOverlay(
-            modifier = Modifier.align(Alignment.TopEnd),
-            flashMode = flashMode,
-            torchMode = torchMode,
-            onFlashToggle = {
-                cameraController.toggleFlashMode()
-                flashMode = cameraController.getFlashMode() ?: FlashMode.OFF
-            },
-            onTorchToggle = {
-                cameraController.toggleTorchMode()
-                torchMode = cameraController.getTorchMode() ?: TorchMode.OFF
-            },
-            onLensSwitch = {
-                cameraController.toggleCameraLens()
-                maxZoom = cameraController.getMaxZoom()
-                zoomLevel = 1f
-            }
-        )
-
-        // Zoom Slider (Left side)
-        if (maxZoom > 1f) {
+        if (capturedImage == null) {
+            // OCR Hint
             Box(
                 modifier = Modifier
-                    .align(Alignment.CenterStart)
-                    .padding(start = 8.dp)
-                    .fillMaxHeight(0.5f),
-                contentAlignment = Alignment.Center
+                    .align(Alignment.TopCenter)
+                    .padding(top = 80.dp)
+                    .background(Color.Black.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
             ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        text = "${(maxZoom * 10).toInt() / 10f}x",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Color.White,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
-
-                    Slider(
-                        value = zoomLevel,
-                        onValueChange = {
-                            zoomLevel = it
-                            cameraController.setZoom(it)
-                        },
-                        valueRange = 1f..maxZoom,
-                        modifier = Modifier
-                            .graphicsLayer {
-                                rotationZ = 270f
-                                transformOrigin = androidx.compose.ui.graphics.TransformOrigin.Center
-                            }
-                            .width(16.dp) // Maintain width for sliding distance
-                            .height(200.dp) // Provide enough height for the rotated slider to not overlap labels
-                            .layout { measurable, constraints ->
-                                val placeable = measurable.measure(
-                                    Constraints(
-                                        minWidth = constraints.minHeight,
-                                        maxWidth = constraints.maxHeight,
-                                        minHeight = constraints.minWidth,
-                                        maxHeight = constraints.maxWidth
-                                    )
-                                )
-                                layout(placeable.height, placeable.width) {
-                                    placeable.place(
-                                        -((placeable.width - placeable.height) / 2),
-                                        -((placeable.height - placeable.width) / 2)
-                                    )
-                                }
-                            },
-                        colors = SliderDefaults.colors(
-                            thumbColor = Color.White,
-                            activeTrackColor = Color.White,
-                            inactiveTrackColor = Color.White.copy(alpha = 0.3f)
-                        )
-                    )
-
-                    Text(
-                        text = "1x",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Color.White,
-                        modifier = Modifier.padding(top = 8.dp)
-                    )
-                }
+                Text(
+                    text = when (ocrType) {
+                        OcrType.NAME -> "Scan product name"
+                        OcrType.AMOUNT -> "Scan weight or volume (e.g. 500g, 1L)"
+                        OcrType.NUTRIENTS -> "Scan nutrition table"
+                    },
+                    color = Color.White,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Bold
+                )
             }
-        }
 
-        // Capture button
-        CaptureButton(
-            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 60.dp),
-            isCapturing = isCapturing,
-            onCapture = {
-                if (!isCapturing) {
-                    isCapturing = true
-                    scope.launch {
-                        handleOcrCapture(
-                            cameraController = cameraController,
-                            ocrPlugin = ocrPlugin,
-                            onRecognized = onRecognized,
+            // Quick controls overlay (Flash, Torch, Switch)
+            QuickControlsOverlay(
+                modifier = Modifier.align(Alignment.TopEnd),
+                flashMode = flashMode,
+                torchMode = torchMode,
+                onFlashToggle = {
+                    cameraController.toggleFlashMode()
+                    flashMode = cameraController.getFlashMode() ?: FlashMode.OFF
+                },
+                onTorchToggle = {
+                    cameraController.toggleTorchMode()
+                    torchMode = cameraController.getTorchMode() ?: TorchMode.OFF
+                },
+                onLensSwitch = {
+                    cameraController.toggleCameraLens()
+                    maxZoom = cameraController.getMaxZoom()
+                    zoomLevel = 1f
+                }
+            )
+
+            // Zoom Slider (Left side)
+            if (maxZoom > 1f) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.CenterStart)
+                        .padding(start = 8.dp)
+                        .fillMaxHeight(0.5f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = "${(maxZoom * 10).toInt() / 10f}x",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color.White,
+                            modifier = Modifier.padding(bottom = 8.dp)
                         )
-                        isCapturing = false
-                        onBack()
+
+                        Slider(
+                            value = zoomLevel,
+                            onValueChange = {
+                                zoomLevel = it
+                                cameraController.setZoom(it)
+                            },
+                            valueRange = 1f..maxZoom,
+                            modifier = Modifier
+                                .graphicsLayer {
+                                    rotationZ = 270f
+                                    transformOrigin = androidx.compose.ui.graphics.TransformOrigin.Center
+                                }
+                                .width(16.dp)
+                                .height(200.dp)
+                                .layout { measurable, constraints ->
+                                    val placeable = measurable.measure(
+                                        Constraints(
+                                            minWidth = constraints.minHeight,
+                                            maxWidth = constraints.maxHeight,
+                                            minHeight = constraints.minWidth,
+                                            maxHeight = constraints.maxWidth
+                                        )
+                                    )
+                                    layout(placeable.height, placeable.width) {
+                                        placeable.place(
+                                            -((placeable.width - placeable.height) / 2),
+                                            -((placeable.height - placeable.width) / 2)
+                                        )
+                                    }
+                                },
+                            colors = SliderDefaults.colors(
+                                thumbColor = Color.White,
+                                activeTrackColor = Color.White,
+                                inactiveTrackColor = Color.White.copy(alpha = 0.3f)
+                            )
+                        )
+
+                        Text(
+                            text = "1x",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color.White,
+                            modifier = Modifier.padding(top = 8.dp)
+                        )
                     }
                 }
-            },
-        )
+            }
 
-        // Captured image preview
-        CapturedImagePreview(imageBitmap = imageBitmap) {
-            imageBitmap = null
-        }
+            // Capture button
+            CaptureButton(
+                modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 60.dp),
+                isCapturing = isCapturing,
+                onCapture = {
+                    if (!isCapturing) {
+                        isCapturing = true
+                        scope.launch {
+                            handleOcrCapture(
+                                cameraController = cameraController,
+                                ocrPlugin = ocrPlugin,
+                                onFileCreated = { sessionFilePaths.add(it) },
+                                onSuccess = { bitmap, text ->
+                                    capturedImage = bitmap
+                                    capturedText = text
+                                }
+                            )
+                            isCapturing = false
+                        }
+                    }
+                },
+            )
 
-        // Back button
-        IconButton(
-            onClick = onBack,
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .padding(16.dp)
-                .background(Color.Black.copy(alpha = 0.4f), CircleShape)
-        ) {
-            Icon(
-                painter = painterResource(Res.drawable.ic_x),
-                contentDescription = stringResource(Res.string.simple_camera_content_description_close_preview),
-                tint = Color.White
+            // Back button
+            IconButton(
+                onClick = onBack,
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(16.dp)
+                    .background(Color.Black.copy(alpha = 0.4f), CircleShape)
+            ) {
+                Icon(
+                    painter = painterResource(Res.drawable.ic_x),
+                    contentDescription = stringResource(Res.string.simple_camera_content_description_close_preview),
+                    tint = Color.White
+                )
+            }
+        } else {
+            OcrResultPreview(
+                imageBitmap = capturedImage!!,
+                recognizedText = capturedText ?: "",
+                onAccept = {
+                    onRecognized(capturedText ?: "")
+                    onBack()
+                },
+                onRetry = {
+                    capturedImage = null
+                    capturedText = null
+                },
+                onClose = onBack
             )
         }
     }
@@ -514,45 +553,113 @@ private fun CaptureButton(modifier: Modifier = Modifier, isCapturing: Boolean, o
 }
 
 @Composable
-private fun CapturedImagePreview(imageBitmap: ImageBitmap?, onDismiss: () -> Unit) {
-    imageBitmap?.let { bitmap ->
-        Surface(
+private fun OcrResultPreview(
+    imageBitmap: ImageBitmap,
+    recognizedText: String,
+    onAccept: () -> Unit,
+    onRetry: () -> Unit,
+    onClose: () -> Unit
+) {
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = Color.Black,
+    ) {
+        Column(
             modifier = Modifier.fillMaxSize(),
-            color = Color.Black.copy(alpha = 0.9f),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Box(modifier = Modifier.fillMaxSize()) {
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+            ) {
                 Image(
-                    bitmap = bitmap,
+                    bitmap = imageBitmap,
                     contentDescription = stringResource(Res.string.simple_camera_content_description_captured_image_preview),
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp),
+                    modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Fit,
                 )
 
                 IconButton(
-                    onClick = onDismiss,
+                    onClick = onClose,
                     modifier = Modifier
-                        .align(Alignment.TopEnd)
+                        .align(Alignment.TopStart)
                         .padding(16.dp)
-                        .background(
-                            MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.6f),
-                            CircleShape,
-                        ),
+                        .background(Color.Black.copy(alpha = 0.4f), CircleShape)
                 ) {
                     Icon(
                         painter = painterResource(Res.drawable.ic_x),
                         contentDescription = stringResource(Res.string.simple_camera_content_description_close_preview),
-                        tint = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.rotate(120f),
+                        tint = Color.White
                     )
                 }
             }
-        }
 
-        LaunchedEffect(bitmap) {
-            delay(3000)
-            onDismiss()
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+                color = MaterialTheme.colorScheme.surface
+            ) {
+                Column(
+                    modifier = Modifier
+                        .padding(24.dp)
+                        .windowInsetsPadding(WindowInsets.systemBars),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Text(
+                        text = "Extracted Text",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 60.dp, max = 200.dp)
+                            .background(
+                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                RoundedCornerShape(12.dp)
+                            )
+                            .padding(16.dp)
+                            .verticalScroll(rememberScrollState())
+                    ) {
+                        Text(
+                            text = recognizedText.trim().ifBlank { stringResource(Res.string.ocr_camera_no_text_detected) },
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        FilledTonalButton(
+                            onClick = onRetry,
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(56.dp),
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            Text(text = stringResource(Res.string.ocr_camera_retry))
+                        }
+                        Button(
+                            onClick = onAccept,
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(56.dp),
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            Text(text = stringResource(Res.string.ocr_camera_accept))
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -560,19 +667,21 @@ private fun CapturedImagePreview(imageBitmap: ImageBitmap?, onDismiss: () -> Uni
 private suspend fun handleOcrCapture(
     cameraController: CameraController,
     ocrPlugin: OcrPlugin,
-    onRecognized: (String) -> Unit,
+    onFileCreated: (String) -> Unit,
+    onSuccess: (ImageBitmap, String) -> Unit
 ) {
     when (val result = cameraController.takePictureToFile()) {
         is ImageCaptureResult.SuccessWithFile -> {
-            Logger.withTag(simpleCameraLoggerTag).i { "Image captured for OCR: ${result.filePath}" }
+            val path = result.filePath
+            onFileCreated(path)
+            Logger.withTag(simpleCameraLoggerTag).i { "Image captured for OCR: $path" }
             try {
-                val path = result.filePath.toPath()
-                val bytes = FileSystem.SYSTEM.read(path) {
+                val bytes = FileSystem.SYSTEM.read(path.toPath()) {
                     readByteArray()
                 }
                 val bitmap = bytes.decodeToImageBitmap()
                 val recognizedText = extractTextFromBitmapImpl(bitmap)
-                onRecognized(recognizedText)
+                onSuccess(bitmap, recognizedText)
             } catch (e: Exception) {
                 Logger.withTag(simpleCameraLoggerTag).e(e) { "OCR failed" }
             }

@@ -97,4 +97,8 @@
     <string name="simple_camera_content_description_captured_image_preview">Vorschau des aufgenommenen Bildes</string>
     <string name="simple_camera_content_description_close_preview">Vorschau schließen</string>
 
+    <!-- OCR Camera -->
+    <string name="ocr_camera_no_text_detected">Es wurde kein Text erkannt. Versuche es mit einem anderen Winkel oder einer anderen Belichtung erneut.</string>
+    <string name="ocr_camera_retry">Erneut versuchen</string>
+    <string name="ocr_camera_accept">Akzeptieren</string>
 </resources>

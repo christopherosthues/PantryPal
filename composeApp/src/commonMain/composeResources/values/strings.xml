@@ -98,4 +98,8 @@
     <string name="simple_camera_content_description_captured_image_preview">Captured image preview</string>
     <string name="simple_camera_content_description_close_preview">Close preview</string>
 
+    <!-- OCR Camera -->
+    <string name="ocr_camera_no_text_detected">No text detected. Try another angle or better lighting.</string>
+    <string name="ocr_camera_retry">Retry</string>
+    <string name="ocr_camera_accept">Accept</string>
 </resources>
