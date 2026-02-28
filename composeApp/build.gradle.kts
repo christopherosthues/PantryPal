@@ -84,12 +84,9 @@ kotlin {
             implementation(libs.compose.ui)
             implementation(libs.compose.components.resources)
             implementation(libs.compose.uiToolingPreview)
-            implementation(libs.androidx.lifecycle.viewmodelCompose)
-            implementation(libs.androidx.lifecycle.runtimeCompose)
             implementation(libs.jetbrains.lifecycle.viewmodelNavigation3)
             implementation(libs.jetbrains.navigation3.ui)
             implementation(libs.compose.material3.window.size)
-            implementation(libs.compose.material3.adaptive)
             implementation(libs.compose.material3.adaptive.layout)
             implementation(libs.jetbrains.material3.adaptiveNavigation3)
 
@@ -110,7 +107,6 @@ kotlin {
 
             implementation(libs.camerak)
             implementation(libs.camerak.image.saver)
-//            implementation(libs.camerak.qr.scanner)
             implementation(libs.camerak.ocr)
 
             implementation(libs.coil.compose)

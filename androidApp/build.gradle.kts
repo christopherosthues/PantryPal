@@ -16,7 +16,6 @@ kotlin {
 
         implementation(libs.koin.android)
         implementation(libs.koin.androidx.compose)
-//            implementation(libs.koin.androidx.compose.navigation)
     }
 
     target {
