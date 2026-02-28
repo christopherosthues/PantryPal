@@ -54,8 +54,8 @@
     <string name="food_list_empty_selection">Wähle ein Lebensmittel aus, um die Details anzuzeigen</string>
 
     <!-- Food Detail -->
-    <string name="food_detail_title_add">Lebensmittel hinzufügen</string>
-    <string name="food_detail_title_edit">Lebensmittel bearbeiten</string>
+    <string name="food_detail_title_add">Eintrag hinzufügen</string>
+    <string name="food_detail_title_edit">Eintrag bearbeiten</string>
     <string name="food_detail_name">Name</string>
     <string name="food_detail_calories">Kalorien (kcal)</string>
     <string name="food_detail_kj">Joule (kJ)</string>
@@ -67,6 +67,7 @@
     <string name="food_detail_fiber">Ballaststoffe (g)</string>
     <string name="food_detail_salt">Salz (g)</string>
     <string name="food_detail_weight">Gewicht (g)</string>
+    <string name="food_detail_volume">Volumen (ml)</string>
     <string name="food_detail_best_before">Mindestens haltbar bis</string>
     <string name="food_detail_use_by">Zu verbrauchen bis</string>
     <string name="food_detail_opened_at">Geöffnet am</string>
@@ -74,12 +75,13 @@
     <string name="food_detail_content_description_edit">Bearbeiten</string>
     <string name="food_detail_content_description_cancel_editing">Bearbeiten abbrechen</string>
     <string name="food_detail_content_description_delete">Löschen</string>
-    <string name="food_detail_error_loading">Fehler beim Laden der Lebensmitteldetails.</string>
-    <string name="food_detail_error_saving">Fehler beim Speichern des Lebensmittels.</string>
-    <string name="food_detail_delete_success">Lebensmittel erfolgreich gelöscht</string>
-    <string name="food_detail_delete_error">Fehler beim Löschen des Lebensmittels</string>
+    <string name="food_detail_error_loading">Fehler beim Laden der Details.</string>
+    <string name="food_detail_error_saving">Fehler beim Speichern.</string>
+    <string name="food_detail_delete_success">Eintrag erfolgreich gelöscht</string>
+    <string name="food_detail_delete_error">Fehler beim Löschen des Eintrags</string>
     <string name="food_detail_content_description_open_camera">Kamera öffnen</string>
-    <string name="food_detail_nutritional_header">Nährwerte pro 100g</string>
+    <string name="food_detail_nutritional_header_weight">Nährwerte pro 100g</string>
+    <string name="food_detail_nutritional_header_volume">Nährwerte pro 100ml</string>
 
     <!-- Simple Camera -->
     <string name="simple_camera_initializing">Kamera wird initialisiert…</string>

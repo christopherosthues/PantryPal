@@ -55,8 +55,8 @@
     <string name="food_list_empty_selection">Select a food item to see details</string>
 
     <!-- Food Detail -->
-    <string name="food_detail_title_add">Add Food</string>
-    <string name="food_detail_title_edit">Edit Food</string>
+    <string name="food_detail_title_add">Add Item</string>
+    <string name="food_detail_title_edit">Edit Item</string>
     <string name="food_detail_name">Name</string>
     <string name="food_detail_calories">Calories (kcal)</string>
     <string name="food_detail_kj">Joule (kJ)</string>
@@ -68,6 +68,7 @@
     <string name="food_detail_fiber">Fiber (g)</string>
     <string name="food_detail_salt">Salt (g)</string>
     <string name="food_detail_weight">Weight (g)</string>
+    <string name="food_detail_volume">Volume (ml)</string>
     <string name="food_detail_best_before">Best Before</string>
     <string name="food_detail_use_by">Use By</string>
     <string name="food_detail_opened_at">Opened At</string>
@@ -75,12 +76,13 @@
     <string name="food_detail_content_description_edit">Edit</string>
     <string name="food_detail_content_description_cancel_editing">Cancel editing</string>
     <string name="food_detail_content_description_delete">Delete</string>
-    <string name="food_detail_error_loading">Failed to load food details.</string>
-    <string name="food_detail_error_saving">Failed to save food.</string>
-    <string name="food_detail_delete_success">Food deleted successfully</string>
-    <string name="food_detail_delete_error">Failed to delete food</string>
+    <string name="food_detail_error_loading">Failed to load details.</string>
+    <string name="food_detail_error_saving">Failed to save.</string>
+    <string name="food_detail_delete_success">Item deleted successfully</string>
+    <string name="food_detail_delete_error">Failed to delete item</string>
     <string name="food_detail_content_description_open_camera">Open camera</string>
-    <string name="food_detail_nutritional_header">Nutritional values (per 100g)</string>
+    <string name="food_detail_nutritional_header_weight">Nutritional values (per 100g)</string>
+    <string name="food_detail_nutritional_header_volume">Nutritional values (per 100ml)</string>
 
     <!-- Simple Camera -->
     <string name="simple_camera_initializing">Initializing Camera...</string>

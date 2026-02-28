@@ -333,7 +333,7 @@ fun FoodItem(
                         val details = mutableListOf<String>()
                         food.kiloCalories?.let { details.add("$it kcal") }
                         food.kiloJoule?.let { details.add("$it kJ") }
-                        food.weightInGrams?.let { details.add("${it}g") }
+                        food.amount?.let { details.add("${it}${if (food.isLiquid) "ml" else "g"}") }
                         if (details.isNotEmpty()) {
                             Text(
                                 text = details.joinToString(" • "),

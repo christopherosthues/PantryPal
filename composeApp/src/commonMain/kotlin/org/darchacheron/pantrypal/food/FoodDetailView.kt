@@ -255,8 +255,36 @@ fun FoodDetailView(
                 }
             )
 
+            OutlinedTextField(
+                value = food.amount?.toString() ?: "",
+                onValueChange = { viewModel.updateAmount(it) },
+                readOnly = !viewModel.isEditing,
+                label = {
+                    Text(
+                        stringResource(
+                            if (food.isLiquid) Res.string.food_detail_volume
+                            else Res.string.food_detail_weight
+                        )
+                    )
+                },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                leadingIcon = {
+                    Switch(
+                        checked = food.isLiquid,
+                        enabled = viewModel.isEditing,
+                        onCheckedChange = { viewModel.updateIsLiquid(it) },
+                        modifier = Modifier.scale(0.8f)
+                    )
+                }
+            )
+
             Text(
-                text = stringResource(Res.string.food_detail_nutritional_header),
+                text = stringResource(
+                    if (food.isLiquid) Res.string.food_detail_nutritional_header_volume
+                    else Res.string.food_detail_nutritional_header_weight
+                ),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.secondary,
                 modifier = Modifier.padding(top = 8.dp)
@@ -286,16 +314,6 @@ fun FoodDetailView(
                         singleLine = true
                     )
                 }
-            )
-
-            OutlinedTextField(
-                value = food.weightInGrams?.toString() ?: "",
-                onValueChange = { viewModel.updateWeightInGrams(it) },
-                readOnly = !viewModel.isEditing,
-                label = { Text(stringResource(Res.string.food_detail_weight)) },
-                modifier = Modifier.fillMaxWidth(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                singleLine = true
             )
 
             AdaptiveRow(

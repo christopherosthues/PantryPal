@@ -48,7 +48,8 @@ class FoodDetailViewModel(
             proteinInGrams = null,
             dietaryFiberInGrams = null,
             saltInGrams = null,
-            weightInGrams = null,
+            amount = null,
+            isLiquid = false,
             bestBeforeUsedByDate = null,
             isUseBy = false,
             openedAt = null,
@@ -193,8 +194,13 @@ class FoodDetailViewModel(
         _uiState.value = UiState.success(food)
     }
 
-    fun updateWeightInGrams(value: String) {
-        food = food.copy(weightInGrams = value.toFloatOrNull())
+    fun updateAmount(value: String) {
+        food = food.copy(amount = value.toFloatOrNull())
+        _uiState.value = UiState.success(food)
+    }
+
+    fun updateIsLiquid(isLiquid: Boolean) {
+        food = food.copy(isLiquid = isLiquid)
         _uiState.value = UiState.success(food)
     }
 
@@ -226,7 +232,8 @@ class FoodDetailViewModel(
             proteinInGrams = null,
             dietaryFiberInGrams = null,
             saltInGrams = null,
-            weightInGrams = null,
+            amount = null,
+            isLiquid = false,
             bestBeforeUsedByDate = null,
             isUseBy = false,
             openedAt = null,
