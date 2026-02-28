@@ -2,6 +2,11 @@
 
 package org.darchacheron.pantrypal.di
 
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
@@ -11,6 +16,8 @@ import androidx.compose.material3.adaptive.navigation3.ListDetailSceneStrategy
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
+import androidx.navigation3.runtime.metadata
+import androidx.navigation3.ui.NavDisplay
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import org.darchacheron.pantrypal.database.PantryPalDatabase
 import org.darchacheron.pantrypal.database.PantryPalDatabaseFactory
@@ -68,7 +75,13 @@ val navigationModule = module {
         )
     }
 
-    navigation<NavRoute.SimpleCamera> {
+    navigation<NavRoute.SimpleCamera>(
+        metadata = NavDisplay.transitionSpec {
+            slideInVertically(initialOffsetY = { it }) togetherWith ExitTransition.KeepUntilTransitionsFinished
+        } + NavDisplay.popTransitionSpec {
+            EnterTransition.None togetherWith slideOutVertically(targetOffsetY = { it })
+        }
+    ) {
         val navigator = get<Navigator>()
         SimpleCameraView(
             onCapture = {
@@ -80,7 +93,13 @@ val navigationModule = module {
         )
     }
 
-    navigation<NavRoute.OcrCamera> { route ->
+    navigation<NavRoute.OcrCamera>(
+        metadata = NavDisplay.transitionSpec {
+            slideInVertically(initialOffsetY = { it }) togetherWith ExitTransition.KeepUntilTransitionsFinished
+        } + NavDisplay.popTransitionSpec {
+            EnterTransition.None togetherWith slideOutVertically(targetOffsetY = { it })
+        }
+    ) { route ->
         val navigator = get<Navigator>()
         OcrCameraView(
             ocrType = route.type,
@@ -93,7 +112,13 @@ val navigationModule = module {
         )
     }
 
-    navigation<NavRoute.Settings> {
+    navigation<NavRoute.Settings>(
+        metadata = NavDisplay.transitionSpec {
+            slideInVertically(initialOffsetY = { it }) togetherWith ExitTransition.KeepUntilTransitionsFinished
+        } + NavDisplay.popTransitionSpec {
+            EnterTransition.None togetherWith slideOutVertically(targetOffsetY = { it })
+        }
+    ) {
         val navigator = get<Navigator>()
         SettingsView(
             onBack = {

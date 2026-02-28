@@ -2,8 +2,8 @@ package org.darchacheron.pantrypal
 
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.navigation3.rememberListDetailSceneStrategy
@@ -54,13 +54,13 @@ fun App(
                 ),
                 entryProvider = koinEntryProvider(),
                 transitionSpec = {
-                    slideInVertically(initialOffsetY = { it }) togetherWith ExitTransition.KeepUntilTransitionsFinished
+                    slideInHorizontally(initialOffsetX = { it }) togetherWith ExitTransition.KeepUntilTransitionsFinished
                 },
                 popTransitionSpec = {
-                    EnterTransition.None togetherWith slideOutVertically(targetOffsetY = { it })
+                    EnterTransition.None togetherWith slideOutHorizontally(targetOffsetX = { it })
                 },
                 predictivePopTransitionSpec = {
-                    EnterTransition.None togetherWith slideOutVertically(targetOffsetY = { it })
+                    EnterTransition.None togetherWith slideOutHorizontally(targetOffsetX = { it })
                 }
             )
         }
