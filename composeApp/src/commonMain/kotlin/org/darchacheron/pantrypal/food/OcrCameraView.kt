@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -28,6 +29,7 @@ import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
@@ -36,19 +38,15 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
@@ -59,9 +57,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import co.touchlab.kermit.Logger
+import coil3.compose.AsyncImage
 import com.kashif.cameraK.compose.CameraKScreen
 import com.kashif.cameraK.compose.rememberCameraKState
-import com.kashif.cameraK.controller.CameraController
 import com.kashif.cameraK.enums.AspectRatio
 import com.kashif.cameraK.enums.CameraDeviceType
 import com.kashif.cameraK.enums.CameraLens
@@ -72,22 +70,15 @@ import com.kashif.cameraK.enums.QualityPrioritization
 import com.kashif.cameraK.enums.TorchMode
 import com.kashif.cameraK.permissions.Permissions
 import com.kashif.cameraK.permissions.providePermissions
-import com.kashif.cameraK.result.ImageCaptureResult
 import com.kashif.cameraK.state.CameraConfiguration
 import com.kashif.cameraK.state.CameraKState
 import com.kashif.imagesaverplugin.ImageSaverConfig
 import com.kashif.imagesaverplugin.ImageSaverPlugin
 import com.kashif.imagesaverplugin.rememberImageSaverPlugin
 import com.kashif.ocrPlugin.OcrPlugin
-import com.kashif.ocrPlugin.extractTextFromBitmapImpl
 import com.kashif.ocrPlugin.rememberOcrPlugin
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import okio.FileSystem
-import okio.Path.Companion.toPath
-import okio.SYSTEM
 import org.darchacheron.pantrypal.navigation.OcrType
-import org.jetbrains.compose.resources.decodeToImageBitmap
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import pantrypal.composeapp.generated.resources.Res
@@ -100,6 +91,7 @@ import pantrypal.composeapp.generated.resources.ic_flashlight_off
 import pantrypal.composeapp.generated.resources.ic_flashlight_on
 import pantrypal.composeapp.generated.resources.ic_x
 import pantrypal.composeapp.generated.resources.ocr_camera_accept
+import pantrypal.composeapp.generated.resources.ocr_camera_extraction_title
 import pantrypal.composeapp.generated.resources.ocr_camera_no_text_detected
 import pantrypal.composeapp.generated.resources.ocr_camera_retry
 import pantrypal.composeapp.generated.resources.simple_camera_content_description_capture_button
@@ -112,13 +104,12 @@ import pantrypal.composeapp.generated.resources.simple_camera_content_descriptio
 import pantrypal.composeapp.generated.resources.simple_camera_error_title
 import pantrypal.composeapp.generated.resources.simple_camera_initializing
 
-private const val simpleCameraLoggerTag = "SimpleCamera"
+private const val ocrCameraLoggerTag = "OcrCamera"
 
 @Composable
 fun OcrCameraView(
-    ocrType: OcrType,
+    viewModel: OcrCameraViewModel,
     onRecognized: (String) -> Unit,
-    onBack: () -> Unit
 ) {
     val permissions: Permissions = providePermissions()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -150,9 +141,8 @@ fun OcrCameraView(
 
         if (cameraPermissionState.value && storagePermissionState.value) {
             CameraContent(
-                ocrType = ocrType,
+                viewModel = viewModel,
                 onRecognized = onRecognized,
-                onBack = onBack,
                 imageSaverPlugin = imageSaverPlugin,
                 ocrPlugin = ocrPlugin
             )
@@ -170,7 +160,7 @@ private fun PermissionsHandler(
         permissions.RequestCameraPermission(
             onGranted = { cameraPermissionState.value = true },
             onDenied = {
-                Logger.withTag(simpleCameraLoggerTag).w { "Camera Permission Denied" }
+                Logger.withTag(ocrCameraLoggerTag).w { "Camera Permission Denied" }
             }
         )
     }
@@ -179,7 +169,7 @@ private fun PermissionsHandler(
         permissions.RequestStoragePermission(
             onGranted = { storagePermissionState.value = true },
             onDenied = {
-                Logger.withTag(simpleCameraLoggerTag).w { "Storage Permission Denied" }
+                Logger.withTag(ocrCameraLoggerTag).w { "Storage Permission Denied" }
             }
         )
     }
@@ -187,9 +177,8 @@ private fun PermissionsHandler(
 
 @Composable
 private fun CameraContent(
-    ocrType: OcrType,
+    viewModel: OcrCameraViewModel,
     onRecognized: (String) -> Unit,
-    onBack: () -> Unit,
     imageSaverPlugin: ImageSaverPlugin,
     ocrPlugin: OcrPlugin
 ) {
@@ -264,9 +253,8 @@ private fun CameraContent(
         },
     ) { state ->
         EnhancedCameraScreen(
-            ocrType = ocrType,
+            viewModel = viewModel,
             onRecognized = onRecognized,
-            onBack = onBack,
             cameraState = state,
             ocrPlugin = ocrPlugin
         )
@@ -276,42 +264,18 @@ private fun CameraContent(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun EnhancedCameraScreen(
-    ocrType: OcrType,
+    viewModel: OcrCameraViewModel,
     onRecognized: (String) -> Unit,
-    onBack: () -> Unit,
     cameraState: CameraKState.Ready,
     ocrPlugin: OcrPlugin
 ) {
-    val scope = rememberCoroutineScope()
+    val uiState by viewModel.uiState.collectAsState()
     val cameraController = cameraState.controller
-    var capturedImage by remember { mutableStateOf<ImageBitmap?>(null) }
-    var capturedText by remember { mutableStateOf<String?>(null) }
-    var isCapturing by remember { mutableStateOf(false) }
-
-    val sessionFilePaths = remember { mutableListOf<String>() }
-
-    DisposableEffect(Unit) {
-        onDispose {
-            sessionFilePaths.forEach { path ->
-                try {
-                    FileSystem.SYSTEM.delete(path.toPath())
-                    Logger.withTag(simpleCameraLoggerTag).i { "Deleted session file: $path" }
-                } catch (e: Exception) {
-                    Logger.withTag(simpleCameraLoggerTag).e(e) { "Failed to delete session file: $path" }
-                }
-            }
-        }
-    }
-
-    // Camera settings state
-    var flashMode by remember { mutableStateOf(FlashMode.OFF) }
-    var torchMode by remember { mutableStateOf(TorchMode.OFF) }
-    var zoomLevel by remember { mutableFloatStateOf(1f) }
-    var maxZoom by remember { mutableFloatStateOf(1f) }
 
     LaunchedEffect(cameraController) {
         // Poll for max zoom as it might not be ready immediately after state is Ready
         var tries = 0
+        var maxZoom = 1f
         while (maxZoom <= 1f && tries < 10) {
             maxZoom = cameraController.getMaxZoom()
             if (maxZoom <= 1f) {
@@ -319,10 +283,11 @@ private fun EnhancedCameraScreen(
             }
             tries++
         }
+        viewModel.updateMaxZoom(maxZoom)
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        if (capturedImage == null) {
+        if (uiState.capturedImageFilePath == null) {
             // OCR Hint
             Box(
                 modifier = Modifier
@@ -332,7 +297,7 @@ private fun EnhancedCameraScreen(
                     .padding(horizontal = 16.dp, vertical = 8.dp)
             ) {
                 Text(
-                    text = when (ocrType) {
+                    text = when (viewModel.route.type) {
                         OcrType.NAME -> "Scan product name"
                         OcrType.AMOUNT -> "Scan weight or volume (e.g. 500g, 1L)"
                         OcrType.NUTRIENTS -> "Scan nutrition table"
@@ -346,25 +311,15 @@ private fun EnhancedCameraScreen(
             // Quick controls overlay (Flash, Torch, Switch)
             QuickControlsOverlay(
                 modifier = Modifier.align(Alignment.TopEnd),
-                flashMode = flashMode,
-                torchMode = torchMode,
-                onFlashToggle = {
-                    cameraController.toggleFlashMode()
-                    flashMode = cameraController.getFlashMode() ?: FlashMode.OFF
-                },
-                onTorchToggle = {
-                    cameraController.toggleTorchMode()
-                    torchMode = cameraController.getTorchMode() ?: TorchMode.OFF
-                },
-                onLensSwitch = {
-                    cameraController.toggleCameraLens()
-                    maxZoom = cameraController.getMaxZoom()
-                    zoomLevel = 1f
-                }
+                flashMode = uiState.flashMode,
+                torchMode = uiState.torchMode,
+                onFlashToggle = { viewModel.onFlashToggle(cameraController) },
+                onTorchToggle = { viewModel.onTorchToggle(cameraController) },
+                onLensSwitch = { viewModel.onLensSwitch(cameraController) }
             )
 
             // Zoom Slider (Left side)
-            if (maxZoom > 1f) {
+            if (uiState.maxZoom > 1f) {
                 Box(
                     modifier = Modifier
                         .align(Alignment.CenterStart)
@@ -377,19 +332,16 @@ private fun EnhancedCameraScreen(
                         verticalArrangement = Arrangement.Center
                     ) {
                         Text(
-                            text = "${(maxZoom * 10).toInt() / 10f}x",
+                            text = "${(uiState.maxZoom * 10).toInt() / 10f}x",
                             style = MaterialTheme.typography.labelSmall,
                             color = Color.White,
                             modifier = Modifier.padding(bottom = 8.dp)
                         )
 
                         Slider(
-                            value = zoomLevel,
-                            onValueChange = {
-                                zoomLevel = it
-                                cameraController.setZoom(it)
-                            },
-                            valueRange = 1f..maxZoom,
+                            value = uiState.zoomLevel,
+                            onValueChange = { viewModel.onZoomChanged(cameraController, it) },
+                            valueRange = 1f..uiState.maxZoom,
                             modifier = Modifier
                                 .graphicsLayer {
                                     rotationZ = 270f
@@ -433,29 +385,13 @@ private fun EnhancedCameraScreen(
             // Capture button
             CaptureButton(
                 modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 60.dp),
-                isCapturing = isCapturing,
-                onCapture = {
-                    if (!isCapturing) {
-                        isCapturing = true
-                        scope.launch {
-                            handleOcrCapture(
-                                cameraController = cameraController,
-                                ocrPlugin = ocrPlugin,
-                                onFileCreated = { sessionFilePaths.add(it) },
-                                onSuccess = { bitmap, text ->
-                                    capturedImage = bitmap
-                                    capturedText = text
-                                }
-                            )
-                            isCapturing = false
-                        }
-                    }
-                },
+                isCapturing = uiState.isCapturing,
+                onCapture = { viewModel.capture(cameraController, ocrPlugin) },
             )
 
             // Back button
             IconButton(
-                onClick = onBack,
+                onClick = { viewModel.goBack() },
                 modifier = Modifier
                     .align(Alignment.TopStart)
                     .padding(16.dp)
@@ -469,17 +405,12 @@ private fun EnhancedCameraScreen(
             }
         } else {
             OcrResultPreview(
-                imageBitmap = capturedImage!!,
-                recognizedText = capturedText ?: "",
-                onAccept = {
-                    onRecognized(capturedText ?: "")
-                    onBack()
-                },
-                onRetry = {
-                    capturedImage = null
-                    capturedText = null
-                },
-                onClose = onBack
+                viewModel = viewModel,
+                imageFilePath = uiState.capturedImageFilePath!!,
+                recognizedText = uiState.capturedText ?: "",
+                onAccept = { viewModel.accept(onRecognized) },
+                onRetry = { viewModel.retry() },
+                onClose = { viewModel.goBack() }
             )
         }
     }
@@ -554,7 +485,8 @@ private fun CaptureButton(modifier: Modifier = Modifier, isCapturing: Boolean, o
 
 @Composable
 private fun OcrResultPreview(
-    imageBitmap: ImageBitmap,
+    viewModel: OcrCameraViewModel,
+    imageFilePath: String,
     recognizedText: String,
     onAccept: () -> Unit,
     onRetry: () -> Unit,
@@ -571,13 +503,13 @@ private fun OcrResultPreview(
             Box(
                 modifier = Modifier
                     .weight(1f)
-                    .fillMaxWidth()
+                    .fillMaxWidth(),
+                contentAlignment = Alignment.Center
             ) {
-                Image(
-                    bitmap = imageBitmap,
+                AsyncImage(
+                    model = imageFilePath,
                     contentDescription = stringResource(Res.string.simple_camera_content_description_captured_image_preview),
                     modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Fit,
                 )
 
                 IconButton(
@@ -609,7 +541,7 @@ private fun OcrResultPreview(
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     Text(
-                        text = "Extracted Text",
+                        text = stringResource(Res.string.ocr_camera_extraction_title),
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold
@@ -626,13 +558,21 @@ private fun OcrResultPreview(
                             .padding(16.dp)
                             .verticalScroll(rememberScrollState())
                     ) {
-                        Text(
-                            text = recognizedText.trim().ifBlank { stringResource(Res.string.ocr_camera_no_text_detected) },
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.fillMaxWidth()
-                        )
+                        if (recognizedText.trim().isBlank()) {
+                            Text(
+                                text = stringResource(Res.string.ocr_camera_no_text_detected),
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        } else {
+                            OutlinedTextField(
+                                value = recognizedText,
+                                onValueChange = { viewModel.onRecognizedTextChanged(it) },
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                        }
                     }
 
                     Row(
@@ -663,44 +603,3 @@ private fun OcrResultPreview(
         }
     }
 }
-
-private suspend fun handleOcrCapture(
-    cameraController: CameraController,
-    ocrPlugin: OcrPlugin,
-    onFileCreated: (String) -> Unit,
-    onSuccess: (ImageBitmap, String) -> Unit
-) {
-    when (val result = cameraController.takePictureToFile()) {
-        is ImageCaptureResult.SuccessWithFile -> {
-            val path = result.filePath
-            onFileCreated(path)
-            Logger.withTag(simpleCameraLoggerTag).i { "Image captured for OCR: $path" }
-            try {
-                val bytes = FileSystem.SYSTEM.read(path.toPath()) {
-                    readByteArray()
-                }
-                val bitmap = bytes.decodeToImageBitmap()
-                val recognizedText = extractTextFromBitmapImpl(bitmap)
-                onSuccess(bitmap, recognizedText)
-            } catch (e: Exception) {
-                Logger.withTag(simpleCameraLoggerTag).e(e) { "OCR failed" }
-            }
-        }
-
-        is ImageCaptureResult.Error -> {
-            Logger.withTag(simpleCameraLoggerTag).e { "Image Capture Error: ${result.exception.message}" }
-        }
-
-        else -> {}
-    }
-}
-
-//    scope.launch {
-//        when (val result = controller.takePictureToFile()) {
-//            is ImageCaptureResult.SuccessWithFile -> {
-//                val file = File(result.filePath)
-//                val byteArray = file.readBytes()
-//                val text = ocrPlugin.recognizeText(byteArray)
-//            }
-//        }
-//    }

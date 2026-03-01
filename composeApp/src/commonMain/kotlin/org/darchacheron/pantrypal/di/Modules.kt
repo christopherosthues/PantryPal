@@ -27,6 +27,7 @@ import org.darchacheron.pantrypal.food.FoodListView
 import org.darchacheron.pantrypal.food.FoodListViewModel
 import org.darchacheron.pantrypal.food.FoodRepository
 import org.darchacheron.pantrypal.food.OcrCameraView
+import org.darchacheron.pantrypal.food.OcrCameraViewModel
 import org.darchacheron.pantrypal.food.SimpleCameraView
 import org.darchacheron.pantrypal.navigation.NavRoute
 import org.darchacheron.pantrypal.navigation.Navigator
@@ -102,12 +103,9 @@ val navigationModule = module {
     ) { route ->
         val navigator = get<Navigator>()
         OcrCameraView(
-            ocrType = route.type,
+            viewModel = koinViewModel<OcrCameraViewModel> { parametersOf(route) },
             onRecognized = {
                 navigator.onOcrCameraResult(it)
-            },
-            onBack = {
-                navigator.goBack()
             }
         )
     }
@@ -152,4 +150,5 @@ val sharedModule =
         viewModelOf(::SettingsViewModel)
         viewModelOf(::FoodListViewModel)
         viewModelOf(::FoodDetailViewModel)
+        viewModelOf(::OcrCameraViewModel)
     }
