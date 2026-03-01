@@ -73,6 +73,9 @@ import com.kashif.imagesaverplugin.ImageSaverPlugin
 import com.kashif.imagesaverplugin.rememberImageSaverPlugin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import okio.FileSystem
+import okio.Path.Companion.toPath
+import okio.SYSTEM
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import pantrypal.composeapp.generated.resources.Res
@@ -93,6 +96,7 @@ import pantrypal.composeapp.generated.resources.simple_camera_content_descriptio
 import pantrypal.composeapp.generated.resources.simple_camera_content_description_torch_toggle
 import pantrypal.composeapp.generated.resources.simple_camera_error_title
 import pantrypal.composeapp.generated.resources.simple_camera_initializing
+import kotlin.time.Clock
 
 private const val simpleCameraLoggerTag = "SimpleCamera"
 
@@ -529,6 +533,15 @@ private suspend fun handleImageCapture(
         is ImageCaptureResult.Success -> {
             // Fallback for platforms that don't support direct file capture
             Logger.withTag(simpleCameraLoggerTag).i { "Image captured successfully (${result.byteArray.size} bytes)" }
+            try {
+                val tempFile = FileSystem.SYSTEM_TEMPORARY_DIRECTORY / "captured_image_${Clock.System.now()}.jpg"
+                FileSystem.SYSTEM.write(tempFile) {
+                    write(result.byteArray)
+                }
+                onCapture(tempFile.toString())
+            } catch (e: Exception) {
+                Logger.withTag(simpleCameraLoggerTag).e(e) { "Failed to save fallback captured image to file" }
+            }
         }
 
         is ImageCaptureResult.Error -> {

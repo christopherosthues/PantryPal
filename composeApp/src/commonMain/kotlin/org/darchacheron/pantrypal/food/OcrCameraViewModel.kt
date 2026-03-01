@@ -23,13 +23,47 @@ import org.jetbrains.compose.resources.decodeToImageBitmap
 
 data class OcrCameraUiState(
     val capturedImageFilePath: String? = null,
+    val capturedImageBytes: ByteArray? = null,
     val capturedText: String? = null,
     val isCapturing: Boolean = false,
     val flashMode: FlashMode = FlashMode.OFF,
     val torchMode: TorchMode = TorchMode.OFF,
     val zoomLevel: Float = 1f,
     val maxZoom: Float = 1f,
-)
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other == null || this::class != other::class) return false
+
+        other as OcrCameraUiState
+
+        if (capturedImageFilePath != other.capturedImageFilePath) return false
+        if (capturedImageBytes != null) {
+            if (other.capturedImageBytes == null) return false
+            if (!capturedImageBytes.contentEquals(other.capturedImageBytes)) return false
+        } else if (other.capturedImageBytes != null) return false
+        if (capturedText != other.capturedText) return false
+        if (isCapturing != other.isCapturing) return false
+        if (flashMode != other.flashMode) return false
+        if (torchMode != other.torchMode) return false
+        if (zoomLevel != other.zoomLevel) return false
+        if (maxZoom != other.maxZoom) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = capturedImageFilePath?.hashCode() ?: 0
+        result = 31 * result + (capturedImageBytes?.contentHashCode() ?: 0)
+        result = 31 * result + (capturedText?.hashCode() ?: 0)
+        result = 31 * result + isCapturing.hashCode()
+        result = 31 * result + flashMode.hashCode()
+        result = 31 * result + torchMode.hashCode()
+        result = 31 * result + zoomLevel.hashCode()
+        result = 31 * result + maxZoom.hashCode()
+        return result
+    }
+}
 
 class OcrCameraViewModel(
     val route: NavRoute.OcrCamera,
@@ -97,6 +131,21 @@ class OcrCameraViewModel(
                         _uiState.update { 
                             it.copy(
                                 capturedImageFilePath = result.filePath,
+                                capturedImageBytes = null,
+                                capturedText = recognizedText,
+                                isCapturing = false
+                            )
+                        }
+                    }
+                    is ImageCaptureResult.Success -> {
+                        // Fallback for platforms that don't support direct file capture
+                        Logger.withTag(loggerTag).i { "Image captured successfully (${result.byteArray.size} bytes)" }
+                        val bitmap = result.byteArray.decodeToImageBitmap()
+                        val recognizedText = extractTextFromBitmapImpl(bitmap)
+                        _uiState.update {
+                            it.copy(
+                                capturedImageFilePath = null,
+                                capturedImageBytes = result.byteArray,
                                 capturedText = recognizedText,
                                 isCapturing = false
                             )
@@ -104,9 +153,6 @@ class OcrCameraViewModel(
                     }
                     is ImageCaptureResult.Error -> {
                         Logger.withTag(loggerTag).e { "Image Capture Error: ${result.exception.message}" }
-                        _uiState.update { it.copy(isCapturing = false) }
-                    }
-                    else -> {
                         _uiState.update { it.copy(isCapturing = false) }
                     }
                 }
@@ -118,7 +164,7 @@ class OcrCameraViewModel(
     }
 
     fun retry() {
-        _uiState.update { it.copy(capturedImageFilePath = null, capturedText = null) }
+        _uiState.update { it.copy(capturedImageFilePath = null, capturedImageBytes = null, capturedText = null) }
     }
 
     fun accept(onRecognized: (String) -> Unit) {
