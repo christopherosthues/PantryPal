@@ -116,11 +116,22 @@ kotlin {
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
-
-//            implementation(libs.kotlinx.coroutines.test)
-//            implementation(libs.androidx.room.testing)
-//            implementation(libs.turbine.test)
+            implementation(libs.kotlinx.coroutines.test)
+            implementation(libs.androidx.room.testing)
+            implementation(libs.turbine.test)
         }
+        val androidHostTest by getting {
+            dependencies {
+                implementation(libs.androidx.test.core.ktx)
+            }
+        }
+
+        val androidDeviceTest by getting {
+            dependencies {
+                implementation(libs.androidx.test.core.ktx)
+            }
+        }
+
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutinesSwing)
