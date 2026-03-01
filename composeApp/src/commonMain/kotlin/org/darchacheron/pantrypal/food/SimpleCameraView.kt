@@ -523,7 +523,14 @@ private suspend fun handleImageCapture(
     cameraController: CameraController,
     onCapture: (String) -> Unit,
 ) {
-    when (val result = cameraController.takePictureToFile()) {
+    var result = cameraController.takePictureToFile()
+    
+    if (result is ImageCaptureResult.Error) {
+        Logger.withTag(simpleCameraLoggerTag).w { "takePictureToFile failed, retrying with takePicture: ${result.exception.message}" }
+        result = cameraController.takePicture()
+    }
+
+    when (result) {
         is ImageCaptureResult.SuccessWithFile -> {
             // Image saved directly to file - significantly faster!
             Logger.withTag(simpleCameraLoggerTag).i { "Image saved to: ${result.filePath}" }
@@ -534,7 +541,7 @@ private suspend fun handleImageCapture(
             // Fallback for platforms that don't support direct file capture
             Logger.withTag(simpleCameraLoggerTag).i { "Image captured successfully (${result.byteArray.size} bytes)" }
             try {
-                val tempFile = FileSystem.SYSTEM_TEMPORARY_DIRECTORY / "captured_image_${Clock.System.now()}.jpg"
+                val tempFile = FileSystem.SYSTEM_TEMPORARY_DIRECTORY / "captured_image_${Clock.System.now().toEpochMilliseconds()}.jpg"
                 FileSystem.SYSTEM.write(tempFile) {
                     write(result.byteArray)
                 }

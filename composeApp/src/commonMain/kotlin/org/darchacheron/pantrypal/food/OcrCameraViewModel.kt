@@ -116,7 +116,13 @@ class OcrCameraViewModel(
 
         viewModelScope.launch {
             try {
-                when (val result = cameraController.takePictureToFile()) {
+                var result = cameraController.takePictureToFile()
+                if (result is ImageCaptureResult.Error) {
+                    Logger.withTag(loggerTag).w { "takePictureToFile failed, retrying with takePicture: ${result.exception.message}" }
+                    result = cameraController.takePicture()
+                }
+
+                when (result) {
                     is ImageCaptureResult.SuccessWithFile -> {
                         val path = result.filePath
                         sessionFilePaths.add(path)

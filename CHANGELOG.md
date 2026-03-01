@@ -4,11 +4,9 @@
 
 ## [Unreleased]
 
-### Added
+### Fixed
 
-### Changed
-
-### Removed
+- Fixed camera and storage access for older Android versions
 
 ## [1.0.1] - 2026-03-01
 
