@@ -6,8 +6,15 @@
 
 ### Added
 
-### Removed
-
 ### Changed
 
+### Removed
+
 ### Fixed
+
+
+## [1.0.0] - 2026-03-01
+
+### Added
+
+- PantryPal app for managing your pantry
