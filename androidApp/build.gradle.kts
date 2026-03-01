@@ -1,4 +1,6 @@
+import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSetTree
 
 plugins {
     alias(libs.plugins.androidApplication)
@@ -16,9 +18,16 @@ kotlin {
 
         implementation(libs.koin.android)
         implementation(libs.koin.androidx.compose)
+
+        androidTestImplementation(libs.androidx.compose.ui.test)
+        debugImplementation(libs.androidx.compose.ui.test.manifest)
+
     }
 
     target {
+        @OptIn(ExperimentalKotlinGradlePluginApi::class)
+        instrumentedTestVariant.sourceSetTree.set(KotlinSourceSetTree.test)
+
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_25)
         }
@@ -35,6 +44,7 @@ android {
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = project.property("appVersionCode").toString().toInt()
         versionName = appVersionName
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     packaging {
         resources {
