@@ -1,5 +1,4 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
-import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -25,16 +24,15 @@ kotlin {
         minSdk = libs.versions.android.minSdk.get().toInt()
 
 //        withJava()
-        withHostTestBuilder {}.configure {
+        withHostTestBuilder { }.configure {
             isIncludeAndroidResources = true
         }
         withDeviceTestBuilder {
             sourceSetTreeName = "test"
+        }.configure {
+            instrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+            execution = "HOST"
         }
-//        withDeviceTest {
-//            instrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-//            execution = "HOST"
-//        }
 
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_25)
@@ -115,6 +113,7 @@ kotlin {
             runtimeOnly(libs.kermit.logger)
         }
         commonTest.dependencies {
+            implementation(libs.compose.ui.test)
             implementation(libs.kotlin.test)
             implementation(libs.kotlinx.coroutines.test)
             implementation(libs.androidx.room.testing)

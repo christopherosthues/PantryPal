@@ -104,7 +104,7 @@ jobs:
       - name: Execute tests
         run: |
           chmod +x gradlew || true
-          ./gradlew --no-daemon --stacktrace :composeApp:jvmTest :composeApp:testAndroid
+          ./gradlew --no-daemon --stacktrace :composeApp:jvmTest :composeApp:connectedAndroidTest 
 
       - name: Upload test artifacts
         if: always()
