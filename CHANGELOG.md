@@ -4,6 +4,14 @@
 
 ## [Unreleased]
 
+### Added
+
+### Changed
+
+### Removed
+
+## [1.0.1] - 2026-03-01
+
 ### Fixed
 
 - Implement fallback for camera capture
