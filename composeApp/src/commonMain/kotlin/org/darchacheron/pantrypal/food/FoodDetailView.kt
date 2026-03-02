@@ -345,7 +345,7 @@ fun FoodDetailView(
             )
 
             OutlinedTextField(
-                value = food.amount?.toString() ?: "",
+                value = viewModel.amountStr,
                 onValueChange = { viewModel.updateAmount(it) },
                 readOnly = !viewModel.isEditing,
                 label = {
@@ -356,7 +356,7 @@ fun FoodDetailView(
                         )
                     )
                 },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 leadingIcon = {
@@ -441,23 +441,23 @@ fun FoodDetailView(
                 isDependent = true,
                 leftContent = {
                     OutlinedTextField(
-                        value = food.carbsInGrams?.toString() ?: "",
+                        value = viewModel.carbsInGramsStr,
                         onValueChange = { viewModel.updateCarbsInGrams(it) },
                         readOnly = !viewModel.isEditing,
                         label = { Text(stringResource(Res.string.food_detail_carbs)) },
                         modifier = Modifier.weight(1f),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         singleLine = true
                     )
                 },
                 rightContent = {
                     OutlinedTextField(
-                        value = food.sugarInGrams?.toString() ?: "",
+                        value = viewModel.sugarInGramsStr,
                         onValueChange = { viewModel.updateSugarInGrams(it) },
                         readOnly = !viewModel.isEditing,
                         label = { Text(stringResource(Res.string.food_detail_sugar)) },
                         modifier = Modifier.weight(1f),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         singleLine = true
                     )
                 }
@@ -468,54 +468,55 @@ fun FoodDetailView(
                 isDependent = true,
                 leftContent = {
                     OutlinedTextField(
-                        value = food.fatInGrams?.toString() ?: "",
+                        value = viewModel.fatInGramsStr,
                         onValueChange = { viewModel.updateFatInGrams(it) },
                         readOnly = !viewModel.isEditing,
                         label = { Text(stringResource(Res.string.food_detail_fat)) },
                         modifier = Modifier.weight(1f),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         singleLine = true
                     )
                 },
                 rightContent = {
                     OutlinedTextField(
-                        value = food.saturatedFattyAcidsInGrams ?: "",
+                        value = viewModel.saturatedFattyAcidsInGramsStr,
                         onValueChange = { viewModel.updateSaturatedFattyAcidsInGrams(it) },
                         readOnly = !viewModel.isEditing,
                         label = { Text(stringResource(Res.string.food_detail_saturated_fat)) },
                         modifier = Modifier.weight(1f),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         singleLine = true
                     )
                 }
             )
 
             OutlinedTextField(
-                value = food.dietaryFiberInGrams?.toString() ?: "",
+                value = viewModel.dietaryFiberInGramsStr,
                 onValueChange = { viewModel.updateDietaryFiberInGrams(it) },
                 readOnly = !viewModel.isEditing,
                 label = { Text(stringResource(Res.string.food_detail_fiber)) },
                 modifier = Modifier.fillMaxWidth(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 singleLine = true
             )
 
             OutlinedTextField(
-                value = food.proteinInGrams?.toString() ?: "",
+                value = viewModel.proteinInGramsStr,
                 onValueChange = { viewModel.updateProteinInGrams(it) },
                 readOnly = !viewModel.isEditing,
                 label = { Text(stringResource(Res.string.food_detail_protein)) },
                 modifier = Modifier.fillMaxWidth(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 singleLine = true
             )
 
             OutlinedTextField(
-                value = food.saltInGrams?.toString() ?: "",
+                value = viewModel.saltInGramsStr,
                 onValueChange = { viewModel.updateSaltInGrams(it) },
                 readOnly = !viewModel.isEditing,
                 label = { Text(stringResource(Res.string.food_detail_salt)) },
                 modifier = Modifier.fillMaxWidth(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 singleLine = true
             )
         }

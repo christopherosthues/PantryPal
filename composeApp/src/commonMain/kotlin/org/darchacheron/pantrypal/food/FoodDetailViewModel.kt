@@ -36,6 +36,17 @@ class FoodDetailViewModel(
 
     val isAdding by derivedStateOf { originalFood == null }
 
+    var kiloCaloriesStr by mutableStateOf("")
+    var kiloJouleStr by mutableStateOf("")
+    var fatInGramsStr by mutableStateOf("")
+    var saturatedFattyAcidsInGramsStr by mutableStateOf("")
+    var carbsInGramsStr by mutableStateOf("")
+    var sugarInGramsStr by mutableStateOf("")
+    var dietaryFiberInGramsStr by mutableStateOf("")
+    var proteinInGramsStr by mutableStateOf("")
+    var saltInGramsStr by mutableStateOf("")
+    var amountStr by mutableStateOf("")
+
     private var food by mutableStateOf(
         Food(
             id = foodId,
@@ -84,6 +95,7 @@ class FoodDetailViewModel(
                         if (loadedFood != null) {
                             food = loadedFood
                             originalFood = loadedFood.copy()
+                            updateStringsFromFood(loadedFood)
                             _uiState.value = UiState.success(food)
                         } else {
                             Logger.withTag(foodDetailLoggerTag).e { "Error loading food: $it" }
@@ -100,10 +112,40 @@ class FoodDetailViewModel(
         }
     }
 
+    private fun updateStringsFromFood(food: Food) {
+        kiloCaloriesStr = food.kiloCalories?.toString() ?: ""
+        kiloJouleStr = food.kiloJoule?.toString() ?: ""
+        fatInGramsStr = food.fatInGrams?.toString() ?: ""
+        saturatedFattyAcidsInGramsStr = food.saturatedFattyAcidsInGrams?.toString() ?: ""
+        carbsInGramsStr = food.carbsInGrams?.toString() ?: ""
+        sugarInGramsStr = food.sugarInGrams?.toString() ?: ""
+        dietaryFiberInGramsStr = food.dietaryFiberInGrams?.toString() ?: ""
+        proteinInGramsStr = food.proteinInGrams?.toString() ?: ""
+        saltInGramsStr = food.saltInGrams?.toString() ?: ""
+        amountStr = food.amount?.toString() ?: ""
+    }
+
+    private fun syncFoodFromStrings() {
+        food = food.copy(
+            kiloCalories = kiloCaloriesStr.toIntOrNull(),
+            kiloJoule = kiloJouleStr.toIntOrNull(),
+            fatInGrams = fatInGramsStr.replace(',', '.').toFloatOrNull(),
+            saturatedFattyAcidsInGrams = saturatedFattyAcidsInGramsStr.replace(',', '.').toFloatOrNull(),
+            carbsInGrams = carbsInGramsStr.replace(',', '.').toFloatOrNull(),
+            sugarInGrams = sugarInGramsStr.replace(',', '.').toFloatOrNull(),
+            dietaryFiberInGrams = dietaryFiberInGramsStr.replace(',', '.').toFloatOrNull(),
+            proteinInGrams = proteinInGramsStr.replace(',', '.').toFloatOrNull(),
+            saltInGrams = saltInGramsStr.replace(',', '.').toFloatOrNull(),
+            amount = amountStr.replace(',', '.').toFloatOrNull()
+        )
+    }
+
     fun save() {
         if (!canSave) {
             return
         }
+
+        syncFoodFromStrings()
 
         viewModelScope.launch {
             _uiState.value = UiState.loading()
@@ -152,52 +194,62 @@ class FoodDetailViewModel(
     }
 
     fun updateKiloCalories(value: String) {
-        food = food.copy(kiloCalories = value.toIntOrNull())
+        kiloCaloriesStr = value
+        syncFoodFromStrings()
         _uiState.value = UiState.success(food)
     }
 
     fun updateKiloJoule(value: String) {
-        food = food.copy(kiloJoule = value.toIntOrNull())
+        kiloJouleStr = value
+        syncFoodFromStrings()
         _uiState.value = UiState.success(food)
     }
 
     fun updateFatInGrams(value: String) {
-        food = food.copy(fatInGrams = value.toFloatOrNull())
+        fatInGramsStr = value
+        syncFoodFromStrings()
         _uiState.value = UiState.success(food)
     }
 
     fun updateSaturatedFattyAcidsInGrams(value: String) {
-        food = food.copy(saturatedFattyAcidsInGrams = value)
+        saturatedFattyAcidsInGramsStr = value
+        syncFoodFromStrings()
         _uiState.value = UiState.success(food)
     }
 
     fun updateCarbsInGrams(value: String) {
-        food = food.copy(carbsInGrams = value.toIntOrNull())
+        carbsInGramsStr = value
+        syncFoodFromStrings()
         _uiState.value = UiState.success(food)
     }
 
     fun updateSugarInGrams(value: String) {
-        food = food.copy(sugarInGrams = value.toFloatOrNull())
+        sugarInGramsStr = value
+        syncFoodFromStrings()
         _uiState.value = UiState.success(food)
     }
 
     fun updateDietaryFiberInGrams(value: String) {
-        food = food.copy(dietaryFiberInGrams = value.toFloatOrNull())
+        dietaryFiberInGramsStr = value
+        syncFoodFromStrings()
         _uiState.value = UiState.success(food)
     }
 
     fun updateProteinInGrams(value: String) {
-        food = food.copy(proteinInGrams = value.toFloatOrNull())
+        proteinInGramsStr = value
+        syncFoodFromStrings()
         _uiState.value = UiState.success(food)
     }
 
     fun updateSaltInGrams(value: String) {
-        food = food.copy(saltInGrams = value.toFloatOrNull())
+        saltInGramsStr = value
+        syncFoodFromStrings()
         _uiState.value = UiState.success(food)
     }
 
     fun updateAmount(value: String) {
-        food = food.copy(amount = value.toFloatOrNull())
+        amountStr = value
+        syncFoodFromStrings()
         _uiState.value = UiState.success(food)
     }
 
@@ -222,7 +274,7 @@ class FoodDetailViewModel(
     }
 
     fun cancelEditing() {
-        food = originalFood?.copy() ?: Food(
+        val resetFood = originalFood?.copy() ?: Food(
             id = foodId,
             name = "",
             kiloCalories = null,
@@ -244,6 +296,8 @@ class FoodDetailViewModel(
             imagePath = null,
             additionalImagePaths = emptyList()
         )
+        food = resetFood
+        updateStringsFromFood(resetFood)
         _uiState.value = UiState.success(food)
         if (navigationRoute.foodId != null) {
             setIsEditing(false)
@@ -300,29 +354,31 @@ class FoodDetailViewModel(
                     val lowerLine = line.lowercase()
                     val value = """(\d+[,.]?\d*)""".toRegex().find(line)?.value?.replace(',', '.') ?: ""
                     
-                    when {
-                        lowerLine.contains("kcal") || lowerLine.contains("energy") || lowerLine.contains("brennwert") -> {
-                             // This might find kJ first or kcal. Usually kJ/kcal are both present.
-                             if (lowerLine.contains("kcal")) updateKiloCalories(value)
-                             else if (lowerLine.contains("kj")) updateKiloJoule(value)
-                        }
-                        lowerLine.contains("fat") || lowerLine.contains("fett") -> {
-                            if (lowerLine.contains("saturat") || lowerLine.contains("gesättigt")) {
-                                updateSaturatedFattyAcidsInGrams(value)
-                            } else {
-                                updateFatInGrams(value)
+                    if (value.isNotBlank()) {
+                        when {
+                            lowerLine.contains("kcal") || lowerLine.contains("energy") || lowerLine.contains("brennwert") -> {
+                                 // This might find kJ first or kcal. Usually kJ/kcal are both present.
+                                 if (lowerLine.contains("kcal")) updateKiloCalories(value)
+                                 else if (lowerLine.contains("kj")) updateKiloJoule(value)
                             }
-                        }
-                        lowerLine.contains("carb") || lowerLine.contains("kohlenhydrat") -> {
-                            if (lowerLine.contains("sugar") || lowerLine.contains("zucker")) {
-                                updateSugarInGrams(value)
-                            } else {
-                                updateCarbsInGrams(value)
+                            lowerLine.contains("fat") || lowerLine.contains("fett") -> {
+                                if (lowerLine.contains("saturat") || lowerLine.contains("gesättigt")) {
+                                    updateSaturatedFattyAcidsInGrams(value)
+                                } else {
+                                    updateFatInGrams(value)
+                                }
                             }
+                            lowerLine.contains("carb") || lowerLine.contains("kohlenhydrat") -> {
+                                if (lowerLine.contains("sugar") || lowerLine.contains("zucker")) {
+                                    updateSugarInGrams(value)
+                                } else {
+                                    updateCarbsInGrams(value)
+                                }
+                            }
+                            lowerLine.contains("protein") || lowerLine.contains("eiweiß") -> updateProteinInGrams(value)
+                            lowerLine.contains("salt") || lowerLine.contains("salz") -> updateSaltInGrams(value)
+                            lowerLine.contains("fiber") || lowerLine.contains("ballaststoff") -> updateDietaryFiberInGrams(value)
                         }
-                        lowerLine.contains("protein") || lowerLine.contains("eiweiß") -> updateProteinInGrams(value)
-                        lowerLine.contains("salt") || lowerLine.contains("salz") -> updateSaltInGrams(value)
-                        lowerLine.contains("fiber") || lowerLine.contains("ballaststoff") -> updateDietaryFiberInGrams(value)
                     }
                 }
             }
