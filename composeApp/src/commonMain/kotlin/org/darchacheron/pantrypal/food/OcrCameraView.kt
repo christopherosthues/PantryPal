@@ -1,56 +1,21 @@
 package org.darchacheron.pantrypal.food
 
-import androidx.compose.foundation.Image
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBars
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Slider
-import androidx.compose.material3.SliderDefaults
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -60,14 +25,7 @@ import co.touchlab.kermit.Logger
 import coil3.compose.AsyncImage
 import com.kashif.cameraK.compose.CameraKScreen
 import com.kashif.cameraK.compose.rememberCameraKState
-import com.kashif.cameraK.enums.AspectRatio
-import com.kashif.cameraK.enums.CameraDeviceType
-import com.kashif.cameraK.enums.CameraLens
-import com.kashif.cameraK.enums.Directory
-import com.kashif.cameraK.enums.FlashMode
-import com.kashif.cameraK.enums.ImageFormat
-import com.kashif.cameraK.enums.QualityPrioritization
-import com.kashif.cameraK.enums.TorchMode
+import com.kashif.cameraK.enums.*
 import com.kashif.cameraK.permissions.Permissions
 import com.kashif.cameraK.permissions.providePermissions
 import com.kashif.cameraK.state.CameraConfiguration
@@ -81,28 +39,7 @@ import kotlinx.coroutines.delay
 import org.darchacheron.pantrypal.navigation.OcrType
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
-import pantrypal.composeapp.generated.resources.Res
-import pantrypal.composeapp.generated.resources.appName
-import pantrypal.composeapp.generated.resources.ic_camera_lens
-import pantrypal.composeapp.generated.resources.ic_cameraswitch
-import pantrypal.composeapp.generated.resources.ic_flash_off
-import pantrypal.composeapp.generated.resources.ic_flash_on
-import pantrypal.composeapp.generated.resources.ic_flashlight_off
-import pantrypal.composeapp.generated.resources.ic_flashlight_on
-import pantrypal.composeapp.generated.resources.ic_x
-import pantrypal.composeapp.generated.resources.ocr_camera_accept
-import pantrypal.composeapp.generated.resources.ocr_camera_extraction_title
-import pantrypal.composeapp.generated.resources.ocr_camera_no_text_detected
-import pantrypal.composeapp.generated.resources.ocr_camera_retry
-import pantrypal.composeapp.generated.resources.simple_camera_content_description_capture_button
-import pantrypal.composeapp.generated.resources.simple_camera_content_description_captured_image_preview
-import pantrypal.composeapp.generated.resources.simple_camera_content_description_close_preview
-import pantrypal.composeapp.generated.resources.simple_camera_content_description_error_icon
-import pantrypal.composeapp.generated.resources.simple_camera_content_description_flash_toggle
-import pantrypal.composeapp.generated.resources.simple_camera_content_description_switch_lens
-import pantrypal.composeapp.generated.resources.simple_camera_content_description_torch_toggle
-import pantrypal.composeapp.generated.resources.simple_camera_error_title
-import pantrypal.composeapp.generated.resources.simple_camera_initializing
+import pantrypal.composeapp.generated.resources.*
 
 private const val ocrCameraLoggerTag = "OcrCamera"
 
@@ -121,7 +58,6 @@ fun OcrCameraView(
         val cameraPermissionState = remember { mutableStateOf(permissions.hasCameraPermission()) }
         val storagePermissionState = remember { mutableStateOf(permissions.hasStoragePermission()) }
 
-        // Create all plugin instances
         val imageSaverPlugin = rememberImageSaverPlugin(
             config = ImageSaverConfig(
                 isAutoSave = true,
@@ -273,7 +209,6 @@ private fun EnhancedCameraScreen(
     val cameraController = cameraState.controller
 
     LaunchedEffect(cameraController) {
-        // Poll for max zoom as it might not be ready immediately after state is Ready
         var tries = 0
         var maxZoom = 1f
         while (maxZoom <= 1f && tries < 10) {
@@ -288,7 +223,6 @@ private fun EnhancedCameraScreen(
 
     Box(modifier = Modifier.fillMaxSize()) {
         if (uiState.capturedImageFilePath == null) {
-            // OCR Hint
             Box(
                 modifier = Modifier
                     .align(Alignment.TopCenter)
@@ -308,7 +242,6 @@ private fun EnhancedCameraScreen(
                 )
             }
 
-            // Quick controls overlay (Flash, Torch, Switch)
             QuickControlsOverlay(
                 modifier = Modifier.align(Alignment.TopEnd),
                 flashMode = uiState.flashMode,
@@ -318,7 +251,6 @@ private fun EnhancedCameraScreen(
                 onLensSwitch = { viewModel.onLensSwitch(cameraController) }
             )
 
-            // Zoom Slider (Left side)
             if (uiState.maxZoom > 1f) {
                 Box(
                     modifier = Modifier
@@ -382,14 +314,12 @@ private fun EnhancedCameraScreen(
                 }
             }
 
-            // Capture button
             CaptureButton(
                 modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 60.dp),
                 isCapturing = uiState.isCapturing,
                 onCapture = { viewModel.capture(cameraController, ocrPlugin) },
             )
 
-            // Back button
             IconButton(
                 onClick = { viewModel.goBack() },
                 modifier = Modifier
@@ -407,7 +337,6 @@ private fun EnhancedCameraScreen(
             OcrResultPreview(
                 viewModel = viewModel,
                 imageFilePath = uiState.capturedImageFilePath!!,
-                recognizedText = uiState.capturedText ?: "",
                 onAccept = { viewModel.accept(onRecognized) },
                 onRetry = { viewModel.retry() },
                 onClose = { viewModel.goBack() }
@@ -487,11 +416,12 @@ private fun CaptureButton(modifier: Modifier = Modifier, isCapturing: Boolean, o
 private fun OcrResultPreview(
     viewModel: OcrCameraViewModel,
     imageFilePath: String,
-    recognizedText: String,
     onAccept: () -> Unit,
     onRetry: () -> Unit,
     onClose: () -> Unit
 ) {
+    val uiState by viewModel.uiState.collectAsState()
+
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = Color.Black,
@@ -502,7 +432,7 @@ private fun OcrResultPreview(
         ) {
             Box(
                 modifier = Modifier
-                    .weight(1f)
+                    .weight(0.3f)
                     .fillMaxWidth(),
                 contentAlignment = Alignment.Center
             ) {
@@ -525,20 +455,35 @@ private fun OcrResultPreview(
                         tint = Color.White
                     )
                 }
+
+                IconButton(
+                    onClick = { viewModel.resetLines() },
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(16.dp)
+                        .background(Color.Black.copy(alpha = 0.4f), CircleShape)
+                ) {
+                    Icon(
+                        painter = painterResource(Res.drawable.ic_reset),
+                        contentDescription = "Reset OCR",
+                        tint = Color.White
+                    )
+                }
             }
 
             Surface(
                 modifier = Modifier
+                    .weight(0.7f)
                     .fillMaxWidth(),
                 shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
                 color = MaterialTheme.colorScheme.surface
             ) {
                 Column(
                     modifier = Modifier
-                        .padding(24.dp)
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
                         .windowInsetsPadding(WindowInsets.systemBars),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
                         text = stringResource(Res.string.ocr_camera_extraction_title),
@@ -547,44 +492,61 @@ private fun OcrResultPreview(
                         fontWeight = FontWeight.Bold
                     )
 
+                    if (viewModel.route.type == OcrType.NUTRIENTS) {
+                        NutrientQuickTags(onTagSelected = { tag ->
+                            uiState.selectedLineIndex?.let { viewModel.tagLine(it, tag) }
+                        })
+                    }
+
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .heightIn(min = 60.dp, max = 200.dp)
+                            .weight(1f)
                             .background(
                                 MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
                                 RoundedCornerShape(12.dp)
                             )
-                            .padding(16.dp)
-                            .verticalScroll(rememberScrollState())
+                            .padding(8.dp)
                     ) {
-                        if (recognizedText.trim().isBlank()) {
+                        if (uiState.capturedLines.isEmpty()) {
                             Text(
                                 text = stringResource(Res.string.ocr_camera_no_text_detected),
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 textAlign = TextAlign.Center,
-                                modifier = Modifier.fillMaxWidth()
+                                modifier = Modifier.fillMaxWidth().align(Alignment.Center)
                             )
                         } else {
-                            OutlinedTextField(
-                                value = recognizedText,
-                                onValueChange = { viewModel.onRecognizedTextChanged(it) },
-                                modifier = Modifier.fillMaxWidth(),
-                            )
+                            LazyColumn(
+                                modifier = Modifier.fillMaxSize(),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                itemsIndexed(uiState.capturedLines) { index, line ->
+                                    OcrLineItem(
+                                        line = line,
+                                        isSelected = uiState.selectedLineIndex == index,
+                                        onLineClicked = { viewModel.toggleLineSelection(index) },
+                                        onLineChanged = { viewModel.updateLine(index, it) },
+                                        onMoveUp = if (index > 0) { { viewModel.moveLineUp(index) } } else null,
+                                        onMoveDown = if (index < uiState.capturedLines.size - 1) { { viewModel.moveLineDown(index) } } else null,
+                                        onMerge = if (index < uiState.capturedLines.size - 1) { { viewModel.mergeWithNext(index) } } else null,
+                                        onDelete = { viewModel.deleteLine(index) }
+                                    )
+                                }
+                            }
                         }
                     }
 
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         FilledTonalButton(
                             onClick = onRetry,
                             modifier = Modifier
                                 .weight(1f)
-                                .height(56.dp),
-                            shape = RoundedCornerShape(16.dp)
+                                .height(48.dp),
+                            shape = RoundedCornerShape(12.dp)
                         ) {
                             Text(text = stringResource(Res.string.ocr_camera_retry))
                         }
@@ -592,11 +554,126 @@ private fun OcrResultPreview(
                             onClick = onAccept,
                             modifier = Modifier
                                 .weight(1f)
-                                .height(56.dp),
-                            shape = RoundedCornerShape(16.dp)
+                                .height(48.dp),
+                            shape = RoundedCornerShape(12.dp)
                         ) {
                             Text(text = stringResource(Res.string.ocr_camera_accept))
                         }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun NutrientQuickTags(onTagSelected: (String) -> Unit) {
+    val tags = listOf("kcal", "kJ", "Fat:", "Sat.Fat:", "Carbs:", "Sugar:", "Fiber:", "Protein:", "Salt:")
+    
+    LazyRow(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        contentPadding = PaddingValues(bottom = 8.dp)
+    ) {
+        itemsIndexed(tags) { _, tag ->
+            AssistChip(
+                onClick = { onTagSelected(tag) },
+                label = { Text(tag) }
+            )
+        }
+    }
+}
+
+@Composable
+private fun OcrLineItem(
+    line: String,
+    isSelected: Boolean,
+    onLineClicked: () -> Unit,
+    onLineChanged: (String) -> Unit,
+    onMoveUp: (() -> Unit)?,
+    onMoveDown: (() -> Unit)?,
+    onMerge: (() -> Unit)?,
+    onDelete: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onLineClicked() },
+        colors = CardDefaults.cardColors(
+            containerColor = if (isSelected) 
+                MaterialTheme.colorScheme.primaryContainer 
+            else 
+                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+        ),
+        shape = RoundedCornerShape(8.dp),
+        border = if (isSelected) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                TextField(
+                    value = line,
+                    onValueChange = onLineChanged,
+                    modifier = Modifier.fillMaxWidth(),
+                    textStyle = MaterialTheme.typography.bodyMedium,
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent,
+                        disabledContainerColor = Color.Transparent,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent,
+                    ),
+                    singleLine = true
+                )
+            }
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (onMerge != null) {
+                    IconButton(onClick = onMerge, modifier = Modifier.size(32.dp)) {
+                        Icon(
+                            painter = painterResource(Res.drawable.ic_add),
+                            contentDescription = stringResource(Res.string.ocr_camera_merge),
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+                
+                IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
+                    Icon(
+                        painter = painterResource(Res.drawable.ic_delete),
+                        contentDescription = stringResource(Res.string.ocr_camera_delete),
+                        modifier = Modifier.size(18.dp),
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                }
+
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    IconButton(
+                        onClick = { onMoveUp?.invoke() },
+                        enabled = onMoveUp != null,
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(Res.drawable.ic_arrow_upward),
+                            contentDescription = stringResource(Res.string.ocr_camera_move_up),
+                            modifier = Modifier.size(14.dp)
+                        )
+                    }
+                    IconButton(
+                        onClick = { onMoveDown?.invoke() },
+                        enabled = onMoveDown != null,
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(Res.drawable.ic_arrow_downward),
+                            contentDescription = stringResource(Res.string.ocr_camera_move_down),
+                            modifier = Modifier.size(14.dp)
+                        )
                     }
                 }
             }

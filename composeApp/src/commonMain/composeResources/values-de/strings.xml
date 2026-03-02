@@ -85,6 +85,7 @@
     <string name="food_detail_additional_images">Weitere Bilder</string>
     <string name="food_detail_add_image">Bild hinzufügen</string>
     <string name="food_detail_content_description_remove_image">Bild entfernen</string>
+    <string name="food_detail_scan_table">Tabelle scannen</string>
 
     <!-- Simple Camera -->
     <string name="simple_camera_initializing">Kamera wird initialisiert…</string>
@@ -102,4 +103,12 @@
     <string name="ocr_camera_no_text_detected">Es wurde kein Text erkannt. Versuche es mit einem anderen Winkel oder einer anderen Belichtung erneut.</string>
     <string name="ocr_camera_retry">Erneut versuchen</string>
     <string name="ocr_camera_accept">Akzeptieren</string>
+    <string name="ocr_camera_move_up">Nach oben verschieben</string>
+    <string name="ocr_camera_move_down">Nach unten verschieben</string>
+    <string name="ocr_camera_merge">Mit nächster Zeile zusammenführen</string>
+    <string name="ocr_camera_delete">Zeile löschen</string>
+    <string name="ocr_camera_reset">OCR zurücksetzen</string>
+    <string name="ocr_camera_hint_name">Produktnamen scannen</string>
+    <string name="ocr_camera_hint_amount">Gewicht oder Volumen scannen (z.B. 500g, 1L)</string>
+    <string name="ocr_camera_hint_nutrients">Nährwerttabelle scannen</string>
 </resources>

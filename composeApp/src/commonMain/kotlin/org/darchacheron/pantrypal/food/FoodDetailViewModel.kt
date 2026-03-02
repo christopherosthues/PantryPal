@@ -348,36 +348,31 @@ class FoodDetailViewModel(
                 }
             }
             OcrType.NUTRIENTS -> {
-                // Heuristic for nutrition table parsing
                 val lines = text.lines()
                 lines.forEach { line ->
                     val lowerLine = line.lowercase()
-                    val value = """(\d+[,.]?\d*)""".toRegex().find(line)?.value?.replace(',', '.') ?: ""
+                    // Extract all numbers on the line
+                    val values = """(\d+[,.]?\d*)""".toRegex().findAll(line).map { it.value.replace(',', '.') }.toList()
                     
-                    if (value.isNotBlank()) {
+                    if (values.isNotEmpty()) {
                         when {
-                            lowerLine.contains("kcal") || lowerLine.contains("energy") || lowerLine.contains("brennwert") -> {
-                                 // This might find kJ first or kcal. Usually kJ/kcal are both present.
-                                 if (lowerLine.contains("kcal")) updateKiloCalories(value)
-                                 else if (lowerLine.contains("kj")) updateKiloJoule(value)
-                            }
-                            lowerLine.contains("fat") || lowerLine.contains("fett") -> {
-                                if (lowerLine.contains("saturat") || lowerLine.contains("gesättigt")) {
-                                    updateSaturatedFattyAcidsInGrams(value)
-                                } else {
-                                    updateFatInGrams(value)
-                                }
-                            }
-                            lowerLine.contains("carb") || lowerLine.contains("kohlenhydrat") -> {
-                                if (lowerLine.contains("sugar") || lowerLine.contains("zucker")) {
-                                    updateSugarInGrams(value)
-                                } else {
-                                    updateCarbsInGrams(value)
-                                }
-                            }
-                            lowerLine.contains("protein") || lowerLine.contains("eiweiß") -> updateProteinInGrams(value)
-                            lowerLine.contains("salt") || lowerLine.contains("salz") -> updateSaltInGrams(value)
-                            lowerLine.contains("fiber") || lowerLine.contains("ballaststoff") -> updateDietaryFiberInGrams(value)
+                            // Specific tags from the OCR UI or common names
+                            lowerLine.contains("kcal") -> updateKiloCalories(values.last())
+                            lowerLine.contains("kj") -> updateKiloJoule(values.first())
+                            lowerLine.contains("sat.fat") || lowerLine.contains("saturated") || lowerLine.contains("gesättigt") -> 
+                                updateSaturatedFattyAcidsInGrams(values.last())
+                            lowerLine.contains("fat") || lowerLine.contains("fett") -> 
+                                updateFatInGrams(values.first())
+                            lowerLine.contains("sugar") || lowerLine.contains("zucker") -> 
+                                updateSugarInGrams(values.last())
+                            lowerLine.contains("carb") || lowerLine.contains("kohlenhydrat") -> 
+                                updateCarbsInGrams(values.first())
+                            lowerLine.contains("protein") || lowerLine.contains("eiweiß") -> 
+                                updateProteinInGrams(values.first())
+                            lowerLine.contains("salt") || lowerLine.contains("salz") -> 
+                                updateSaltInGrams(values.first())
+                            lowerLine.contains("fiber") || lowerLine.contains("ballaststoff") -> 
+                                updateDietaryFiberInGrams(values.first())
                         }
                     }
                 }

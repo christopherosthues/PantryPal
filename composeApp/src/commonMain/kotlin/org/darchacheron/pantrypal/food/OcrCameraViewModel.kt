@@ -25,11 +25,14 @@ data class OcrCameraUiState(
     val capturedImageFilePath: String? = null,
     val capturedImageBytes: ByteArray? = null,
     val capturedText: String? = null,
+    val capturedLines: List<String> = emptyList(),
+    val originalCapturedLines: List<String> = emptyList(),
     val isCapturing: Boolean = false,
     val flashMode: FlashMode = FlashMode.OFF,
     val torchMode: TorchMode = TorchMode.OFF,
     val zoomLevel: Float = 1f,
     val maxZoom: Float = 1f,
+    val selectedLineIndex: Int? = null,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -43,11 +46,14 @@ data class OcrCameraUiState(
             if (!capturedImageBytes.contentEquals(other.capturedImageBytes)) return false
         } else if (other.capturedImageBytes != null) return false
         if (capturedText != other.capturedText) return false
+        if (capturedLines != other.capturedLines) return false
+        if (originalCapturedLines != other.originalCapturedLines) return false
         if (isCapturing != other.isCapturing) return false
         if (flashMode != other.flashMode) return false
         if (torchMode != other.torchMode) return false
         if (zoomLevel != other.zoomLevel) return false
         if (maxZoom != other.maxZoom) return false
+        if (selectedLineIndex != other.selectedLineIndex) return false
 
         return true
     }
@@ -56,11 +62,14 @@ data class OcrCameraUiState(
         var result = capturedImageFilePath?.hashCode() ?: 0
         result = 31 * result + (capturedImageBytes?.contentHashCode() ?: 0)
         result = 31 * result + (capturedText?.hashCode() ?: 0)
+        result = 31 * result + capturedLines.hashCode()
+        result = 31 * result + originalCapturedLines.hashCode()
         result = 31 * result + isCapturing.hashCode()
         result = 31 * result + flashMode.hashCode()
         result = 31 * result + torchMode.hashCode()
         result = 31 * result + zoomLevel.hashCode()
         result = 31 * result + maxZoom.hashCode()
+        result = 31 * result + (selectedLineIndex ?: 0)
         return result
     }
 }
@@ -102,7 +111,108 @@ class OcrCameraViewModel(
     }
 
     fun onRecognizedTextChanged(recognizedText: String) {
-        _uiState.update { it.copy(capturedText = recognizedText) }
+        _uiState.update { it.copy(capturedText = recognizedText, capturedLines = recognizedText.lines()) }
+    }
+
+    fun updateLine(index: Int, text: String) {
+        _uiState.update { state ->
+            val lines = state.capturedLines.toMutableList()
+            if (index in lines.indices) {
+                lines[index] = text
+            }
+            state.copy(capturedLines = lines, capturedText = lines.joinToString("\n"))
+        }
+    }
+
+    fun toggleLineSelection(index: Int) {
+        _uiState.update { state ->
+            val currentIndex = state.selectedLineIndex
+            if (currentIndex == null) {
+                state.copy(selectedLineIndex = index)
+            } else if (currentIndex == index) {
+                state.copy(selectedLineIndex = null)
+            } else {
+                // Merge lines
+                val lines = state.capturedLines.toMutableList()
+                val firstIndex = minOf(currentIndex, index)
+                val secondIndex = maxOf(currentIndex, index)
+                
+                val merged = lines[firstIndex].trim() + " " + lines[secondIndex].trim()
+                lines[firstIndex] = merged
+                lines.removeAt(secondIndex)
+                
+                state.copy(capturedLines = lines, capturedText = lines.joinToString("\n"), selectedLineIndex = null)
+            }
+        }
+    }
+
+    fun tagLine(index: Int, nutrientPrefix: String) {
+        _uiState.update { state ->
+            val lines = state.capturedLines.toMutableList()
+            if (index in lines.indices) {
+                // Check if already tagged with this prefix to avoid duplication
+                if (!lines[index].contains(nutrientPrefix, ignoreCase = true)) {
+                    lines[index] = "$nutrientPrefix ${lines[index]}"
+                }
+            }
+            state.copy(capturedLines = lines, capturedText = lines.joinToString("\n"))
+        }
+    }
+
+    fun mergeWithNext(index: Int) {
+        _uiState.update { state ->
+            val lines = state.capturedLines.toMutableList()
+            if (index in 0 until lines.size - 1) {
+                val merged = lines[index].trim() + " " + lines[index + 1].trim()
+                lines.removeAt(index + 1)
+                lines[index] = merged
+            }
+            state.copy(capturedLines = lines, capturedText = lines.joinToString("\n"), selectedLineIndex = null)
+        }
+    }
+
+    fun deleteLine(index: Int) {
+        _uiState.update { state ->
+            val lines = state.capturedLines.toMutableList()
+            if (index in lines.indices) {
+                lines.removeAt(index)
+            }
+            state.copy(capturedLines = lines, capturedText = lines.joinToString("\n"), selectedLineIndex = null)
+        }
+    }
+
+    fun moveLineUp(index: Int) {
+        _uiState.update { state ->
+            val lines = state.capturedLines.toMutableList()
+            if (index > 0 && index < lines.size) {
+                val temp = lines[index]
+                lines[index] = lines[index - 1]
+                lines[index - 1] = temp
+            }
+            state.copy(capturedLines = lines, capturedText = lines.joinToString("\n"), selectedLineIndex = null)
+        }
+    }
+
+    fun moveLineDown(index: Int) {
+        _uiState.update { state ->
+            val lines = state.capturedLines.toMutableList()
+            if (index >= 0 && index < lines.size - 1) {
+                val temp = lines[index]
+                lines[index] = lines[index + 1]
+                lines[index + 1] = temp
+            }
+            state.copy(capturedLines = lines, capturedText = lines.joinToString("\n"), selectedLineIndex = null)
+        }
+    }
+
+    fun resetLines() {
+        _uiState.update { state ->
+            state.copy(
+                capturedLines = state.originalCapturedLines,
+                capturedText = state.originalCapturedLines.joinToString("\n"),
+                selectedLineIndex = null
+            )
+        }
     }
 
     fun updateMaxZoom(maxZoom: Float) {
@@ -133,12 +243,15 @@ class OcrCameraViewModel(
                         }
                         val bitmap = bytes.decodeToImageBitmap()
                         val recognizedText = extractTextFromBitmapImpl(bitmap)
+                        val lines = recognizedText.lines().filter { line -> line.isNotBlank() }
                         
                         _uiState.update { 
                             it.copy(
                                 capturedImageFilePath = result.filePath,
                                 capturedImageBytes = null,
                                 capturedText = recognizedText,
+                                capturedLines = lines,
+                                originalCapturedLines = lines,
                                 isCapturing = false
                             )
                         }
@@ -148,11 +261,14 @@ class OcrCameraViewModel(
                         Logger.withTag(loggerTag).i { "Image captured successfully (${result.byteArray.size} bytes)" }
                         val bitmap = result.byteArray.decodeToImageBitmap()
                         val recognizedText = extractTextFromBitmapImpl(bitmap)
+                        val lines = recognizedText.lines().filter { line -> line.isNotBlank() }
                         _uiState.update {
                             it.copy(
                                 capturedImageFilePath = null,
                                 capturedImageBytes = result.byteArray,
                                 capturedText = recognizedText,
+                                capturedLines = lines,
+                                originalCapturedLines = lines,
                                 isCapturing = false
                             )
                         }
@@ -170,7 +286,7 @@ class OcrCameraViewModel(
     }
 
     fun retry() {
-        _uiState.update { it.copy(capturedImageFilePath = null, capturedImageBytes = null, capturedText = null) }
+        _uiState.update { it.copy(capturedImageFilePath = null, capturedImageBytes = null, capturedText = null, capturedLines = emptyList(), originalCapturedLines = emptyList(), selectedLineIndex = null) }
     }
 
     fun accept(onRecognized: (String) -> Unit) {

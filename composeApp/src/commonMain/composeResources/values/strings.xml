@@ -86,6 +86,7 @@
     <string name="food_detail_additional_images">Additional Images</string>
     <string name="food_detail_add_image">Add Image</string>
     <string name="food_detail_content_description_remove_image">Remove image</string>
+    <string name="food_detail_scan_table">Scan table</string>
 
     <!-- Simple Camera -->
     <string name="simple_camera_initializing">Initializing Camera...</string>
@@ -103,4 +104,12 @@
     <string name="ocr_camera_no_text_detected">No text detected. Try another angle or better lighting.</string>
     <string name="ocr_camera_retry">Retry</string>
     <string name="ocr_camera_accept">Accept</string>
+    <string name="ocr_camera_move_up">Move up</string>
+    <string name="ocr_camera_move_down">Move down</string>
+    <string name="ocr_camera_merge">Merge with next</string>
+    <string name="ocr_camera_delete">Delete line</string>
+    <string name="ocr_camera_reset">Reset OCR</string>
+    <string name="ocr_camera_hint_name">Scan product name</string>
+    <string name="ocr_camera_hint_amount">Scan weight or volume (e.g. 500g, 1L)</string>
+    <string name="ocr_camera_hint_nutrients">Scan nutrition table</string>
 </resources>
