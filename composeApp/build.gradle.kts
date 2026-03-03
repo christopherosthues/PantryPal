@@ -98,7 +98,7 @@ kotlin {
             implementation(libs.androidx.room.runtime)
             implementation(libs.sqlite.bundled)
 
-            implementation(libs.kotlinx.dateime)
+            implementation(libs.kotlinx.datetime)
 
             api(libs.androidx.datastore)
             api(libs.androidx.datastore.preferences)
