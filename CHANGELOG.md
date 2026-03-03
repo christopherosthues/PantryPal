@@ -4,6 +4,16 @@
 
 ## [Unreleased]
 
+### Added
+
+### Changed
+
+### Removed
+
+### Fixed
+
+## [1.0.3] - 2026-03-03
+
 ### Fixed
 
 - Improve table recognition for nutrients
