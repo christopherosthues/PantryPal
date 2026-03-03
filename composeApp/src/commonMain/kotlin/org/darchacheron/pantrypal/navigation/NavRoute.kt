@@ -23,5 +23,5 @@ sealed interface NavRoute : NavKey {
 
 @Serializable
 enum class OcrType {
-    NAME, AMOUNT, NUTRIENTS
+    NAME, AMOUNT, NUTRIENTS, DATE
 }

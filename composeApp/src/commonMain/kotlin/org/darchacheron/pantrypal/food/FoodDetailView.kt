@@ -319,8 +319,10 @@ fun FoodDetailView(
                 useTwoColumns = useTwoColumns,
                 leftContent = {
                     DatePickerField(
+                        viewModel = viewModel,
                         label = stringResource(if (food.isUseBy) Res.string.food_detail_use_by else Res.string.food_detail_best_before),
                         selectedDate = food.bestBeforeUsedByDate,
+                        isDetectable = true,
                         onDateSelected = { viewModel.updateBestBeforeUsedByDate(it) },
                         enabled = viewModel.isEditing,
                         modifier = Modifier.weight(1f),
@@ -564,9 +566,11 @@ fun AdaptiveRow(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DatePickerField(
+    viewModel: FoodDetailViewModel? = null,
     label: String,
     selectedDate: LocalDate?,
     onDateSelected: (LocalDate?) -> Unit,
+    isDetectable: Boolean = false,
     enabled: Boolean,
     modifier: Modifier = Modifier,
     leadingIcon: @Composable (() -> Unit)? = null
@@ -581,11 +585,22 @@ fun DatePickerField(
         readOnly = true,
         leadingIcon = leadingIcon,
         trailingIcon = {
-            IconButton(onClick = { showDialog = true }, enabled = enabled) {
-                Icon(
-                    painter = painterResource(Res.drawable.ic_calendar),
-                    contentDescription = null
-                )
+            Row {
+                if (isDetectable) {
+                    IconButton(onClick = { viewModel?.openOcrCamera(OcrType.DATE) }) {
+                        Icon(
+                            painter = painterResource(Res.drawable.ic_camera),
+                            contentDescription = "OCR Date"
+                        )
+                    }
+                }
+
+                IconButton(onClick = { showDialog = true }, enabled = enabled) {
+                    Icon(
+                        painter = painterResource(Res.drawable.ic_calendar),
+                        contentDescription = null
+                    )
+                }
             }
         }
     )

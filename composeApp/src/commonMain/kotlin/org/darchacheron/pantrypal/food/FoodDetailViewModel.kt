@@ -377,6 +377,10 @@ class FoodDetailViewModel(
                     }
                 }
             }
+            OcrType.DATE -> {
+                val date = LocalDate.parse(text)
+                updateBestBeforeUsedByDate(date)
+            }
         }
     }
 

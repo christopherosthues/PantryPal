@@ -6,6 +6,8 @@
 
 ### Added
 
+- Date formatting
+
 ### Changed
 
 ### Removed
