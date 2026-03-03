@@ -52,11 +52,16 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.format
+import kotlinx.datetime.format.byUnicodePattern
 import org.darchacheron.pantrypal.ui.PantryPalTheme
+import org.darchacheron.pantrypal.utils.format
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import pantrypal.composeapp.generated.resources.Res
+import pantrypal.composeapp.generated.resources.date_format
 import pantrypal.composeapp.generated.resources.food_list_add_food
 import pantrypal.composeapp.generated.resources.food_list_best_before_label
 import pantrypal.composeapp.generated.resources.food_list_content_description_settings
@@ -410,7 +415,7 @@ fun FoodItem(
 
                         if (food.openedAt != null) {
                             Text(
-                                text = "${stringResource(Res.string.food_list_opened_at)}: ${food.openedAt}",
+                                text = "${stringResource(Res.string.food_list_opened_at)}: ${food.openedAt.format()}",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.primary
                             )
@@ -429,7 +434,7 @@ fun FoodItem(
                                 color = itemColor
                             )
                             Text(
-                                text = food.bestBeforeUsedByDate.toString(),
+                                text = food.bestBeforeUsedByDate.format(),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = itemColor
                             )

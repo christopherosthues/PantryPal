@@ -111,4 +111,6 @@
     <string name="ocr_camera_hint_name">Produktnamen scannen</string>
     <string name="ocr_camera_hint_amount">Gewicht oder Volumen scannen (z.B. 500g, 1L)</string>
     <string name="ocr_camera_hint_nutrients">Nährwerttabelle scannen</string>
+
+    <string name="date_format">dd.MM.uuuu</string>
 </resources>

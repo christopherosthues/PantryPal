@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.toSize
 import coil3.compose.AsyncImage
 import kotlinx.datetime.LocalDate
 import org.darchacheron.pantrypal.navigation.OcrType
+import org.darchacheron.pantrypal.utils.format
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
@@ -573,7 +574,7 @@ fun DatePickerField(
     var showDialog by remember { mutableStateOf(false) }
 
     OutlinedTextField(
-        value = selectedDate?.toString() ?: "",
+        value = selectedDate?.format() ?: "",
         onValueChange = { },
         label = { Text(label) },
         modifier = modifier.fillMaxWidth(),

@@ -112,4 +112,6 @@
     <string name="ocr_camera_hint_name">Scan product name</string>
     <string name="ocr_camera_hint_amount">Scan weight or volume (e.g. 500g, 1L)</string>
     <string name="ocr_camera_hint_nutrients">Scan nutrition table</string>
+
+    <string name="date_format">uuuu-MM-dd</string>
 </resources>
