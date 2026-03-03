@@ -110,10 +110,6 @@ class OcrCameraViewModel(
         _uiState.update { it.copy(zoomLevel = zoomLevel) }
     }
 
-    fun onRecognizedTextChanged(recognizedText: String) {
-        _uiState.update { it.copy(capturedText = recognizedText, capturedLines = recognizedText.lines()) }
-    }
-
     fun updateLine(index: Int, text: String) {
         _uiState.update { state ->
             val lines = state.capturedLines.toMutableList()
