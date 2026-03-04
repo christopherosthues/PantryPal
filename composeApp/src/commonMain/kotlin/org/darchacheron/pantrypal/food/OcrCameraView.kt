@@ -63,9 +63,10 @@ fun OcrCameraView(
         val imageSaverPlugin = rememberImageSaverPlugin(
             config = ImageSaverConfig(
                 isAutoSave = true,
-                prefix = stringResource(Res.string.appName),
+                prefix = "PantryPal",
                 directory = Directory.PICTURES,
-                customFolderName = stringResource(Res.string.appName),
+                customFolderName = "PantryPal",
+                imageFormat = ImageFormat.JPEG
             ),
         )
 
@@ -132,8 +133,6 @@ private fun CameraContent(
         config = CameraConfiguration(
             cameraLens = CameraLens.BACK,
             flashMode = FlashMode.OFF,
-            imageFormat = ImageFormat.JPEG,
-            directory = Directory.PICTURES,
             torchMode = TorchMode.OFF,
             qualityPrioritization = QualityPrioritization.QUALITY,
             cameraDeviceType = CameraDeviceType.WIDE_ANGLE,
