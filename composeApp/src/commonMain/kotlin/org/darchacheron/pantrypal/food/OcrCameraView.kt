@@ -3,6 +3,7 @@ package org.darchacheron.pantrypal.food
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -16,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -101,6 +103,14 @@ private fun PermissionsHandler(
         )
     }
 
+    RequestStoragePermission(storagePermissionState, permissions)
+}
+
+@Composable
+private fun RequestStoragePermission(
+    storagePermissionState: MutableState<Boolean>,
+    permissions: Permissions
+) {
     if (!storagePermissionState.value) {
         permissions.RequestStoragePermission(
             onGranted = { storagePermissionState.value = true },
@@ -221,7 +231,19 @@ private fun EnhancedCameraScreen(
         viewModel.updateMaxZoom(maxZoom)
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    val zoomLevel = uiState.zoomLevel
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .pointerInput(Unit) {
+                detectTransformGestures { _, _, zoomChange, _ ->
+                    if (zoomChange != 1f) {
+                        viewModel.onZoomChanged(cameraController, zoomLevel * zoomChange)
+                    }
+                }
+            },
+    ) {
         if (uiState.capturedImageFilePath == null) {
             Box(
                 modifier = Modifier
@@ -235,6 +257,7 @@ private fun EnhancedCameraScreen(
                         OcrType.NAME -> "Scan product name"
                         OcrType.AMOUNT -> "Scan weight or volume (e.g. 500g, 1L)"
                         OcrType.NUTRIENTS -> "Scan nutrition table"
+                        OcrType.DATE -> "Scan expiration date"
                     },
                     color = Color.White,
                     style = MaterialTheme.typography.bodyLarge,
@@ -569,7 +592,7 @@ private fun OcrResultPreview(
 @Composable
 private fun NutrientQuickTags(onTagSelected: (String) -> Unit) {
     val tags = listOf("kcal", "kJ", "Fat:", "Sat.Fat:", "Carbs:", "Sugar:", "Fiber:", "Protein:", "Salt:")
-    
+
     LazyRow(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -600,9 +623,9 @@ private fun OcrLineItem(
             .fillMaxWidth()
             .clickable { onLineClicked() },
         colors = CardDefaults.cardColors(
-            containerColor = if (isSelected) 
-                MaterialTheme.colorScheme.primaryContainer 
-            else 
+            containerColor = if (isSelected)
+                MaterialTheme.colorScheme.primaryContainer
+            else
                 MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
         ),
         shape = RoundedCornerShape(8.dp),
@@ -642,7 +665,7 @@ private fun OcrLineItem(
                         )
                     }
                 }
-                
+
                 IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
                     Icon(
                         painter = painterResource(Res.drawable.ic_delete),

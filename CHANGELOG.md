@@ -7,6 +7,7 @@
 ### Added
 
 - Date formatting
+- Expiration date recognition via OCR
 
 ### Changed
 

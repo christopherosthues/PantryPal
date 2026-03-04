@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.format.byUnicodePattern
 import org.darchacheron.pantrypal.navigation.NavRoute
 import org.darchacheron.pantrypal.navigation.Navigator
 import org.darchacheron.pantrypal.navigation.OcrType
@@ -84,6 +85,10 @@ class FoodDetailViewModel(
     val snackbarMessage: StateFlow<StringResource?> = _snackbarMessage.asStateFlow()
 
     private val foodDetailLoggerTag = "FoodDetail"
+
+    private val germanDateFormat = LocalDate.Format {
+        byUnicodePattern("dd.MM.yyyy")
+    }
 
     init {
         foodId.let {
@@ -332,6 +337,16 @@ class FoodDetailViewModel(
         )
     }
 
+    private val kcal = "kcal"
+    private val kj = "kj"
+    private val saturatedFatCandidates = listOf("sat.fat", "saturated", "gesättigt")
+    private val fatCandidates = listOf("fat", "fett")
+    private val sugarCandidates = listOf("sugar", "zucker")
+    private val carbsCandidates = listOf("carb", "kohlenhydrat")
+    private val proteinCandidates = listOf("protein", "eiweiß")
+    private val saltCandidates = listOf("salt", "salz")
+    private val fiberCandidates = listOf("fiber", "ballaststoff")
+
     private fun handleOcrResult(type: OcrType, text: String) {
         when (type) {
             OcrType.NAME -> updateName(text.trim())
@@ -357,29 +372,43 @@ class FoodDetailViewModel(
                     if (values.isNotEmpty()) {
                         when {
                             // Specific tags from the OCR UI or common names
-                            lowerLine.contains("kcal") -> updateKiloCalories(values.last())
-                            lowerLine.contains("kj") -> updateKiloJoule(values.first())
-                            lowerLine.contains("sat.fat") || lowerLine.contains("saturated") || lowerLine.contains("gesättigt") -> 
+                            lowerLine.contains(kcal) -> updateKiloCalories(values.last())
+                            lowerLine.contains(kj) -> updateKiloJoule(values.first())
+                            saturatedFatCandidates.any { lowerLine.contains(it) } ->
                                 updateSaturatedFattyAcidsInGrams(values.last())
-                            lowerLine.contains("fat") || lowerLine.contains("fett") -> 
+                            fatCandidates.any { lowerLine.contains(it) } ->
                                 updateFatInGrams(values.first())
-                            lowerLine.contains("sugar") || lowerLine.contains("zucker") -> 
+                            sugarCandidates.any { lowerLine.contains(it) } ->
                                 updateSugarInGrams(values.last())
-                            lowerLine.contains("carb") || lowerLine.contains("kohlenhydrat") -> 
+                            carbsCandidates.any { lowerLine.contains(it) } ->
                                 updateCarbsInGrams(values.first())
-                            lowerLine.contains("protein") || lowerLine.contains("eiweiß") -> 
+                            proteinCandidates.any { lowerLine.contains(it) } ->
                                 updateProteinInGrams(values.first())
-                            lowerLine.contains("salt") || lowerLine.contains("salz") -> 
+                            saltCandidates.any { lowerLine.contains(it) } ->
                                 updateSaltInGrams(values.first())
-                            lowerLine.contains("fiber") || lowerLine.contains("ballaststoff") -> 
+                            fiberCandidates.any { lowerLine.contains(it) } ->
                                 updateDietaryFiberInGrams(values.first())
                         }
                     }
                 }
             }
             OcrType.DATE -> {
-                val date = LocalDate.parse(text)
-                updateBestBeforeUsedByDate(date)
+                val trimmedText = text.trim()
+                val date = try {
+                    LocalDate.parse(trimmedText)
+                } catch (e: IllegalArgumentException) {
+                    try {
+                        LocalDate.parse(trimmedText, germanDateFormat)
+                    } catch (e2: IllegalArgumentException) {
+                        null
+                    }
+                }
+
+                if (date != null) {
+                    updateBestBeforeUsedByDate(date)
+                } else {
+                    Logger.withTag(foodDetailLoggerTag).w { "Error parsing date: $text" }
+                }
             }
         }
     }

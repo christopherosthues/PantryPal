@@ -2,6 +2,7 @@ package org.darchacheron.pantrypal.food
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -46,6 +47,7 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.text.style.TextAlign
@@ -156,6 +158,14 @@ private fun PermissionsHandler(
         )
     }
 
+    RequestStoragePermission(permissions, storagePermissionState)
+}
+
+@Composable
+private fun RequestStoragePermission(
+    permissions: Permissions,
+    storagePermissionState: MutableState<Boolean>,
+) {
     if (!storagePermissionState.value) {
         permissions.RequestStoragePermission(
             onGranted = { storagePermissionState.value = true },
@@ -279,7 +289,18 @@ private fun EnhancedCameraScreen(
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .pointerInput(Unit) {
+                detectTransformGestures { _, _, zoomChange, _ ->
+                    if (zoomChange != 1f) {
+                        cameraController.setZoom(zoomLevel * zoomChange)
+                        zoomLevel = cameraController.getZoom()
+                    }
+                }
+            },
+    ) {
         // Quick controls overlay (Flash, Torch, Switch)
         QuickControlsOverlay(
             modifier = Modifier.align(Alignment.TopEnd),
