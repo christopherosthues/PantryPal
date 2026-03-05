@@ -208,6 +208,18 @@ class FoodDetailViewModel(
         _uiState.value = UiState.success(food)
     }
 
+    fun incrementAmount() {
+        val currentAmount = amountStr.toIntOrNull() ?: 1
+        updateAmount((currentAmount + 1).toString())
+    }
+
+    fun decrementAmount() {
+        val currentAmount = amountStr.toIntOrNull() ?: 1
+        if (currentAmount > 1) {
+            updateAmount((currentAmount - 1).toString())
+        }
+    }
+
     fun updateKiloCalories(value: String) {
         kiloCaloriesStr = value
         syncFoodFromStrings()

@@ -67,6 +67,8 @@
     <string name="food_detail_fiber">Ballaststoffe (g)</string>
     <string name="food_detail_salt">Salz (g)</string>
     <string name="food_detail_amount">Anzahl</string>
+    <string name="food_detail_content_description_increase_amount">Anzahl um Eins erhöhen</string>
+    <string name="food_detail_content_description_decrease_amount">Anzahl um Eins verringern</string>
     <string name="food_detail_weight">Gewicht (g)</string>
     <string name="food_detail_volume">Volumen (ml)</string>
     <string name="food_detail_best_before">Mindestens haltbar bis</string>

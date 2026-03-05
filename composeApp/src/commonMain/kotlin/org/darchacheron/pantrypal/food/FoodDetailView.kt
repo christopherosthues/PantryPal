@@ -25,6 +25,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import coil3.compose.AsyncImage
@@ -315,14 +316,9 @@ fun FoodDetailView(
                 }
             )
 
-            OutlinedTextField(
-                value = viewModel.amountStr,
-                onValueChange = { viewModel.updateAmount(it) },
-                readOnly = !viewModel.isEditing,
-                label = { Text(text = stringResource(Res.string.food_detail_amount)) },
-                modifier = Modifier.fillMaxWidth(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                singleLine = true
+            AmountControl(
+                viewModel = viewModel,
+                isEditing = viewModel.isEditing,
             )
 
             AdaptiveRow(
@@ -534,6 +530,75 @@ fun FoodDetailView(
             )
         }
     }
+}
+
+@Composable
+fun AmountControl(
+    viewModel: FoodDetailViewModel,
+    isEditing: Boolean,
+) {
+    SingleChoiceSegmentedButtonRow {
+        SegmentedButton(
+            selected = false,
+            onClick = { viewModel.decrementAmount() },
+            enabled = isEditing && viewModel.amountStr.toInt() > 1,
+            modifier = Modifier.size(48.dp).align(Alignment.CenterVertically),
+            shape = SegmentedButtonDefaults.itemShape(
+                index = 0,
+                count = 2,
+            )
+        ) {
+            Icon(
+                painter = painterResource(Res.drawable.ic_remove),
+                contentDescription = stringResource(Res.string.food_detail_content_description_decrease_amount),
+                modifier = Modifier.size(24.dp)
+            )
+        }
+
+        OutlinedTextField(
+            value = viewModel.amountStr,
+            onValueChange = { viewModel.updateAmount(it) },
+            readOnly = !isEditing,
+            label = { Text(text = stringResource(Res.string.food_detail_amount)) },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            singleLine = true,
+            textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Center),
+            modifier = Modifier.width(96.dp)
+        )
+
+        SegmentedButton(
+            selected = false,
+            onClick = { viewModel.incrementAmount() },
+            enabled = isEditing,
+            modifier = Modifier.size(48.dp).align(Alignment.CenterVertically),
+            shape = SegmentedButtonDefaults.itemShape(
+                index = 1,
+                count = 2,
+            )
+        ) {
+            Icon(
+                painter = painterResource(Res.drawable.ic_add),
+                contentDescription = stringResource(Res.string.food_detail_content_description_increase_amount),
+                modifier = Modifier.size(24.dp)
+            )
+        }
+    }
+
+//    Row(
+//        modifier = modifier,
+//        verticalAlignment = Alignment.CenterVertically,
+//        horizontalArrangement = Arrangement.spacedBy(8.dp)
+//    ) {
+//        if (isEditing) {
+//
+//        }
+//
+//
+//
+//        if (isEditing) {
+//
+//        }
+//    }
 }
 
 @Composable

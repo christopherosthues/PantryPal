@@ -68,6 +68,8 @@
     <string name="food_detail_fiber">Fiber (g)</string>
     <string name="food_detail_salt">Salt (g)</string>
     <string name="food_detail_amount">Amount</string>
+    <string name="food_detail_content_description_increase_amount">Increase amount by one</string>
+    <string name="food_detail_content_description_decrease_amount">Decrease amount by one</string>
     <string name="food_detail_weight">Weight (g)</string>
     <string name="food_detail_volume">Volume (ml)</string>
     <string name="food_detail_best_before">Best Before</string>
