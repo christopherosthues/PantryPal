@@ -8,6 +8,7 @@
 
 - Date formatting
 - Expiration date recognition via OCR
+- Add amount feature
 
 ### Changed
 

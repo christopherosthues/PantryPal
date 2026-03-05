@@ -141,8 +141,9 @@ val sharedModule =
 //                        { get<WorkoutTemplateDao>() }
 //                    )
 //                )
-            .setDriver(BundledSQLiteDriver())
-            .build()
+                .addMigrations(PantryPalDatabase.MIGRATION_1_2)
+                .setDriver(BundledSQLiteDriver())
+                .build()
         }
 
         single { get<PantryPalDatabase>().foodDao }

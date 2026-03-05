@@ -315,6 +315,16 @@ fun FoodDetailView(
                 }
             )
 
+            OutlinedTextField(
+                value = viewModel.amountStr,
+                onValueChange = { viewModel.updateAmount(it) },
+                readOnly = !viewModel.isEditing,
+                label = { Text(text = stringResource(Res.string.food_detail_amount)) },
+                modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                singleLine = true
+            )
+
             AdaptiveRow(
                 useTwoColumns = useTwoColumns,
                 leftContent = {
@@ -348,8 +358,8 @@ fun FoodDetailView(
             )
 
             OutlinedTextField(
-                value = viewModel.amountStr,
-                onValueChange = { viewModel.updateAmount(it) },
+                value = viewModel.fillingQuantityStr,
+                onValueChange = { viewModel.updateFillingQuantity(it) },
                 readOnly = !viewModel.isEditing,
                 label = {
                     Text(

@@ -67,6 +67,7 @@
     <string name="food_detail_protein">Protein (g)</string>
     <string name="food_detail_fiber">Fiber (g)</string>
     <string name="food_detail_salt">Salt (g)</string>
+    <string name="food_detail_amount">Amount</string>
     <string name="food_detail_weight">Weight (g)</string>
     <string name="food_detail_volume">Volume (ml)</string>
     <string name="food_detail_best_before">Best Before</string>

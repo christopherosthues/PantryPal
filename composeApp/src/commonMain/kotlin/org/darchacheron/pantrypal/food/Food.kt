@@ -12,6 +12,7 @@ import kotlin.uuid.Uuid
 data class Food(
     val id: Uuid = Uuid.generateV7(),
     val name: String,
+    val amount: Int = 1,
     val kiloCalories: Int?,
     val kiloJoule: Int?,
     val fatInGrams: Float?,
@@ -21,7 +22,7 @@ data class Food(
     val dietaryFiberInGrams: Float?,
     val proteinInGrams: Float?,
     val saltInGrams: Float?,
-    val amount: Float?,
+    val fillingQuantity: Float?,
     val isLiquid: Boolean = false,
     val bestBeforeUsedByDate: LocalDate?,
     val isUseBy: Boolean,

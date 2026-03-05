@@ -66,6 +66,7 @@
     <string name="food_detail_protein">Proteine (g)</string>
     <string name="food_detail_fiber">Ballaststoffe (g)</string>
     <string name="food_detail_salt">Salz (g)</string>
+    <string name="food_detail_amount">Anzahl</string>
     <string name="food_detail_weight">Gewicht (g)</string>
     <string name="food_detail_volume">Volumen (ml)</string>
     <string name="food_detail_best_before">Mindestens haltbar bis</string>

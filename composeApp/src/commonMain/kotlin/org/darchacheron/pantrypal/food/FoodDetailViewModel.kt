@@ -37,6 +37,7 @@ class FoodDetailViewModel(
 
     val isAdding by derivedStateOf { originalFood == null }
 
+    var amountStr by mutableStateOf("1")
     var kiloCaloriesStr by mutableStateOf("")
     var kiloJouleStr by mutableStateOf("")
     var fatInGramsStr by mutableStateOf("")
@@ -46,12 +47,13 @@ class FoodDetailViewModel(
     var dietaryFiberInGramsStr by mutableStateOf("")
     var proteinInGramsStr by mutableStateOf("")
     var saltInGramsStr by mutableStateOf("")
-    var amountStr by mutableStateOf("")
+    var fillingQuantityStr by mutableStateOf("")
 
     private var food by mutableStateOf(
         Food(
             id = foodId,
             name = "",
+            amount = 1,
             kiloCalories = null,
             kiloJoule = null,
             carbsInGrams = null,
@@ -61,7 +63,7 @@ class FoodDetailViewModel(
             proteinInGrams = null,
             dietaryFiberInGrams = null,
             saltInGrams = null,
-            amount = null,
+            fillingQuantity = null,
             isLiquid = false,
             bestBeforeUsedByDate = null,
             isUseBy = false,
@@ -118,6 +120,7 @@ class FoodDetailViewModel(
     }
 
     private fun updateStringsFromFood(food: Food) {
+        amountStr = food.amount.toString()
         kiloCaloriesStr = food.kiloCalories?.toString() ?: ""
         kiloJouleStr = food.kiloJoule?.toString() ?: ""
         fatInGramsStr = food.fatInGrams?.toString() ?: ""
@@ -127,11 +130,12 @@ class FoodDetailViewModel(
         dietaryFiberInGramsStr = food.dietaryFiberInGrams?.toString() ?: ""
         proteinInGramsStr = food.proteinInGrams?.toString() ?: ""
         saltInGramsStr = food.saltInGrams?.toString() ?: ""
-        amountStr = food.amount?.toString() ?: ""
+        fillingQuantityStr = food.fillingQuantity?.toString() ?: ""
     }
 
     private fun syncFoodFromStrings() {
         food = food.copy(
+            amount = amountStr.toIntOrNull() ?: 1,
             kiloCalories = kiloCaloriesStr.toIntOrNull(),
             kiloJoule = kiloJouleStr.toIntOrNull(),
             fatInGrams = fatInGramsStr.replace(',', '.').toFloatOrNull(),
@@ -141,7 +145,7 @@ class FoodDetailViewModel(
             dietaryFiberInGrams = dietaryFiberInGramsStr.replace(',', '.').toFloatOrNull(),
             proteinInGrams = proteinInGramsStr.replace(',', '.').toFloatOrNull(),
             saltInGrams = saltInGramsStr.replace(',', '.').toFloatOrNull(),
-            amount = amountStr.replace(',', '.').toFloatOrNull()
+            fillingQuantity = fillingQuantityStr.replace(',', '.').toFloatOrNull()
         )
     }
 
@@ -195,6 +199,12 @@ class FoodDetailViewModel(
 
     fun updateName(name: String) {
         food = food.copy(name = name)
+        _uiState.value = UiState.success(food)
+    }
+
+    fun updateAmount(value: String) {
+        amountStr = value
+        syncFoodFromStrings()
         _uiState.value = UiState.success(food)
     }
 
@@ -252,8 +262,8 @@ class FoodDetailViewModel(
         _uiState.value = UiState.success(food)
     }
 
-    fun updateAmount(value: String) {
-        amountStr = value
+    fun updateFillingQuantity(value: String) {
+        fillingQuantityStr = value
         syncFoodFromStrings()
         _uiState.value = UiState.success(food)
     }
@@ -282,6 +292,7 @@ class FoodDetailViewModel(
         val resetFood = originalFood?.copy() ?: Food(
             id = foodId,
             name = "",
+            amount = 1,
             kiloCalories = null,
             kiloJoule = null,
             carbsInGrams = null,
@@ -291,7 +302,7 @@ class FoodDetailViewModel(
             proteinInGrams = null,
             dietaryFiberInGrams = null,
             saltInGrams = null,
-            amount = null,
+            fillingQuantity = null,
             isLiquid = false,
             bestBeforeUsedByDate = null,
             isUseBy = false,
@@ -354,7 +365,7 @@ class FoodDetailViewModel(
                 // Extract number from text like "500g" or "1.5L"
                 val amountRegex = """(\d+[,.]?\d*)""".toRegex()
                 val match = amountRegex.find(text)
-                match?.value?.replace(',', '.')?.let { updateAmount(it) }
+                match?.value?.replace(',', '.')?.let { updateFillingQuantity(it) }
                 
                 if (text.contains("l", ignoreCase = true) || text.contains("ml", ignoreCase = true)) {
                     updateIsLiquid(true)
@@ -385,7 +396,7 @@ class FoodDetailViewModel(
                             proteinCandidates.any { lowerLine.contains(it) } ->
                                 updateProteinInGrams(values.first())
                             saltCandidates.any { lowerLine.contains(it) } ->
-                                updateSaltInGrams(values.first())
+                                updateSaltInGrams(values.last())
                             fiberCandidates.any { lowerLine.contains(it) } ->
                                 updateDietaryFiberInGrams(values.first())
                         }

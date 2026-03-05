@@ -15,6 +15,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AssistChip
+import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -52,16 +53,12 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
-import kotlinx.datetime.LocalDate
-import kotlinx.datetime.format
-import kotlinx.datetime.format.byUnicodePattern
 import org.darchacheron.pantrypal.ui.PantryPalTheme
 import org.darchacheron.pantrypal.utils.format
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import pantrypal.composeapp.generated.resources.Res
-import pantrypal.composeapp.generated.resources.date_format
 import pantrypal.composeapp.generated.resources.food_list_add_food
 import pantrypal.composeapp.generated.resources.food_list_best_before_label
 import pantrypal.composeapp.generated.resources.food_list_content_description_settings
@@ -314,7 +311,7 @@ fun FoodListControls(
     }
 }
 
-@OptIn(ExperimentalUuidApi::class)
+@OptIn(ExperimentalUuidApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun FoodItem(
     food: Food,
@@ -393,18 +390,29 @@ fun FoodItem(
                     }
                 },
                 headlineContent = {
-                    Text(
-                        text = food.name,
-                        style = MaterialTheme.typography.titleMedium,
-                        maxLines = 1
-                    )
+                    BadgedBox(
+                        badge = {
+                            if (food.amount > 1) {
+                                Badge {
+                                    Text(text = "x${food.amount}")
+                                }
+                            }
+                        }
+                    ) {
+                        Text(
+                            text = food.name,
+                            style = MaterialTheme.typography.titleMedium,
+                            maxLines = 1,
+                            modifier = Modifier.padding(end = 12.dp)
+                        )
+                    }
                 },
                 supportingContent = {
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         val details = mutableListOf<String>()
                         food.kiloCalories?.let { details.add("$it kcal") }
                         food.kiloJoule?.let { details.add("$it kJ") }
-                        food.amount?.let { details.add("${it}${if (food.isLiquid) "ml" else "g"}") }
+                        food.fillingQuantity?.let { details.add("${it}${if (food.isLiquid) "ml" else "g"}") }
                         if (details.isNotEmpty()) {
                             Text(
                                 text = details.joinToString(" • "),
