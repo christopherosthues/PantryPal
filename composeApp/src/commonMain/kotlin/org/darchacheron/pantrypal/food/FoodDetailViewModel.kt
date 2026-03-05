@@ -362,7 +362,7 @@ class FoodDetailViewModel(
 
     private val kcal = "kcal"
     private val kj = "kj"
-    private val saturatedFatCandidates = listOf("sat.fat", "saturated", "gesättigt")
+    private val saturatedFatCandidates = listOf("sat.fat", "sat fat", "saturated", "gesättigt")
     private val fatCandidates = listOf("fat", "fett")
     private val sugarCandidates = listOf("sugar", "zucker")
     private val carbsCandidates = listOf("carb", "kohlenhydrat")
