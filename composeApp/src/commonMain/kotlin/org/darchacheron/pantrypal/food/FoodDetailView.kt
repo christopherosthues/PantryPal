@@ -586,8 +586,8 @@ fun DatePickerField(
         leadingIcon = leadingIcon,
         trailingIcon = {
             Row {
-                if (isDetectable) {
-                    IconButton(onClick = { viewModel?.openOcrCamera(OcrType.DATE) }) {
+                if (viewModel?.isEditing ?: false && isDetectable) {
+                    IconButton(onClick = { viewModel.openOcrCamera(OcrType.DATE) }) {
                         Icon(
                             painter = painterResource(Res.drawable.ic_camera),
                             contentDescription = "OCR Date"
