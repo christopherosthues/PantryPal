@@ -53,8 +53,16 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import com.stevdza_san.swipeable.Swipeable
+import com.stevdza_san.swipeable.domain.ActionCustomization
+import com.stevdza_san.swipeable.domain.HapticFeedbackConfig
+import com.stevdza_san.swipeable.domain.HapticFeedbackIntensity
+import com.stevdza_san.swipeable.domain.HapticFeedbackMode
+import com.stevdza_san.swipeable.domain.SwipeAction
+import com.stevdza_san.swipeable.domain.SwipeBehavior
 import org.darchacheron.pantrypal.ui.PantryPalTheme
 import org.darchacheron.pantrypal.utils.format
+import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
@@ -79,6 +87,7 @@ import pantrypal.composeapp.generated.resources.ic_add
 import pantrypal.composeapp.generated.resources.ic_arrow_downward
 import pantrypal.composeapp.generated.resources.ic_arrow_upward
 import pantrypal.composeapp.generated.resources.ic_check
+import pantrypal.composeapp.generated.resources.ic_delete
 import pantrypal.composeapp.generated.resources.ic_fridge
 import pantrypal.composeapp.generated.resources.ic_opened_can
 import pantrypal.composeapp.generated.resources.ic_search
@@ -149,18 +158,21 @@ fun FoodListView(
                     state.isLoading -> {
                         CircularProgressIndicator()
                     }
+
                     state.hasError -> {
                         val errorMessage = stringResource(state.error!!)
                         LaunchedEffect(errorMessage) {
                             snackbarHostState.showSnackbar(message = errorMessage)
                         }
                     }
+
                     state.data.isNullOrEmpty() && !state.isLoading -> {
                         Text(
                             text = stringResource(Res.string.food_list_empty),
                             textAlign = TextAlign.Center
                         )
                     }
+
                     state.data != null -> {
                         LazyColumn(
                             modifier = Modifier.fillMaxSize(),
@@ -329,127 +341,160 @@ fun FoodItem(
         extraColors.notOverdueContainer
     }
 
-    BadgedBox(
-        badge = {
-            if (food.isOverdue) {
-                Icon(
-                    painter = painterResource(if (food.isUseBy) Res.drawable.ic_stop_sign else Res.drawable.ic_warning),
-                    tint = itemColor,
-                    contentDescription = null,
-                )
-            }
-        }
-    ) {
-        OutlinedCard(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { onClick() },
-            shape = RoundedCornerShape(12.dp),
-            border = BorderStroke(1.dp, itemColor),
-            colors = CardDefaults.outlinedCardColors(
-                containerColor = containerColor
+    // TODO: implement swipeable
+    Swipeable(
+        behavior = SwipeBehavior.DISMISS,
+        leftHapticFeedbackConfig = HapticFeedbackConfig(
+            mode = HapticFeedbackMode.THRESHOLD_ONCE,
+            intensity = HapticFeedbackIntensity.LIGHT
+        ),
+        rightHapticFeedbackConfig = HapticFeedbackConfig(
+            mode = HapticFeedbackMode.THRESHOLD_ONCE,
+            intensity = HapticFeedbackIntensity.HEAVY
+        ),
+        leftDismissAction = SwipeAction(
+            label = "Archive",
+            onAction = {  },
+            customization = ActionCustomization(
+                icon = Res.drawable.ic_fridge,
+                iconColor = MaterialTheme.colorScheme.onSecondary,
+                containerColor = MaterialTheme.colorScheme.secondary,
+                shape = MaterialTheme.shapes.medium
             )
+        ),
+        rightDismissAction = SwipeAction(
+            label = "Delete",
+            onAction = {  },
+            customization = ActionCustomization(
+                icon = Res.drawable.ic_delete,
+                iconColor = MaterialTheme.colorScheme.onError,
+                containerColor = MaterialTheme.colorScheme.error,
+                shape = MaterialTheme.shapes.medium
+            )
+        ),
+    ) {
+        BadgedBox(
+            badge = {
+                if (food.isOverdue) {
+                    Icon(
+                        painter = painterResource(if (food.isUseBy) Res.drawable.ic_stop_sign else Res.drawable.ic_warning),
+                        tint = itemColor,
+                        contentDescription = null,
+                    )
+                }
+            }
         ) {
-            ListItem(
-                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                leadingContent = {
-                    BadgedBox(
-                        badge = {
-                            if (food.isOpened) {
-                                Icon(
-                                    painter = painterResource(Res.drawable.ic_opened_can),
-                                    contentDescription = null
-                                )
-                            }
-                        }
-                    ) {
-                        if (food.imagePath != null) {
-                            AsyncImage(
-                                model = food.imagePath,
-                                contentDescription = null,
-                                modifier = Modifier
-                                    .size(64.dp)
-                                    .clip(RoundedCornerShape(8.dp)),
-                                contentScale = ContentScale.Crop
-                            )
-                        } else {
-                            Surface(
-                                modifier = Modifier.size(64.dp),
-                                shape = RoundedCornerShape(8.dp),
-                                color = MaterialTheme.colorScheme.surfaceVariant
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
+            OutlinedCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onClick() },
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(1.dp, itemColor),
+                colors = CardDefaults.outlinedCardColors(
+                    containerColor = containerColor
+                )
+            ) {
+                ListItem(
+                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                    leadingContent = {
+                        BadgedBox(
+                            badge = {
+                                if (food.isOpened) {
                                     Icon(
-                                        painter = painterResource(Res.drawable.ic_fridge),
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                        painter = painterResource(Res.drawable.ic_opened_can),
+                                        contentDescription = null
                                     )
                                 }
                             }
-                        }
-                    }
-                },
-                headlineContent = {
-                    BadgedBox(
-                        badge = {
-                            if (food.amount > 1) {
-                                Badge {
-                                    Text(text = "x${food.amount}")
+                        ) {
+                            if (food.imagePath != null) {
+                                AsyncImage(
+                                    model = food.imagePath,
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .size(64.dp)
+                                        .clip(RoundedCornerShape(8.dp)),
+                                    contentScale = ContentScale.Crop
+                                )
+                            } else {
+                                Surface(
+                                    modifier = Modifier.size(64.dp),
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = MaterialTheme.colorScheme.surfaceVariant
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Icon(
+                                            painter = painterResource(Res.drawable.ic_fridge),
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
                                 }
                             }
                         }
-                    ) {
-                        Text(
-                            text = food.name,
-                            style = MaterialTheme.typography.titleMedium,
-                            maxLines = 1,
-                            modifier = Modifier.padding(end = 12.dp)
-                        )
-                    }
-                },
-                supportingContent = {
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        val details = mutableListOf<String>()
-                        food.kiloCalories?.let { details.add("$it kcal") }
-                        food.kiloJoule?.let { details.add("$it kJ") }
-                        food.fillingQuantity?.let { details.add("${it}${if (food.isLiquid) "ml" else "g"}") }
-                        if (details.isNotEmpty()) {
+                    },
+                    headlineContent = {
+                        BadgedBox(
+                            badge = {
+                                if (food.amount > 1) {
+                                    Badge {
+                                        Text(text = "x${food.amount}")
+                                    }
+                                }
+                            }
+                        ) {
                             Text(
-                                text = details.joinToString(" • "),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                text = food.name,
+                                style = MaterialTheme.typography.titleMedium,
+                                maxLines = 1,
+                                modifier = Modifier.padding(end = 12.dp)
                             )
                         }
+                    },
+                    supportingContent = {
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            val details = mutableListOf<String>()
+                            food.kiloCalories?.let { details.add("$it kcal") }
+                            food.kiloJoule?.let { details.add("$it kJ") }
+                            food.fillingQuantity?.let { details.add("${it}${if (food.isLiquid) "ml" else "g"}") }
+                            if (details.isNotEmpty()) {
+                                Text(
+                                    text = details.joinToString(" • "),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
 
-                        if (food.openedAt != null) {
-                            Text(
-                                text = "${stringResource(Res.string.food_list_opened_at)}: ${food.openedAt.format()}",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.primary
-                            )
+                            if (food.openedAt != null) {
+                                Text(
+                                    text = "${stringResource(Res.string.food_list_opened_at)}: ${food.openedAt.format()}",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                    },
+                    trailingContent = {
+                        if (food.bestBeforeUsedByDate != null) {
+                            Column(horizontalAlignment = Alignment.End) {
+                                Text(
+                                    text = stringResource(
+                                        if (food.isUseBy) Res.string.food_list_use_by_label
+                                        else Res.string.food_list_best_before_label
+                                    ),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = itemColor
+                                )
+                                Text(
+                                    text = food.bestBeforeUsedByDate.format(),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = itemColor
+                                )
+                            }
                         }
                     }
-                },
-                trailingContent = {
-                    if (food.bestBeforeUsedByDate != null) {
-                        Column(horizontalAlignment = Alignment.End) {
-                            Text(
-                                text = stringResource(
-                                    if (food.isUseBy) Res.string.food_list_use_by_label
-                                    else Res.string.food_list_best_before_label
-                                ),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = itemColor
-                            )
-                            Text(
-                                text = food.bestBeforeUsedByDate.format(),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = itemColor
-                            )
-                        }
-                    }
-                }
-            )
+                )
+            }
         }
     }
 }

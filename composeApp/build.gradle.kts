@@ -110,6 +110,8 @@ kotlin {
             implementation(libs.coil.compose)
             implementation(libs.coil.network.ktor)
 
+            implementation(libs.swipeable.kmp)
+
             runtimeOnly(libs.kermit.logger)
         }
         commonTest.dependencies {
