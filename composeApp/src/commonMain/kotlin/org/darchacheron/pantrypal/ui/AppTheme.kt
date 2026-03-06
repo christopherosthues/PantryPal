@@ -15,7 +15,11 @@ data class PantryPalColorScheme(
     val notOverdue: Color,
     val overdueUseByContainer: Color,
     val overdueBestBeforeContainer: Color,
-    val notOverdueContainer: Color
+    val notOverdueContainer: Color,
+    val leftCardBackgroundFrom: Color,
+    val leftCardBackgroundTo: Color,
+    val rightCardBackgroundFrom: Color,
+    val rightCardBackgroundTo: Color
 )
 
 val LocalPantryPalColorScheme = staticCompositionLocalOf {
@@ -25,7 +29,11 @@ val LocalPantryPalColorScheme = staticCompositionLocalOf {
         notOverdue = Color.Unspecified,
         overdueUseByContainer = Color.Unspecified,
         overdueBestBeforeContainer = Color.Unspecified,
-        notOverdueContainer = Color.Unspecified
+        notOverdueContainer = Color.Unspecified,
+        leftCardBackgroundFrom = Color.Unspecified,
+        leftCardBackgroundTo = Color.Unspecified,
+        rightCardBackgroundFrom = Color.Unspecified,
+        rightCardBackgroundTo = Color.Unspecified
     )
 }
 
@@ -42,7 +50,11 @@ private val LightPantryPalColorScheme = PantryPalColorScheme(
     notOverdue = Color(0xFF7B1FA2),
     overdueUseByContainer = Color(0xFFFFEBEE),
     overdueBestBeforeContainer = Color(0xFFFFF3E0),
-    notOverdueContainer = Color(0xFFF3E5F5)
+    notOverdueContainer = Color(0xFFF3E5F5),
+    leftCardBackgroundFrom = Color(0xFFDCAEEF),
+    leftCardBackgroundTo = Color(0xFFBF3EF6),
+    rightCardBackgroundFrom = Color(0xFFFD3B3B),
+    rightCardBackgroundTo = Color(0xFFF87B7B),
 )
 
 private val DarkPantryPalColorScheme = PantryPalColorScheme(
@@ -51,7 +63,11 @@ private val DarkPantryPalColorScheme = PantryPalColorScheme(
     notOverdue = Color(0xFFCE93D8),
     overdueUseByContainer = Color(0xFF3B1F1F),
     overdueBestBeforeContainer = Color(0xFF3E2C1A),
-    notOverdueContainer = Color(0xFF2D1D32)
+    notOverdueContainer = Color(0xFF2D1D32),
+    leftCardBackgroundFrom = Color(0xFFDB9FF5),
+    leftCardBackgroundTo = Color(0xFFA232D2),
+    rightCardBackgroundFrom = Color(0xFFCD3030),
+    rightCardBackgroundTo = Color(0xFFEE8787),
 )
 
 private val LightColorScheme =

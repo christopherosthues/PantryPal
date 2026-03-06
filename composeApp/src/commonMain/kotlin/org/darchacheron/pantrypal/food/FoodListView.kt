@@ -54,40 +54,46 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.stevdza_san.swipeable.Swipeable
+import com.stevdza_san.swipeable.domain.ActionAnimationConfig
 import com.stevdza_san.swipeable.domain.ActionCustomization
 import com.stevdza_san.swipeable.domain.HapticFeedbackConfig
 import com.stevdza_san.swipeable.domain.HapticFeedbackIntensity
 import com.stevdza_san.swipeable.domain.HapticFeedbackMode
 import com.stevdza_san.swipeable.domain.SwipeAction
+import com.stevdza_san.swipeable.domain.SwipeBackground
 import com.stevdza_san.swipeable.domain.SwipeBehavior
 import org.darchacheron.pantrypal.ui.PantryPalTheme
 import org.darchacheron.pantrypal.utils.format
-import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import pantrypal.composeapp.generated.resources.Res
 import pantrypal.composeapp.generated.resources.food_list_add_food
-import pantrypal.composeapp.generated.resources.food_list_best_before_label
+import pantrypal.composeapp.generated.resources.food_list_card_best_before_label
+import pantrypal.composeapp.generated.resources.food_list_card_content_description_consume
+import pantrypal.composeapp.generated.resources.food_list_card_content_description_copy
+import pantrypal.composeapp.generated.resources.food_list_card_content_description_delete
 import pantrypal.composeapp.generated.resources.food_list_content_description_settings
 import pantrypal.composeapp.generated.resources.food_list_empty
 import pantrypal.composeapp.generated.resources.food_list_filter_all
 import pantrypal.composeapp.generated.resources.food_list_filter_opened
 import pantrypal.composeapp.generated.resources.food_list_filter_overdue
 import pantrypal.composeapp.generated.resources.food_list_filter_unopened
-import pantrypal.composeapp.generated.resources.food_list_opened_at
+import pantrypal.composeapp.generated.resources.food_list_card_opened_at
 import pantrypal.composeapp.generated.resources.food_list_search_placeholder
 import pantrypal.composeapp.generated.resources.food_list_sort_date_asc
 import pantrypal.composeapp.generated.resources.food_list_sort_date_desc
 import pantrypal.composeapp.generated.resources.food_list_sort_name_asc
 import pantrypal.composeapp.generated.resources.food_list_sort_name_desc
 import pantrypal.composeapp.generated.resources.food_list_title
-import pantrypal.composeapp.generated.resources.food_list_use_by_label
+import pantrypal.composeapp.generated.resources.food_list_card_use_by_label
 import pantrypal.composeapp.generated.resources.ic_add
 import pantrypal.composeapp.generated.resources.ic_arrow_downward
 import pantrypal.composeapp.generated.resources.ic_arrow_upward
 import pantrypal.composeapp.generated.resources.ic_check
+import pantrypal.composeapp.generated.resources.ic_copy
 import pantrypal.composeapp.generated.resources.ic_delete
+import pantrypal.composeapp.generated.resources.ic_food
 import pantrypal.composeapp.generated.resources.ic_fridge
 import pantrypal.composeapp.generated.resources.ic_opened_can
 import pantrypal.composeapp.generated.resources.ic_search
@@ -109,6 +115,7 @@ fun FoodListView(
     val sortOrder by foodListViewModel.sortOrder.collectAsState()
     val sortDirection by foodListViewModel.sortDirection.collectAsState()
     val filter by foodListViewModel.filter.collectAsState()
+    val message by foodListViewModel.messages.collectAsState()
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -153,6 +160,14 @@ fun FoodListView(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
+                if (message != null) {
+                    val snackbarMessage = if (message!!.parameter == null) stringResource(message!!.messageResource) else stringResource(message!!.messageResource, message!!.parameter!!)
+                    LaunchedEffect(snackbarMessage) {
+                        snackbarHostState.showSnackbar(message = snackbarMessage)
+                        foodListViewModel.clearMessage()
+                    }
+                }
+
                 val state = uiState
                 when {
                     state.isLoading -> {
@@ -182,7 +197,16 @@ fun FoodListView(
                             items(state.data, key = { it.id.toString() }) { food ->
                                 FoodItem(
                                     food = food,
-                                    onClick = { foodListViewModel.goToFoodDetail(food.id.toString()) }
+                                    onClick = { foodListViewModel.goToFoodDetail(food.id.toString()) },
+                                    onDelete = {
+                                        foodListViewModel.deleteFood(it)
+                                    },
+                                    onConsume = {
+                                        foodListViewModel.consumeFood(it)
+                                    },
+                                    onCopy = {
+                                        foodListViewModel.copyFood(it)
+                                    }
                                 )
                             }
                         }
@@ -327,7 +351,10 @@ fun FoodListControls(
 @Composable
 fun FoodItem(
     food: Food,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onDelete: (food: Food) -> Unit,
+    onConsume: (food: Food) -> Unit,
+    onCopy: (food: Food) -> Unit,
 ) {
     val extraColors = PantryPalTheme.extraColors
     val itemColor = if (food.isOverdue) {
@@ -341,9 +368,10 @@ fun FoodItem(
         extraColors.notOverdueContainer
     }
 
-    // TODO: implement swipeable
     Swipeable(
-        behavior = SwipeBehavior.DISMISS,
+        actionAnimation = ActionAnimationConfig.Flip,
+        behavior = SwipeBehavior.REVEAL,
+        threshold = 0.5f,
         leftHapticFeedbackConfig = HapticFeedbackConfig(
             mode = HapticFeedbackMode.THRESHOLD_ONCE,
             intensity = HapticFeedbackIntensity.LIGHT
@@ -352,24 +380,48 @@ fun FoodItem(
             mode = HapticFeedbackMode.THRESHOLD_ONCE,
             intensity = HapticFeedbackIntensity.HEAVY
         ),
-        leftDismissAction = SwipeAction(
-            label = "Archive",
-            onAction = {  },
-            customization = ActionCustomization(
-                icon = Res.drawable.ic_fridge,
-                iconColor = MaterialTheme.colorScheme.onSecondary,
-                containerColor = MaterialTheme.colorScheme.secondary,
-                shape = MaterialTheme.shapes.medium
+        leftBackground = SwipeBackground.radialGradient(
+            colors = listOf(extraColors.leftCardBackgroundFrom, extraColors.leftCardBackgroundTo),
+            radius = 250f,
+            centerX = 0.1f,
+            centerY = 0.5f,
+        ),
+        rightBackground = SwipeBackground.radialGradient(
+            colors = listOf(extraColors.rightCardBackgroundFrom, extraColors.rightCardBackgroundTo),
+            radius = 250f,
+        ),
+        leftRevealActions = listOf(
+            SwipeAction(
+                label = stringResource(Res.string.food_list_card_content_description_consume, food.name),
+                onAction = { onConsume(food) },
+                customization = ActionCustomization(
+                    icon = Res.drawable.ic_food,
+                    iconColor = MaterialTheme.colorScheme.onPrimary,
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    shape = MaterialTheme.shapes.medium
+                )
+            ),
+            SwipeAction(
+                label = stringResource(Res.string.food_list_card_content_description_copy, food.name),
+                onAction = { onCopy(food) },
+                customization = ActionCustomization(
+                    icon = Res.drawable.ic_copy,
+                    iconColor = MaterialTheme.colorScheme.onPrimary,
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    shape = MaterialTheme.shapes.medium
+                )
             )
         ),
-        rightDismissAction = SwipeAction(
-            label = "Delete",
-            onAction = {  },
-            customization = ActionCustomization(
-                icon = Res.drawable.ic_delete,
-                iconColor = MaterialTheme.colorScheme.onError,
-                containerColor = MaterialTheme.colorScheme.error,
-                shape = MaterialTheme.shapes.medium
+        rightRevealActions = listOf(
+            SwipeAction(
+                label = stringResource(Res.string.food_list_card_content_description_delete, food.name),
+                onAction = { onDelete(food) },
+                customization = ActionCustomization(
+                    icon = Res.drawable.ic_delete,
+                    iconColor = MaterialTheme.colorScheme.onError,
+                    containerColor = MaterialTheme.colorScheme.error,
+                    shape = MaterialTheme.shapes.medium
+                )
             )
         ),
     ) {
@@ -467,7 +519,7 @@ fun FoodItem(
 
                             if (food.openedAt != null) {
                                 Text(
-                                    text = "${stringResource(Res.string.food_list_opened_at)}: ${food.openedAt.format()}",
+                                    text = "${stringResource(Res.string.food_list_card_opened_at)}: ${food.openedAt.format()}",
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.primary
                                 )
@@ -479,8 +531,8 @@ fun FoodItem(
                             Column(horizontalAlignment = Alignment.End) {
                                 Text(
                                     text = stringResource(
-                                        if (food.isUseBy) Res.string.food_list_use_by_label
-                                        else Res.string.food_list_best_before_label
+                                        if (food.isUseBy) Res.string.food_list_card_use_by_label
+                                        else Res.string.food_list_card_best_before_label
                                     ),
                                     style = MaterialTheme.typography.labelSmall,
                                     color = itemColor

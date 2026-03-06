@@ -9,12 +9,8 @@
 - Date formatting
 - Expiration date recognition via OCR
 - Add amount feature
-
-### Changed
-
-### Removed
-
-### Fixed
+- Copy feature
+- Swipe to delete, copy or consume
 
 ## [1.0.3] - 2026-03-03
 
