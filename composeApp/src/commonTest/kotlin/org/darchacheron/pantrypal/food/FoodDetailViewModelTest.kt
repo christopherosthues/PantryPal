@@ -158,6 +158,7 @@ class FoodDetailViewModelTest {
         viewModel.updateProteinInGrams("8.0")
         viewModel.updateSaltInGrams("0.1")
         viewModel.updateAmount("500")
+        viewModel.updateFillingQuantity("500.0")
         viewModel.updateIsLiquid(true)
 
         val food = viewModel.uiState.value.data
@@ -171,7 +172,8 @@ class FoodDetailViewModelTest {
         assertEquals(3.2f, food.dietaryFiberInGrams)
         assertEquals(8.0f, food.proteinInGrams)
         assertEquals(0.1f, food.saltInGrams)
-        assertEquals(500f, food.amount)
+        assertEquals(500, food.amount)
+        assertEquals(500f, food.fillingQuantity)
         assertTrue(food.isLiquid)
     }
 
@@ -232,7 +234,8 @@ class FoodDetailViewModelTest {
         dietaryFiberInGrams = null,
         proteinInGrams = null,
         saltInGrams = null,
-        amount = null,
+        amount = 1,
+        fillingQuantity = null,
         isLiquid = false,
         bestBeforeUsedByDate = null,
         isUseBy = false,
