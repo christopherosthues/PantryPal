@@ -1,0 +1,9 @@
+<animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/ic_launcher_foreground">
+    <target
+        android:name="top_door"
+        android:animation="@animator/door_open_close" />
+    <target
+        android:name="bottom_door"
+        android:animation="@animator/door_open_close" />
+</animated-vector>
