@@ -9,6 +9,9 @@ import com.kashif.cameraK.enums.TorchMode
 import com.kashif.cameraK.result.ImageCaptureResult
 import com.kashif.ocrPlugin.OcrPlugin
 import com.kashif.ocrPlugin.extractTextFromBitmapImpl
+import io.github.vinceglb.filekit.FileKit
+import io.github.vinceglb.filekit.filesDir
+import io.github.vinceglb.filekit.path
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -20,6 +23,7 @@ import okio.SYSTEM
 import org.darchacheron.pantrypal.navigation.NavRoute
 import org.darchacheron.pantrypal.navigation.Navigator
 import org.jetbrains.compose.resources.decodeToImageBitmap
+import kotlin.time.Clock
 
 data class OcrCameraUiState(
     val capturedImageFilePath: String? = null,
@@ -228,46 +232,32 @@ class OcrCameraViewModel(
                     result = cameraController.takePicture()
                 }
 
+                val timestamp = Clock.System.now().toEpochMilliseconds()
+                val fileName = "PantryPal_$timestamp.jpg"
+                val targetDir = FileKit.filesDir.path.toPath() / "PantryPal" / "OCR"
+                val targetFile = targetDir / fileName
+
+                if (!FileSystem.SYSTEM.exists(targetDir)) {
+                    FileSystem.SYSTEM.createDirectories(targetDir)
+                }
+
                 when (result) {
                     is ImageCaptureResult.SuccessWithFile -> {
-                        val path = result.filePath
-                        sessionFilePaths.add(path)
-                        Logger.withTag(loggerTag).i { "Image captured for OCR: $path" }
+                        val sourcePath = result.filePath.toPath()
+                        FileSystem.SYSTEM.copy(sourcePath, targetFile)
+                        FileSystem.SYSTEM.delete(sourcePath)
+                        sessionFilePaths.add(targetFile.toString())
+                        Logger.withTag(loggerTag).i { "Image captured for OCR: $targetFile" }
                         
-                        val bytes = FileSystem.SYSTEM.read(path.toPath()) {
+                        val bytes = FileSystem.SYSTEM.read(targetFile) {
                             readByteArray()
                         }
-                        val bitmap = bytes.decodeToImageBitmap()
-                        val recognizedText = extractTextFromBitmapImpl(bitmap)
-                        val lines = recognizedText.lines().filter { line -> line.isNotBlank() }
-                        
-                        _uiState.update { 
-                            it.copy(
-                                capturedImageFilePath = result.filePath,
-                                capturedImageBytes = null,
-                                capturedText = recognizedText,
-                                capturedLines = lines,
-                                originalCapturedLines = lines,
-                                isCapturing = false
-                            )
-                        }
+                        extractTextFromBitmap(bytes)
                     }
                     is ImageCaptureResult.Success -> {
                         // Fallback for platforms that don't support direct file capture
                         Logger.withTag(loggerTag).i { "Image captured successfully (${result.byteArray.size} bytes)" }
-                        val bitmap = result.byteArray.decodeToImageBitmap()
-                        val recognizedText = extractTextFromBitmapImpl(bitmap)
-                        val lines = recognizedText.lines().filter { line -> line.isNotBlank() }
-                        _uiState.update {
-                            it.copy(
-                                capturedImageFilePath = null,
-                                capturedImageBytes = result.byteArray,
-                                capturedText = recognizedText,
-                                capturedLines = lines,
-                                originalCapturedLines = lines,
-                                isCapturing = false
-                            )
-                        }
+                        extractTextFromBitmap(result.byteArray)
                     }
                     is ImageCaptureResult.Error -> {
                         Logger.withTag(loggerTag).e { "Image Capture Error: ${result.exception.message}" }
@@ -278,6 +268,22 @@ class OcrCameraViewModel(
                 Logger.withTag(loggerTag).e(e) { "OCR failed" }
                 _uiState.update { it.copy(isCapturing = false) }
             }
+        }
+    }
+
+    private suspend fun extractTextFromBitmap(byteArray: ByteArray) {
+        val bitmap = byteArray.decodeToImageBitmap()
+        val recognizedText = extractTextFromBitmapImpl(bitmap)
+        val lines = recognizedText.lines().filter { line -> line.isNotBlank() }
+        _uiState.update {
+            it.copy(
+                capturedImageFilePath = null,
+                capturedImageBytes = byteArray,
+                capturedText = recognizedText,
+                capturedLines = lines,
+                originalCapturedLines = lines,
+                isCapturing = false
+            )
         }
     }
 
@@ -296,6 +302,7 @@ class OcrCameraViewModel(
 
     override fun onCleared() {
         super.onCleared()
+        // TODO: Clean up files on app startup if app was closed before cleanup finished -> All images in OCR folder
         sessionFilePaths.forEach { path ->
             try {
                 FileSystem.SYSTEM.delete(path.toPath())
