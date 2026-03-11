@@ -73,6 +73,11 @@ import com.kashif.cameraK.state.CameraKState
 import com.kashif.imagesaverplugin.ImageSaverConfig
 import com.kashif.imagesaverplugin.ImageSaverPlugin
 import com.kashif.imagesaverplugin.rememberImageSaverPlugin
+import io.github.vinceglb.filekit.FileKit
+import io.github.vinceglb.filekit.databasesDir
+import io.github.vinceglb.filekit.filesDir
+import io.github.vinceglb.filekit.path
+import io.github.vinceglb.filekit.projectDir
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import okio.FileSystem
@@ -81,7 +86,6 @@ import okio.SYSTEM
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import pantrypal.composeapp.generated.resources.Res
-import pantrypal.composeapp.generated.resources.appName
 import pantrypal.composeapp.generated.resources.ic_camera_lens
 import pantrypal.composeapp.generated.resources.ic_cameraswitch
 import pantrypal.composeapp.generated.resources.ic_flash_off
@@ -550,24 +554,40 @@ private suspend fun handleImageCapture(
         result = cameraController.takePicture()
     }
 
+    val timestamp = Clock.System.now().toEpochMilliseconds()
+    val fileName = "PantryPal_$timestamp.jpg"
+    val targetDir = FileKit.filesDir.path.toPath() / "PantryPal"
+    val targetFile = targetDir / fileName
+
+    if (!FileSystem.SYSTEM.exists(targetDir)) {
+        FileSystem.SYSTEM.createDirectories(targetDir)
+    }
+
     when (result) {
         is ImageCaptureResult.SuccessWithFile -> {
-            // Image saved directly to file - significantly faster!
-            Logger.withTag(simpleCameraLoggerTag).i { "Image saved to: ${result.filePath}" }
-            onCapture(result.filePath)
+            Logger.withTag(simpleCameraLoggerTag).i { "Image saved to: ${result.filePath} by CameraK" }
+            try {
+                val sourcePath = result.filePath.toPath()
+                FileSystem.SYSTEM.copy(sourcePath, targetFile)
+                FileSystem.SYSTEM.delete(sourcePath)
+                Logger.withTag(simpleCameraLoggerTag).i { "Moved image to: $targetFile" }
+                onCapture(targetFile.toString())
+            } catch (e: Exception) {
+                Logger.withTag(simpleCameraLoggerTag).e(e) { "Failed to move image from ${result.filePath} to $targetFile" }
+                onCapture(result.filePath) // Fallback to original path if move fails
+            }
         }
 
         is ImageCaptureResult.Success -> {
-            // Fallback for platforms that don't support direct file capture
             Logger.withTag(simpleCameraLoggerTag).i { "Image captured successfully (${result.byteArray.size} bytes)" }
             try {
-                val tempFile = FileSystem.SYSTEM_TEMPORARY_DIRECTORY / "captured_image_${Clock.System.now().toEpochMilliseconds()}.jpg"
-                FileSystem.SYSTEM.write(tempFile) {
+                FileSystem.SYSTEM.write(targetFile) {
                     write(result.byteArray)
                 }
-                onCapture(tempFile.toString())
+                Logger.withTag(simpleCameraLoggerTag).i { "Saved image to: $targetFile" }
+                onCapture(targetFile.toString())
             } catch (e: Exception) {
-                Logger.withTag(simpleCameraLoggerTag).e(e) { "Failed to save fallback captured image to file" }
+                Logger.withTag(simpleCameraLoggerTag).e(e) { "Failed to save captured image to $targetFile" }
             }
         }
 
