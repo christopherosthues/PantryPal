@@ -123,6 +123,18 @@
     <string name="ocr_camera_hint_name">Produktnamen scannen</string>
     <string name="ocr_camera_hint_amount">Gewicht oder Volumen scannen (z.B. 500g, 1L)</string>
     <string name="ocr_camera_hint_nutrients">Nährwerttabelle scannen</string>
+    <string name="ocr_camera_hint_date">Ablaufdatum scannen</string>
+
+    <!-- Nutrient Tags -->
+    <string name="nutrient_tag_kcal">kcal</string>
+    <string name="nutrient_tag_kj">kJ</string>
+    <string name="nutrient_tag_fat">Fett:</string>
+    <string name="nutrient_tag_sat_fat">ges.Fett:</string>
+    <string name="nutrient_tag_carbs">KH:</string>
+    <string name="nutrient_tag_sugar">Zucker:</string>
+    <string name="nutrient_tag_fiber">Ballastst.:</string>
+    <string name="nutrient_tag_protein">Eiweiß:</string>
+    <string name="nutrient_tag_salt">Salz:</string>
 
     <string name="date_format">dd.MM.uuuu</string>
 </resources>

@@ -124,6 +124,18 @@
     <string name="ocr_camera_hint_name">Scan product name</string>
     <string name="ocr_camera_hint_amount">Scan weight or volume (e.g. 500g, 1L)</string>
     <string name="ocr_camera_hint_nutrients">Scan nutrition table</string>
+    <string name="ocr_camera_hint_date">Scan expiration date</string>
+
+    <!-- Nutrient Tags -->
+    <string name="nutrient_tag_kcal">kcal</string>
+    <string name="nutrient_tag_kj">kJ</string>
+    <string name="nutrient_tag_fat">Fat:</string>
+    <string name="nutrient_tag_sat_fat">Sat.Fat:</string>
+    <string name="nutrient_tag_carbs">Carbs:</string>
+    <string name="nutrient_tag_sugar">Sugar:</string>
+    <string name="nutrient_tag_fiber">Fiber:</string>
+    <string name="nutrient_tag_protein">Protein:</string>
+    <string name="nutrient_tag_salt">Salt:</string>
 
     <string name="date_format">uuuu-MM-dd</string>
 </resources>

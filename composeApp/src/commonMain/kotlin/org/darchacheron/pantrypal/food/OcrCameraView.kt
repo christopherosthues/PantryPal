@@ -252,12 +252,14 @@ private fun EnhancedCameraScreen(
                     .padding(horizontal = 16.dp, vertical = 8.dp)
             ) {
                 Text(
-                    text = when (viewModel.route.type) {
-                        OcrType.NAME -> "Scan product name"
-                        OcrType.AMOUNT -> "Scan weight or volume (e.g. 500g, 1L)"
-                        OcrType.NUTRIENTS -> "Scan nutrition table"
-                        OcrType.DATE -> "Scan expiration date"
-                    },
+                    text = stringResource(
+                        when (viewModel.route.type) {
+                            OcrType.NAME -> Res.string.ocr_camera_hint_name
+                            OcrType.AMOUNT -> Res.string.ocr_camera_hint_amount
+                            OcrType.NUTRIENTS -> Res.string.ocr_camera_hint_nutrients
+                            OcrType.DATE -> Res.string.ocr_camera_hint_date
+                        }
+                    ),
                     color = Color.White,
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Bold
@@ -487,7 +489,7 @@ private fun OcrResultPreview(
                 ) {
                     Icon(
                         painter = painterResource(Res.drawable.ic_reset),
-                        contentDescription = "Reset OCR",
+                        contentDescription = stringResource(Res.string.ocr_camera_reset),
                         tint = Color.White
                     )
                 }
@@ -590,7 +592,17 @@ private fun OcrResultPreview(
 
 @Composable
 private fun NutrientQuickTags(onTagSelected: (String) -> Unit) {
-    val tags = listOf("kcal", "kJ", "Fat:", "Sat.Fat:", "Carbs:", "Sugar:", "Fiber:", "Protein:", "Salt:")
+    val tags = listOf(
+        stringResource(Res.string.nutrient_tag_kcal),
+        stringResource(Res.string.nutrient_tag_kj),
+        stringResource(Res.string.nutrient_tag_fat),
+        stringResource(Res.string.nutrient_tag_sat_fat),
+        stringResource(Res.string.nutrient_tag_carbs),
+        stringResource(Res.string.nutrient_tag_sugar),
+        stringResource(Res.string.nutrient_tag_fiber),
+        stringResource(Res.string.nutrient_tag_protein),
+        stringResource(Res.string.nutrient_tag_salt)
+    )
 
     LazyRow(
         modifier = Modifier.fillMaxWidth(),
