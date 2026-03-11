@@ -18,7 +18,7 @@ fun properties(key: String) = providers.gradleProperty(key)
 val appVersionName = project.property("appVersionName") as String
 
 kotlin {
-    androidLibrary {
+    android {
         namespace = "compose.org.darchacheron.pantrypal"
         compileSdk = libs.versions.android.compileSdk.get().toInt()
         minSdk = libs.versions.android.minSdk.get().toInt()
