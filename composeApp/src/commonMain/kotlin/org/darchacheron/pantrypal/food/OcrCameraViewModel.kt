@@ -252,12 +252,16 @@ class OcrCameraViewModel(
                         val bytes = FileSystem.SYSTEM.read(targetFile) {
                             readByteArray()
                         }
-                        extractTextFromBitmap(bytes)
+                        extractTextFromBitmap(bytes, targetFile.toString())
                     }
                     is ImageCaptureResult.Success -> {
                         // Fallback for platforms that don't support direct file capture
                         Logger.withTag(loggerTag).i { "Image captured successfully (${result.byteArray.size} bytes)" }
-                        extractTextFromBitmap(result.byteArray)
+                        FileSystem.SYSTEM.write(targetFile) {
+                            write(result.byteArray)
+                        }
+                        sessionFilePaths.add(targetFile.toString())
+                        extractTextFromBitmap(result.byteArray, targetFile.toString())
                     }
                     is ImageCaptureResult.Error -> {
                         Logger.withTag(loggerTag).e { "Image Capture Error: ${result.exception.message}" }
@@ -271,13 +275,13 @@ class OcrCameraViewModel(
         }
     }
 
-    private suspend fun extractTextFromBitmap(byteArray: ByteArray) {
+    private suspend fun extractTextFromBitmap(byteArray: ByteArray, filePath: String) {
         val bitmap = byteArray.decodeToImageBitmap()
         val recognizedText = extractTextFromBitmapImpl(bitmap)
         val lines = recognizedText.lines().filter { line -> line.isNotBlank() }
         _uiState.update {
             it.copy(
-                capturedImageFilePath = null,
+                capturedImageFilePath = filePath,
                 capturedImageBytes = byteArray,
                 capturedText = recognizedText,
                 capturedLines = lines,

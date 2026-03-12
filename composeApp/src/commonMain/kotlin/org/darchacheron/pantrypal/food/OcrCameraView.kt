@@ -360,6 +360,7 @@ private fun EnhancedCameraScreen(
         } else {
             OcrResultPreview(
                 viewModel = viewModel,
+                uiState = uiState,
                 imageFilePath = uiState.capturedImageFilePath!!,
                 onAccept = { viewModel.accept(onRecognized) },
                 onRetry = { viewModel.retry() },
@@ -439,13 +440,12 @@ private fun CaptureButton(modifier: Modifier = Modifier, isCapturing: Boolean, o
 @Composable
 private fun OcrResultPreview(
     viewModel: OcrCameraViewModel,
+    uiState: OcrCameraUiState,
     imageFilePath: String,
     onAccept: () -> Unit,
     onRetry: () -> Unit,
     onClose: () -> Unit
 ) {
-    val uiState by viewModel.uiState.collectAsState()
-
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = Color.Black,
