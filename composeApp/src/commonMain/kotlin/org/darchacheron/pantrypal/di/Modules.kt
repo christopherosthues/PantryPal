@@ -29,6 +29,7 @@ import org.darchacheron.pantrypal.food.FoodRepository
 import org.darchacheron.pantrypal.food.OcrCameraView
 import org.darchacheron.pantrypal.food.OcrCameraViewModel
 import org.darchacheron.pantrypal.food.SimpleCameraView
+import org.darchacheron.pantrypal.food.SimpleCameraViewModel
 import org.darchacheron.pantrypal.navigation.NavRoute
 import org.darchacheron.pantrypal.navigation.Navigator
 import org.darchacheron.pantrypal.settings.SettingsView
@@ -152,4 +153,5 @@ val sharedModule =
         viewModelOf(::FoodListViewModel)
         viewModelOf(::FoodDetailViewModel)
         viewModelOf(::OcrCameraViewModel)
+        viewModelOf(::SimpleCameraViewModel)
     }

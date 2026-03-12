@@ -34,11 +34,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -56,7 +55,6 @@ import androidx.compose.ui.unit.dp
 import co.touchlab.kermit.Logger
 import com.kashif.cameraK.compose.CameraKScreen
 import com.kashif.cameraK.compose.rememberCameraKState
-import com.kashif.cameraK.controller.CameraController
 import com.kashif.cameraK.enums.AspectRatio
 import com.kashif.cameraK.enums.CameraDeviceType
 import com.kashif.cameraK.enums.CameraLens
@@ -67,24 +65,15 @@ import com.kashif.cameraK.enums.QualityPrioritization
 import com.kashif.cameraK.enums.TorchMode
 import com.kashif.cameraK.permissions.Permissions
 import com.kashif.cameraK.permissions.providePermissions
-import com.kashif.cameraK.result.ImageCaptureResult
 import com.kashif.cameraK.state.CameraConfiguration
 import com.kashif.cameraK.state.CameraKState
 import com.kashif.imagesaverplugin.ImageSaverConfig
 import com.kashif.imagesaverplugin.ImageSaverPlugin
 import com.kashif.imagesaverplugin.rememberImageSaverPlugin
-import io.github.vinceglb.filekit.FileKit
-import io.github.vinceglb.filekit.databasesDir
-import io.github.vinceglb.filekit.filesDir
-import io.github.vinceglb.filekit.path
-import io.github.vinceglb.filekit.projectDir
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import okio.FileSystem
-import okio.Path.Companion.toPath
-import okio.SYSTEM
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.viewmodel.koinViewModel
 import pantrypal.composeapp.generated.resources.Res
 import pantrypal.composeapp.generated.resources.ic_camera_lens
 import pantrypal.composeapp.generated.resources.ic_cameraswitch
@@ -102,12 +91,12 @@ import pantrypal.composeapp.generated.resources.simple_camera_content_descriptio
 import pantrypal.composeapp.generated.resources.simple_camera_content_description_torch_toggle
 import pantrypal.composeapp.generated.resources.simple_camera_error_title
 import pantrypal.composeapp.generated.resources.simple_camera_initializing
-import kotlin.time.Clock
 
 private const val simpleCameraLoggerTag = "SimpleCamera"
 
 @Composable
 fun SimpleCameraView(
+    viewModel: SimpleCameraViewModel = koinViewModel(),
     onCapture: (String) -> Unit,
     onBack: () -> Unit
 ) {
@@ -140,6 +129,7 @@ fun SimpleCameraView(
 
         if (cameraPermissionState.value && storagePermissionState.value) {
             CameraContent(
+                viewModel = viewModel,
                 onCapture = onCapture,
                 onBack = onBack,
                 imageSaverPlugin = imageSaverPlugin,
@@ -183,6 +173,7 @@ private fun RequestStoragePermission(
 
 @Composable
 private fun CameraContent(
+    viewModel: SimpleCameraViewModel,
     onCapture: (String) -> Unit,
     onBack: () -> Unit,
     imageSaverPlugin: ImageSaverPlugin,
@@ -255,6 +246,7 @@ private fun CameraContent(
         },
     ) { state ->
         EnhancedCameraScreen(
+            viewModel = viewModel,
             onCapture = onCapture,
             onBack = onBack,
             cameraState = state,
@@ -265,24 +257,19 @@ private fun CameraContent(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun EnhancedCameraScreen(
+    viewModel: SimpleCameraViewModel,
     onCapture: (String) -> Unit,
     onBack: () -> Unit,
     cameraState: CameraKState.Ready,
 ) {
-    val scope = rememberCoroutineScope()
+    val uiState by viewModel.uiState.collectAsState()
     val cameraController = cameraState.controller
     var imageBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
-    var isCapturing by remember { mutableStateOf(false) }
-
-    // Camera settings state
-    var flashMode by remember { mutableStateOf(FlashMode.OFF) }
-    var torchMode by remember { mutableStateOf(TorchMode.OFF) }
-    var zoomLevel by remember { mutableFloatStateOf(1f) }
-    var maxZoom by remember { mutableFloatStateOf(1f) }
 
     LaunchedEffect(cameraController) {
         // Poll for max zoom as it might not be ready immediately after state is Ready
         var tries = 0
+        var maxZoom = 1f
         while (maxZoom <= 1f && tries < 10) {
             maxZoom = cameraController.getMaxZoom()
             if (maxZoom <= 1f) {
@@ -290,6 +277,7 @@ private fun EnhancedCameraScreen(
             }
             tries++
         }
+        viewModel.updateMaxZoom(maxZoom)
     }
 
     Box(
@@ -298,8 +286,7 @@ private fun EnhancedCameraScreen(
             .pointerInput(Unit) {
                 detectTransformGestures { _, _, zoomChange, _ ->
                     if (zoomChange != 1f) {
-                        cameraController.setZoom(zoomLevel * zoomChange)
-                        zoomLevel = cameraController.getZoom()
+                        viewModel.onZoomChanged(cameraController, uiState.zoomLevel * zoomChange)
                     }
                 }
             },
@@ -307,25 +294,21 @@ private fun EnhancedCameraScreen(
         // Quick controls overlay (Flash, Torch, Switch)
         QuickControlsOverlay(
             modifier = Modifier.align(Alignment.TopEnd),
-            flashMode = flashMode,
-            torchMode = torchMode,
+            flashMode = uiState.flashMode,
+            torchMode = uiState.torchMode,
             onFlashToggle = {
-                cameraController.toggleFlashMode()
-                flashMode = cameraController.getFlashMode() ?: FlashMode.OFF
+                viewModel.onFlashToggle(cameraController)
             },
             onTorchToggle = {
-                cameraController.toggleTorchMode()
-                torchMode = cameraController.getTorchMode() ?: TorchMode.OFF
+                viewModel.onTorchToggle(cameraController)
             },
             onLensSwitch = {
-                cameraController.toggleCameraLens()
-                maxZoom = cameraController.getMaxZoom()
-                zoomLevel = 1f
+                viewModel.onLensSwitch(cameraController)
             }
         )
 
         // Zoom Slider (Left side)
-        if (maxZoom > 1f) {
+        if (uiState.maxZoom > 1f) {
             Box(
                 modifier = Modifier
                     .align(Alignment.CenterStart)
@@ -338,19 +321,18 @@ private fun EnhancedCameraScreen(
                     verticalArrangement = Arrangement.Center
                 ) {
                     Text(
-                        text = "${(maxZoom * 10).toInt() / 10f}x",
+                        text = "${(uiState.maxZoom * 10).toInt() / 10f}x",
                         style = MaterialTheme.typography.labelSmall,
                         color = Color.White,
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
 
                     Slider(
-                        value = zoomLevel,
+                        value = uiState.zoomLevel,
                         onValueChange = {
-                            zoomLevel = it
-                            cameraController.setZoom(it)
+                            viewModel.onZoomChanged(cameraController, it)
                         },
-                        valueRange = 1f..maxZoom,
+                        valueRange = 1f..uiState.maxZoom,
                         modifier = Modifier
                             .graphicsLayer {
                                 rotationZ = 270f
@@ -394,18 +376,11 @@ private fun EnhancedCameraScreen(
         // Capture button
         CaptureButton(
             modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 60.dp),
-            isCapturing = isCapturing,
+            isCapturing = uiState.isCapturing,
             onCapture = {
-                if (!isCapturing) {
-                    isCapturing = true
-                    scope.launch {
-                        handleImageCapture(
-                            cameraController = cameraController,
-                            onCapture = onCapture,
-                        )
-                        isCapturing = false
-                        onBack()
-                    }
+                viewModel.capture(cameraController) {
+                    onCapture(it)
+                    onBack()
                 }
             },
         )
@@ -539,60 +514,6 @@ private fun CapturedImagePreview(imageBitmap: ImageBitmap?, onDismiss: () -> Uni
         LaunchedEffect(bitmap) {
             delay(3000)
             onDismiss()
-        }
-    }
-}
-
-private suspend fun handleImageCapture(
-    cameraController: CameraController,
-    onCapture: (String) -> Unit,
-) {
-    var result = cameraController.takePictureToFile()
-    
-    if (result is ImageCaptureResult.Error) {
-        Logger.withTag(simpleCameraLoggerTag).w { "takePictureToFile failed, retrying with takePicture: ${result.exception.message}" }
-        result = cameraController.takePicture()
-    }
-
-    val timestamp = Clock.System.now().toEpochMilliseconds()
-    val fileName = "PantryPal_$timestamp.jpg"
-    val targetDir = FileKit.filesDir.path.toPath() / "PantryPal"
-    val targetFile = targetDir / fileName
-
-    if (!FileSystem.SYSTEM.exists(targetDir)) {
-        FileSystem.SYSTEM.createDirectories(targetDir)
-    }
-
-    when (result) {
-        is ImageCaptureResult.SuccessWithFile -> {
-            Logger.withTag(simpleCameraLoggerTag).i { "Image saved to: ${result.filePath} by CameraK" }
-            try {
-                val sourcePath = result.filePath.toPath()
-                FileSystem.SYSTEM.copy(sourcePath, targetFile)
-                FileSystem.SYSTEM.delete(sourcePath)
-                Logger.withTag(simpleCameraLoggerTag).i { "Moved image to: $targetFile" }
-                onCapture(targetFile.toString())
-            } catch (e: Exception) {
-                Logger.withTag(simpleCameraLoggerTag).e(e) { "Failed to move image from ${result.filePath} to $targetFile" }
-                onCapture(result.filePath) // Fallback to original path if move fails
-            }
-        }
-
-        is ImageCaptureResult.Success -> {
-            Logger.withTag(simpleCameraLoggerTag).i { "Image captured successfully (${result.byteArray.size} bytes)" }
-            try {
-                FileSystem.SYSTEM.write(targetFile) {
-                    write(result.byteArray)
-                }
-                Logger.withTag(simpleCameraLoggerTag).i { "Saved image to: $targetFile" }
-                onCapture(targetFile.toString())
-            } catch (e: Exception) {
-                Logger.withTag(simpleCameraLoggerTag).e(e) { "Failed to save captured image to $targetFile" }
-            }
-        }
-
-        is ImageCaptureResult.Error -> {
-            Logger.withTag(simpleCameraLoggerTag).e { "Image Capture Error: ${result.exception.message}" }
         }
     }
 }
