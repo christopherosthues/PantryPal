@@ -12,7 +12,7 @@ import okio.Path.Companion.toPath
 import okio.SYSTEM
 
 object CleanupUtils {
-    private val loggerTag = "CleanupUtils"
+    private const val LOGGER_TAG = "CleanupUtils"
 
     fun cleanupOcrDirectory(scope: CoroutineScope) {
         scope.launch(Dispatchers.Default) {
@@ -22,11 +22,11 @@ object CleanupUtils {
                     val files = FileSystem.SYSTEM.list(ocrDir)
                     files.forEach { file ->
                         FileSystem.SYSTEM.delete(file)
-                        Logger.withTag(loggerTag).i { "Deleted old OCR file: $file" }
+                        Logger.withTag(LOGGER_TAG).i { "Deleted old OCR file: $file" }
                     }
                 }
             } catch (e: Exception) {
-                Logger.withTag(loggerTag).e(e) { "Failed to cleanup OCR directory" }
+                Logger.withTag(LOGGER_TAG).e(e) { "Failed to cleanup OCR directory" }
             }
         }
     }
