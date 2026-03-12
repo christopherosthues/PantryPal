@@ -288,7 +288,16 @@ class OcrCameraViewModel(
     }
 
     fun retry() {
-        _uiState.update { it.copy(capturedImageFilePath = null, capturedImageBytes = null, capturedText = null, capturedLines = emptyList(), originalCapturedLines = emptyList(), selectedLineIndex = null) }
+        _uiState.update {
+            it.copy(
+                capturedImageFilePath = null,
+                capturedImageBytes = null,
+                capturedText = null,
+                capturedLines = emptyList(),
+                originalCapturedLines = emptyList(),
+                selectedLineIndex = null
+            )
+        }
     }
 
     fun accept(onRecognized: (String) -> Unit) {
@@ -302,7 +311,6 @@ class OcrCameraViewModel(
 
     override fun onCleared() {
         super.onCleared()
-        // TODO: Clean up files on app startup if app was closed before cleanup finished -> All images in OCR folder
         sessionFilePaths.forEach { path ->
             try {
                 FileSystem.SYSTEM.delete(path.toPath())

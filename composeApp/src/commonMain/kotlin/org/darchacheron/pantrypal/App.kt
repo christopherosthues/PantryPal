@@ -8,7 +8,9 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.navigation3.rememberListDetailSceneStrategy
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
@@ -17,12 +19,14 @@ import org.darchacheron.pantrypal.navigation.Navigator
 import org.darchacheron.pantrypal.settings.Settings
 import org.darchacheron.pantrypal.settings.SettingsViewModel
 import org.darchacheron.pantrypal.ui.AppTheme
+import org.darchacheron.pantrypal.utils.CleanupUtils
 import org.koin.compose.KoinApplication
 import org.koin.compose.koinInject
 import org.koin.compose.navigation3.koinEntryProvider
+import org.koin.core.annotation.KoinExperimentalAPI
 import org.koin.dsl.koinConfiguration
 
-@OptIn(ExperimentalMaterial3AdaptiveApi::class)
+@OptIn(ExperimentalMaterial3AdaptiveApi::class, KoinExperimentalAPI::class)
 @Composable
 fun App(
     settingsViewModel: SettingsViewModel = koinInject(),
@@ -36,6 +40,11 @@ fun App(
             currentSettings.data!!
         } else {
             Settings()
+        }
+
+        val scope = rememberCoroutineScope()
+        LaunchedEffect(Unit) {
+            CleanupUtils.cleanupOcrDirectory(scope)
         }
 
         AppTheme(themeMode = settings.themeMode) {
