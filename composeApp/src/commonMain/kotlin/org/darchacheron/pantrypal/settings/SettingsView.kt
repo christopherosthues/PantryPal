@@ -14,7 +14,6 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import pantrypal.composeapp.generated.resources.*
 import pantrypal.composeapp.generated.resources.Res
-import pantrypal.composeapp.generated.resources.arrow_drop_down
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -87,7 +86,6 @@ fun SettingsView(
             } else if (uiState.hasData) {
                 SettingsContent(
                     settings = uiState.data!!,
-                    onMeasureUnitSelected = viewModel::onMeasureUnitSelected,
                     onThemeModeSelected = viewModel::onThemeModeSelected
                 )
             }
@@ -98,7 +96,6 @@ fun SettingsView(
 @Composable
 private fun SettingsContent(
     settings: Settings,
-    onMeasureUnitSelected: (MeasureUnit) -> Unit,
     onThemeModeSelected: (ThemeMode) -> Unit
 ) {
     Column(
@@ -108,22 +105,6 @@ private fun SettingsContent(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
-        // Measurement Unit Section
-        Column {
-            Text(
-                text = stringResource(Res.string.settings_measurement_unit),
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.primary
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            MeasureUnitDropdown(
-                selectedUnit = settings.weightUnit,
-                onUnitSelected = onMeasureUnitSelected
-            )
-        }
-
-        HorizontalDivider()
-
         // Theme Section
         Column {
             Text(
@@ -136,52 +117,6 @@ private fun SettingsContent(
                 selectedTheme = settings.themeMode,
                 onThemeSelected = onThemeModeSelected
             )
-        }
-    }
-}
-
-@Composable
-private fun MeasureUnitDropdown(
-    selectedUnit: MeasureUnit,
-    onUnitSelected: (MeasureUnit) -> Unit
-) {
-    var expanded by remember { mutableStateOf(false) }
-
-    Box {
-        OutlinedTextField(
-            value = stringResource(selectedUnit.toStringResource()),
-            onValueChange = {},
-            readOnly = true,
-            label = { Text(stringResource(Res.string.settings_default_unit)) },
-            modifier = Modifier.fillMaxWidth(),
-            trailingIcon = {
-                IconButton(onClick = { expanded = true }) {
-                    Icon(
-                        painter = painterResource(Res.drawable.arrow_drop_down),
-                        contentDescription = stringResource(Res.string.settings_select_unit)
-                    )
-                }
-            }
-        )
-        Box(
-            modifier = Modifier
-                .matchParentSize()
-                .clickable { expanded = true }
-        )
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
-            modifier = Modifier.fillMaxWidth(0.9f)
-        ) {
-            MeasureUnit.entries.forEach { unit ->
-                DropdownMenuItem(
-                    text = { Text(stringResource(unit.toStringResource())) },
-                    onClick = {
-                        onUnitSelected(unit)
-                        expanded = false
-                    }
-                )
-            }
         }
     }
 }

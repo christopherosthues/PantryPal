@@ -17,13 +17,11 @@ class AndroidSettingsRepository(
     private val context: Context
 ) : SettingsRepository {
     private object PreferencesKeys {
-        val WEIGHT_UNIT = stringPreferencesKey(SettingsKeys.WEIGHT_UNIT)
         val THEME_MODE = stringPreferencesKey(SettingsKeys.THEME_MODE)
     }
 
     override suspend fun saveSettings(settings: Settings) {
         context.dataStore.edit { preferences ->
-            preferences[PreferencesKeys.WEIGHT_UNIT] = settings.weightUnit.name
             preferences[PreferencesKeys.THEME_MODE] = settings.themeMode.name
         }
     }
@@ -36,10 +34,6 @@ class AndroidSettingsRepository(
                 emit(emptyPreferences())
             }.map { preferences ->
                 Settings(
-                    weightUnit =
-                        preferences[PreferencesKeys.WEIGHT_UNIT]?.let {
-                            MeasureUnit.valueOf(it)
-                        } ?: MeasureUnit.KG,
                     themeMode =
                         preferences[PreferencesKeys.THEME_MODE]?.let {
                             ThemeMode.valueOf(it)

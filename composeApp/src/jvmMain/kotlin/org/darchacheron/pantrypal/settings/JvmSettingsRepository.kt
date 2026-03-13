@@ -31,10 +31,6 @@ class JvmSettingsRepository : SettingsRepository {
 
                 val settings =
                     Settings(
-                        weightUnit =
-                            getProperty(SettingsKeys.WEIGHT_UNIT)?.let {
-                                MeasureUnit.valueOf(it)
-                            } ?: MeasureUnit.KG,
                         themeMode =
                             getProperty(SettingsKeys.THEME_MODE)?.let {
                                 ThemeMode.valueOf(it)
@@ -49,7 +45,6 @@ class JvmSettingsRepository : SettingsRepository {
         withContext(Dispatchers.IO) {
             runCatching {
                 Properties().apply {
-                    setProperty(SettingsKeys.WEIGHT_UNIT, settings.weightUnit.name)
                     setProperty(SettingsKeys.THEME_MODE, settings.themeMode.name)
                     settingsFile.outputStream().use { store(it, null) }
                 }

@@ -39,12 +39,6 @@ class SettingsViewModel(
         }
     }
 
-    fun onMeasureUnitSelected(unit: MeasureUnit) {
-        _settingsFlow.update { state ->
-            state.data?.let { UiState.success(it.copy(weightUnit = unit)) } ?: state
-        }
-    }
-
     fun onThemeModeSelected(mode: ThemeMode) {
         _settingsFlow.update { state ->
             state.data?.let { UiState.success(it.copy(themeMode = mode)) } ?: state

@@ -39,10 +39,6 @@ class NativeSettingsRepository : SettingsRepository {
             (NSDictionary.dictionaryWithContentsOfFile(settingsFile))?.let { dict ->
                 val settings =
                     Settings(
-                        weightUnit =
-                            (dict.getValue(SettingsKeys.WEIGHT_UNIT) as? String)?.let {
-                                MeasureUnit.valueOf(it)
-                            } ?: MeasureUnit.KG,
                         themeMode =
                             (dict.getValue(SettingsKeys.THEME_MODE) as? String)?.let {
                                 ThemeMode.valueOf(it)
@@ -57,7 +53,6 @@ class NativeSettingsRepository : SettingsRepository {
         runCatching {
             val dict =
                 mutableMapOf(
-                    SettingsKeys.WEIGHT_UNIT to settings.weightUnit.name,
                     SettingsKeys.THEME_MODE to settings.themeMode.name,
                 )
 
