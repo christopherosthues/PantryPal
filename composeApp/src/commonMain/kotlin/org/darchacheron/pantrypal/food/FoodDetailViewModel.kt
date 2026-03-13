@@ -31,9 +31,7 @@ class FoodDetailViewModel(
 ) : ViewModel() {
     var foodId by mutableStateOf(if (navigationRoute.foodId != null) Uuid.parse(navigationRoute.foodId) else Uuid.generateV7())
 
-    var isEditing by mutableStateOf(navigationRoute.foodId == null)
-
-    val canSave by derivedStateOf { isEditing && food.name.isNotBlank() }
+    val canSave by derivedStateOf { food.name.isNotBlank() }
 
     val isAdding by derivedStateOf { originalFood == null }
 
@@ -163,13 +161,7 @@ class FoodDetailViewModel(
                 val lastModifiedAt = Clock.System.now()
                 foodRepository.upsert(food.copy(createdAt = createdAt, lastModifiedAt = lastModifiedAt))
                 _isSaved.value = true
-                setIsEditing(false)
-                if (originalFood == null) {
-                    navigator.goToFoodDetail(foodId.toString())
-                } else {
-                    originalFood = foodRepository.getById(foodId)
-                    _uiState.value = UiState.success(food)
-                }
+                goBack()
             } catch (e: Exception) {
                 Logger.withTag(foodDetailLoggerTag).e { "Error saving food: ${e.message}" }
                 _uiState.value = UiState.error(_uiState.value, Res.string.food_detail_error_saving)
@@ -191,10 +183,6 @@ class FoodDetailViewModel(
                 _snackbarMessage.value = Res.string.food_detail_delete_error
             }
         }
-    }
-
-    fun setIsEditing(isEditing: Boolean) {
-        this.isEditing = isEditing
     }
 
     fun updateName(name: String) {
@@ -301,37 +289,7 @@ class FoodDetailViewModel(
     }
 
     fun cancelEditing() {
-        val resetFood = originalFood?.copy() ?: Food(
-            id = foodId,
-            name = "",
-            amount = 1,
-            kiloCalories = null,
-            kiloJoule = null,
-            carbsInGrams = null,
-            sugarInGrams = null,
-            fatInGrams = null,
-            saturatedFattyAcidsInGrams = null,
-            proteinInGrams = null,
-            dietaryFiberInGrams = null,
-            saltInGrams = null,
-            fillingQuantity = null,
-            isLiquid = false,
-            bestBeforeUsedByDate = null,
-            isUseBy = false,
-            openedAt = null,
-            createdAt = Clock.System.now(),
-            lastModifiedAt = Clock.System.now(),
-            imagePath = null,
-            additionalImagePaths = emptyList()
-        )
-        food = resetFood
-        updateStringsFromFood(resetFood)
-        _uiState.value = UiState.success(food)
-        if (navigationRoute.foodId != null) {
-            setIsEditing(false)
-        } else {
-            goBack()
-        }
+        goBack()
     }
 
     fun clearSnackbar() {

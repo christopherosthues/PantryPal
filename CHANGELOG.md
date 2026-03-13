@@ -6,6 +6,17 @@
 
 ### Added
 
+- New scrolling behavior for food list
+
+### Removed
+
+- Unused measurement selection in settings
+- Separate edit mode for food details
+
+## [1.1.0] - 2026.03.06
+
+### Added
+
 - Date formatting
 - Expiration date recognition via OCR
 - Add amount feature

@@ -25,6 +25,7 @@ import org.koin.compose.koinInject
 import org.koin.compose.navigation3.koinEntryProvider
 import org.koin.core.annotation.KoinExperimentalAPI
 import org.koin.dsl.koinConfiguration
+import kotlin.collections.listOf
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class, KoinExperimentalAPI::class)
 @Composable
@@ -56,7 +57,7 @@ fun App(
             NavDisplay(
                 backStack = backstack,
                 onBack = { navigator.goBack() },
-                sceneStrategy = listDetailStrategy,
+                sceneStrategies = listOf(listDetailStrategy),
                 entryDecorators = listOf(
                     rememberSaveableStateHolderNavEntryDecorator(),
                     rememberViewModelStoreNavEntryDecorator()

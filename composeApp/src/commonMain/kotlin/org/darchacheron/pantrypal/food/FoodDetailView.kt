@@ -95,13 +95,11 @@ fun FoodDetailView(
                     }
                 },
                 actions = {
-                    if (viewModel.isEditing) {
-                        IconButton(onClick = { viewModel.openCamera() }) {
-                            Icon(
-                                painter = painterResource(Res.drawable.ic_camera),
-                                contentDescription = stringResource(Res.string.food_detail_content_description_open_camera)
-                            )
-                        }
+                    IconButton(onClick = { viewModel.openCamera() }) {
+                        Icon(
+                            painter = painterResource(Res.drawable.ic_camera),
+                            contentDescription = stringResource(Res.string.food_detail_content_description_open_camera)
+                        )
                     }
                     if (!viewModel.isAdding) {
                         IconButton(onClick = {
@@ -130,66 +128,41 @@ fun FoodDetailView(
             ) {
                 Spacer(modifier = Modifier.weight(1f))
 
-                AnimatedVisibility(viewModel.isEditing) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                        FloatingActionButton(
-                            onClick = { viewModel.cancelEditing() },
-                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                        ) {
-                            Icon(
-                                painter = painterResource(Res.drawable.ic_cancel),
-                                contentDescription =
-                                stringResource(Res.string.food_detail_content_description_cancel_editing)
-                            )
-                        }
-
-                        FloatingActionButton(
-                            onClick = { if (viewModel.canSave && !uiState.isLoading) viewModel.save() },
-                            containerColor = if (viewModel.canSave && !uiState.isLoading) {
-                                MaterialTheme.colorScheme.primaryContainer
-                            } else {
-                                MaterialTheme.colorScheme.surfaceVariant
-                            },
-                            contentColor = if (viewModel.canSave && !uiState.isLoading) {
-                                MaterialTheme.colorScheme.onPrimaryContainer
-                            } else {
-                                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
-                            }
-                        ) {
-                            if (uiState.isLoading) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(24.dp),
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    strokeWidth = 2.dp
-                                )
-                            } else {
-                                Icon(
-                                    painter = painterResource(Res.drawable.ic_save),
-                                    contentDescription = stringResource(Res.string.food_detail_content_description_save)
-                                )
-                            }
-                        }
-                    }
+                FloatingActionButton(
+                    onClick = { viewModel.cancelEditing() },
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                ) {
+                    Icon(
+                        painter = painterResource(Res.drawable.ic_cancel),
+                        contentDescription =
+                        stringResource(Res.string.food_detail_content_description_cancel_editing)
+                    )
                 }
 
-                AnimatedVisibility(!viewModel.isEditing) {
-                    FloatingActionButton(
-                        onClick = { viewModel.setIsEditing(true) },
-                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                    ) {
-                        if (uiState.isLoading) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(24.dp),
-                                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                strokeWidth = 2.dp
-                            )
-                        } else {
-                            Icon(
-                                painter = painterResource(Res.drawable.ic_edit),
-                                contentDescription = stringResource(Res.string.food_detail_content_description_edit)
-                            )
-                        }
+                FloatingActionButton(
+                    onClick = { if (viewModel.canSave && !uiState.isLoading) viewModel.save() },
+                    containerColor = if (viewModel.canSave && !uiState.isLoading) {
+                        MaterialTheme.colorScheme.primaryContainer
+                    } else {
+                        MaterialTheme.colorScheme.surfaceVariant
+                    },
+                    contentColor = if (viewModel.canSave && !uiState.isLoading) {
+                        MaterialTheme.colorScheme.onPrimaryContainer
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
+                    }
+                ) {
+                    if (uiState.isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Icon(
+                            painter = painterResource(Res.drawable.ic_save),
+                            contentDescription = stringResource(Res.string.food_detail_content_description_save)
+                        )
                     }
                 }
             }
@@ -247,51 +220,47 @@ fun FoodDetailView(
                             modifier = Modifier.fillMaxSize(),
                             contentScale = ContentScale.Crop
                         )
-                        if (viewModel.isEditing) {
-                            IconButton(
-                                onClick = { viewModel.removeAdditionalImage(path) },
-                                modifier = Modifier
-                                    .align(Alignment.TopEnd)
-                                    .size(24.dp)
-                                    .background(
-                                        MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.7f),
-                                        CircleShape
-                                    )
-                                    .padding(4.dp)
-                            ) {
-                                Icon(
-                                    painter = painterResource(Res.drawable.ic_cancel),
-                                    contentDescription = stringResource(Res.string.food_detail_content_description_remove_image),
-                                    tint = MaterialTheme.colorScheme.onErrorContainer,
-                                    modifier = Modifier.size(16.dp)
+                        IconButton(
+                            onClick = { viewModel.removeAdditionalImage(path) },
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .size(24.dp)
+                                .background(
+                                    MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.7f),
+                                    CircleShape
                                 )
-                            }
+                                .padding(4.dp)
+                        ) {
+                            Icon(
+                                painter = painterResource(Res.drawable.ic_cancel),
+                                contentDescription = stringResource(Res.string.food_detail_content_description_remove_image),
+                                tint = MaterialTheme.colorScheme.onErrorContainer,
+                                modifier = Modifier.size(16.dp)
+                            )
                         }
                     }
                 }
 
-                if (viewModel.isEditing) {
-                    item {
-                        Box(
-                            modifier = Modifier
-                                .size(100.dp)
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(MaterialTheme.colorScheme.surfaceVariant)
-                                .clickable { viewModel.addAdditionalImage() },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Icon(
-                                    painter = painterResource(Res.drawable.ic_camera),
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Text(
-                                    text = stringResource(Res.string.food_detail_add_image),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
+                item {
+                    Box(
+                        modifier = Modifier
+                            .size(100.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                            .clickable { viewModel.addAdditionalImage() },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(
+                                painter = painterResource(Res.drawable.ic_camera),
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = stringResource(Res.string.food_detail_add_image),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
                     }
                 }
@@ -300,25 +269,21 @@ fun FoodDetailView(
             OutlinedTextField(
                 value = food.name,
                 onValueChange = { viewModel.updateName(it) },
-                readOnly = !viewModel.isEditing,
                 label = { Text(stringResource(Res.string.food_detail_name)) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 trailingIcon = {
-                    if (viewModel.isEditing) {
-                        IconButton(onClick = { viewModel.openOcrCamera(OcrType.NAME) }) {
-                            Icon(
-                                painter = painterResource(Res.drawable.ic_camera),
-                                contentDescription = "OCR Name"
-                            )
-                        }
+                    IconButton(onClick = { viewModel.openOcrCamera(OcrType.NAME) }) {
+                        Icon(
+                            painter = painterResource(Res.drawable.ic_camera),
+                            contentDescription = "OCR Name"
+                        )
                     }
                 }
             )
 
             AmountControl(
-                viewModel = viewModel,
-                isEditing = viewModel.isEditing,
+                viewModel = viewModel
             )
 
             AdaptiveRow(
@@ -330,12 +295,10 @@ fun FoodDetailView(
                         selectedDate = food.bestBeforeUsedByDate,
                         isDetectable = true,
                         onDateSelected = { viewModel.updateBestBeforeUsedByDate(it) },
-                        enabled = viewModel.isEditing,
                         modifier = Modifier.weight(1f),
                         leadingIcon = {
                             Switch(
                                 checked = food.isUseBy,
-                                enabled = viewModel.isEditing,
                                 onCheckedChange = { viewModel.updateIsUseBy(it) },
                                 modifier = Modifier.scale(0.8f)
                             )
@@ -347,7 +310,6 @@ fun FoodDetailView(
                         label = stringResource(Res.string.food_detail_opened_at),
                         selectedDate = food.openedAt,
                         onDateSelected = { viewModel.updateOpenedAt(it) },
-                        enabled = viewModel.isEditing,
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -356,7 +318,6 @@ fun FoodDetailView(
             OutlinedTextField(
                 value = viewModel.fillingQuantityStr,
                 onValueChange = { viewModel.updateFillingQuantity(it) },
-                readOnly = !viewModel.isEditing,
                 label = {
                     Text(
                         stringResource(
@@ -371,19 +332,16 @@ fun FoodDetailView(
                 leadingIcon = {
                     Switch(
                         checked = food.isLiquid,
-                        enabled = viewModel.isEditing,
                         onCheckedChange = { viewModel.updateIsLiquid(it) },
                         modifier = Modifier.scale(0.8f)
                     )
                 },
                 trailingIcon = {
-                    if (viewModel.isEditing) {
-                        IconButton(onClick = { viewModel.openOcrCamera(OcrType.AMOUNT) }) {
-                            Icon(
-                                painter = painterResource(Res.drawable.ic_camera),
-                                contentDescription = "OCR Amount"
-                            )
-                        }
+                    IconButton(onClick = { viewModel.openOcrCamera(OcrType.AMOUNT) }) {
+                        Icon(
+                            painter = painterResource(Res.drawable.ic_camera),
+                            contentDescription = "OCR Amount"
+                        )
                     }
                 }
             )
@@ -403,19 +361,17 @@ fun FoodDetailView(
                     modifier = Modifier.padding(top = 8.dp)
                 )
                 
-                if (viewModel.isEditing) {
-                    TextButton(
-                        onClick = { viewModel.openOcrCamera(OcrType.NUTRIENTS) },
-                        contentPadding = PaddingValues(horizontal = 8.dp)
-                    ) {
-                        Icon(
-                            painter = painterResource(Res.drawable.ic_camera),
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(Modifier.width(4.dp))
-                        Text("Scan table", style = MaterialTheme.typography.labelMedium)
-                    }
+                TextButton(
+                    onClick = { viewModel.openOcrCamera(OcrType.NUTRIENTS) },
+                    contentPadding = PaddingValues(horizontal = 8.dp)
+                ) {
+                    Icon(
+                        painter = painterResource(Res.drawable.ic_camera),
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Text("Scan table", style = MaterialTheme.typography.labelMedium)
                 }
             }
 
@@ -425,7 +381,6 @@ fun FoodDetailView(
                     OutlinedTextField(
                         value = food.kiloCalories?.toString() ?: "",
                         onValueChange = { viewModel.updateKiloCalories(it) },
-                        readOnly = !viewModel.isEditing,
                         label = { Text(stringResource(Res.string.food_detail_calories)) },
                         modifier = Modifier.weight(1f),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -436,7 +391,6 @@ fun FoodDetailView(
                     OutlinedTextField(
                         value = food.kiloJoule?.toString() ?: "",
                         onValueChange = { viewModel.updateKiloJoule(it) },
-                        readOnly = !viewModel.isEditing,
                         label = { Text(stringResource(Res.string.food_detail_kj)) },
                         modifier = Modifier.weight(1f),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -452,7 +406,6 @@ fun FoodDetailView(
                     OutlinedTextField(
                         value = viewModel.carbsInGramsStr,
                         onValueChange = { viewModel.updateCarbsInGrams(it) },
-                        readOnly = !viewModel.isEditing,
                         label = { Text(stringResource(Res.string.food_detail_carbs)) },
                         modifier = Modifier.weight(1f),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
@@ -463,7 +416,6 @@ fun FoodDetailView(
                     OutlinedTextField(
                         value = viewModel.sugarInGramsStr,
                         onValueChange = { viewModel.updateSugarInGrams(it) },
-                        readOnly = !viewModel.isEditing,
                         label = { Text(stringResource(Res.string.food_detail_sugar)) },
                         modifier = Modifier.weight(1f),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
@@ -479,7 +431,6 @@ fun FoodDetailView(
                     OutlinedTextField(
                         value = viewModel.fatInGramsStr,
                         onValueChange = { viewModel.updateFatInGrams(it) },
-                        readOnly = !viewModel.isEditing,
                         label = { Text(stringResource(Res.string.food_detail_fat)) },
                         modifier = Modifier.weight(1f),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
@@ -490,7 +441,6 @@ fun FoodDetailView(
                     OutlinedTextField(
                         value = viewModel.saturatedFattyAcidsInGramsStr,
                         onValueChange = { viewModel.updateSaturatedFattyAcidsInGrams(it) },
-                        readOnly = !viewModel.isEditing,
                         label = { Text(stringResource(Res.string.food_detail_saturated_fat)) },
                         modifier = Modifier.weight(1f),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
@@ -502,7 +452,6 @@ fun FoodDetailView(
             OutlinedTextField(
                 value = viewModel.dietaryFiberInGramsStr,
                 onValueChange = { viewModel.updateDietaryFiberInGrams(it) },
-                readOnly = !viewModel.isEditing,
                 label = { Text(stringResource(Res.string.food_detail_fiber)) },
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
@@ -512,7 +461,6 @@ fun FoodDetailView(
             OutlinedTextField(
                 value = viewModel.proteinInGramsStr,
                 onValueChange = { viewModel.updateProteinInGrams(it) },
-                readOnly = !viewModel.isEditing,
                 label = { Text(stringResource(Res.string.food_detail_protein)) },
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
@@ -522,7 +470,6 @@ fun FoodDetailView(
             OutlinedTextField(
                 value = viewModel.saltInGramsStr,
                 onValueChange = { viewModel.updateSaltInGrams(it) },
-                readOnly = !viewModel.isEditing,
                 label = { Text(stringResource(Res.string.food_detail_salt)) },
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
@@ -534,14 +481,13 @@ fun FoodDetailView(
 
 @Composable
 fun AmountControl(
-    viewModel: FoodDetailViewModel,
-    isEditing: Boolean,
+    viewModel: FoodDetailViewModel
 ) {
     SingleChoiceSegmentedButtonRow {
         SegmentedButton(
             selected = false,
             onClick = { viewModel.decrementAmount() },
-            enabled = isEditing && viewModel.amountStr.toInt() > 1,
+            enabled = (viewModel.amountStr.toIntOrNull() ?: 0) > 1,
             modifier = Modifier.size(48.dp).align(Alignment.CenterVertically),
             shape = SegmentedButtonDefaults.itemShape(
                 index = 0,
@@ -558,7 +504,6 @@ fun AmountControl(
         OutlinedTextField(
             value = viewModel.amountStr,
             onValueChange = { viewModel.updateAmount(it) },
-            readOnly = !isEditing,
             label = { Text(text = stringResource(Res.string.food_detail_amount)) },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             singleLine = true,
@@ -569,7 +514,6 @@ fun AmountControl(
         SegmentedButton(
             selected = false,
             onClick = { viewModel.incrementAmount() },
-            enabled = isEditing,
             modifier = Modifier.size(48.dp).align(Alignment.CenterVertically),
             shape = SegmentedButtonDefaults.itemShape(
                 index = 1,
@@ -583,22 +527,6 @@ fun AmountControl(
             )
         }
     }
-
-//    Row(
-//        modifier = modifier,
-//        verticalAlignment = Alignment.CenterVertically,
-//        horizontalArrangement = Arrangement.spacedBy(8.dp)
-//    ) {
-//        if (isEditing) {
-//
-//        }
-//
-//
-//
-//        if (isEditing) {
-//
-//        }
-//    }
 }
 
 @Composable
@@ -646,7 +574,7 @@ fun DatePickerField(
     selectedDate: LocalDate?,
     onDateSelected: (LocalDate?) -> Unit,
     isDetectable: Boolean = false,
-    enabled: Boolean,
+    enabled: Boolean = true,
     modifier: Modifier = Modifier,
     leadingIcon: @Composable (() -> Unit)? = null
 ) {
@@ -661,7 +589,7 @@ fun DatePickerField(
         leadingIcon = leadingIcon,
         trailingIcon = {
             Row {
-                if (viewModel?.isEditing ?: false && isDetectable) {
+                if (viewModel != null && isDetectable) {
                     IconButton(onClick = { viewModel.openOcrCamera(OcrType.DATE) }) {
                         Icon(
                             painter = painterResource(Res.drawable.ic_camera),
