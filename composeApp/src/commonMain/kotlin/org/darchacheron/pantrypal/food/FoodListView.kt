@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Badge
@@ -41,6 +42,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -49,6 +51,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -117,6 +120,30 @@ fun FoodListView(
     val filter by foodListViewModel.filter.collectAsState()
     val message by foodListViewModel.messages.collectAsState()
 
+    // 1. Track the scroll state
+    val scrollState = rememberLazyListState()
+
+    // 2. Calculate Parallax and Alpha based on scroll
+    // We use derivedStateOf to prevent unnecessary recompositions
+    val headerParallaxOffset by remember {
+        derivedStateOf {
+            if (scrollState.firstVisibleItemIndex == 0) {
+                // Moves at 0.5x the speed of the scroll
+                scrollState.firstVisibleItemScrollOffset.toFloat() * 0.5f
+            } else 0f
+        }
+    }
+
+    val headerAlpha by remember {
+        derivedStateOf {
+            if (scrollState.firstVisibleItemIndex == 0) {
+                // Fades out completely after 400 pixels of scroll
+                val progress = scrollState.firstVisibleItemScrollOffset.toFloat() / 400f
+                (1f - progress).coerceIn(0f, 1f)
+            } else 0f
+        }
+    }
+
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
@@ -141,72 +168,83 @@ fun FoodListView(
             }
         }
     ) { padding ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
+                .padding(padding),
+            contentAlignment = Alignment.Center
         ) {
-            FoodListControls(
-                searchQuery = searchQuery,
-                onSearchQueryChange = foodListViewModel::setSearchQuery,
-                sortOrder = sortOrder,
-                sortDirection = sortDirection,
-                onSortChange = foodListViewModel::setSort,
-                currentFilter = filter,
-                onFilterChange = foodListViewModel::setFilter
-            )
+            if (message != null) {
+                val snackbarMessage = if (message!!.parameter == null)
+                    stringResource(message!!.messageResource)
+                else
+                    stringResource(message!!.messageResource, message!!.parameter!!)
 
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                if (message != null) {
-                    val snackbarMessage = if (message!!.parameter == null) stringResource(message!!.messageResource) else stringResource(message!!.messageResource, message!!.parameter!!)
-                    LaunchedEffect(snackbarMessage) {
-                        snackbarHostState.showSnackbar(message = snackbarMessage)
-                        foodListViewModel.clearMessage()
+                LaunchedEffect(snackbarMessage) {
+                    snackbarHostState.showSnackbar(message = snackbarMessage)
+                    foodListViewModel.clearMessage()
+                }
+            }
+
+            val state = uiState
+            when {
+                state.isLoading -> {
+                    CircularProgressIndicator()
+                }
+
+                state.hasError -> {
+                    val errorMessage = stringResource(state.error!!)
+                    LaunchedEffect(errorMessage) {
+                        snackbarHostState.showSnackbar(message = errorMessage)
                     }
                 }
 
-                val state = uiState
-                when {
-                    state.isLoading -> {
-                        CircularProgressIndicator()
-                    }
-
-                    state.hasError -> {
-                        val errorMessage = stringResource(state.error!!)
-                        LaunchedEffect(errorMessage) {
-                            snackbarHostState.showSnackbar(message = errorMessage)
+                state.data != null -> {
+                    LazyColumn(
+                        state = scrollState, // 3. Attach the scroll state
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 72.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        // 4. Move Controls inside the LazyColumn
+                        item {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .graphicsLayer {
+                                        // Apply the parallax and fade effects
+                                        translationY = headerParallaxOffset
+                                        alpha = headerAlpha
+                                    }
+                            ) {
+                                FoodListControls(
+                                    searchQuery = searchQuery,
+                                    onSearchQueryChange = foodListViewModel::setSearchQuery,
+                                    sortOrder = sortOrder,
+                                    sortDirection = sortDirection,
+                                    onSortChange = foodListViewModel::setSort,
+                                    currentFilter = filter,
+                                    onFilterChange = foodListViewModel::setFilter
+                                )
+                            }
                         }
-                    }
 
-                    state.data.isNullOrEmpty() && !state.isLoading -> {
-                        Text(
-                            text = stringResource(Res.string.food_list_empty),
-                            textAlign = TextAlign.Center
-                        )
-                    }
-
-                    state.data != null -> {
-                        LazyColumn(
-                            modifier = Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 72.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
+                        if (state.data.isNullOrEmpty()) {
+                            item {
+                                Text(
+                                    text = stringResource(Res.string.food_list_empty),
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.fillMaxWidth().padding(top = 32.dp)
+                                )
+                            }
+                        } else {
                             items(state.data, key = { it.id.toString() }) { food ->
                                 FoodItem(
                                     food = food,
                                     onClick = { foodListViewModel.goToFoodDetail(food.id.toString()) },
-                                    onDelete = {
-                                        foodListViewModel.deleteFood(it)
-                                    },
-                                    onConsume = {
-                                        foodListViewModel.consumeFood(it)
-                                    },
-                                    onCopy = {
-                                        foodListViewModel.copyFood(it)
-                                    }
+                                    onDelete = { foodListViewModel.deleteFood(it) },
+                                    onConsume = { foodListViewModel.consumeFood(it) },
+                                    onCopy = { foodListViewModel.copyFood(it) }
                                 )
                             }
                         }
@@ -233,7 +271,7 @@ fun FoodListControls(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .padding(vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         OutlinedTextField(
