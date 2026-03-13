@@ -99,7 +99,6 @@ class FoodIntegrationTest {
             while (item.isLoading) item = awaitItem()
         }
 
-        detailViewModel.setIsEditing(true)
         detailViewModel.updateName("Updated Name")
         
         detailViewModel.isSaved.test {

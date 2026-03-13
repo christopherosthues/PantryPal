@@ -49,7 +49,6 @@ class FoodDetailViewModelTest {
                 item = awaitItem()
             }
             assertEquals("Apple", item.data?.name)
-            assertFalse(viewModel.isEditing)
             assertFalse(viewModel.isAdding)
         }
     }
@@ -67,7 +66,6 @@ class FoodDetailViewModelTest {
             }
             assertTrue(item.hasData)
             assertEquals("", item.data?.name)
-            assertTrue(viewModel.isEditing)
             assertTrue(viewModel.isAdding)
         }
     }
@@ -111,30 +109,6 @@ class FoodDetailViewModelTest {
 
         assertNull(foodDao.foods[foodId])
         assertTrue(viewModel.isSaved.value)
-    }
-
-    @Test
-    fun testCancelEditingExistingFood() = runTest {
-        val foodId = Uuid.generateV7()
-        val originalName = "Original"
-        foodDao.foods[foodId] = createFoodEntity(foodId, originalName)
-
-        val route = NavRoute.FoodDetail(foodId.toString())
-        val viewModel = FoodDetailViewModel(route, repository, navigator)
-
-        // Wait for it to be ready
-        viewModel.uiState.test {
-            var item = awaitItem()
-            while (item.isLoading) item = awaitItem()
-        }
-
-        viewModel.setIsEditing(true)
-        viewModel.updateName("Changed")
-        assertEquals("Changed", viewModel.uiState.value.data?.name)
-
-        viewModel.cancelEditing()
-        assertEquals(originalName, viewModel.uiState.value.data?.name)
-        assertFalse(viewModel.isEditing)
     }
 
     @Test
