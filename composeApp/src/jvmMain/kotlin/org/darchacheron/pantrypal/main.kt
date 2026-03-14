@@ -2,6 +2,7 @@ package org.darchacheron.pantrypal
 
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
+import io.github.vinceglb.filekit.FileKit
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import pantrypal.composeapp.generated.resources.Res
@@ -12,6 +13,8 @@ import org.darchacheron.pantrypal.di.initKoin
 fun main() {
     initKoin()
     application {
+        FileKit.init(appId = "PantryPal")
+
         Window(
             onCloseRequest = ::exitApplication,
             title = stringResource(Res.string.appName),

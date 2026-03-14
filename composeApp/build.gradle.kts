@@ -1,3 +1,4 @@
+import org.gradle.kotlin.dsl.invoke
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
@@ -107,6 +108,10 @@ kotlin {
             implementation(libs.camerak.image.saver)
             implementation(libs.camerak.ocr)
 
+            implementation(libs.ktor.client.cio)
+            implementation(libs.ktor.client.core)
+            implementation(libs.ktor.serialization.kotlinx.json)
+
             implementation(libs.coil.compose)
             implementation(libs.coil.network.ktor)
 
@@ -136,6 +141,10 @@ kotlin {
             dependencies {
                 implementation(libs.androidx.test.core.ktx)
             }
+        }
+
+        nativeMain.dependencies {
+            implementation(libs.ktor.client.darwin)
         }
 
         jvmMain.dependencies {

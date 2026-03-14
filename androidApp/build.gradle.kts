@@ -20,6 +20,8 @@ kotlin {
         implementation(libs.koin.android)
         implementation(libs.koin.androidx.compose)
 
+        implementation(libs.ktor.client.okhttp)
+
         androidTestImplementation(libs.androidx.compose.ui.test)
         debugImplementation(libs.androidx.compose.ui.test.manifest)
     }
