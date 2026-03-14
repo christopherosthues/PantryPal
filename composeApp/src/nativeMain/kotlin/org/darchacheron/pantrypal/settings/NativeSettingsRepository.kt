@@ -2,6 +2,7 @@ package org.darchacheron.pantrypal.settings
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import org.darchacheron.pantrypal.settings.DataSynchronization
 import platform.Foundation.NSDictionary
 import platform.Foundation.NSDocumentDirectory
 import platform.Foundation.NSFileManager
@@ -43,6 +44,10 @@ class NativeSettingsRepository : SettingsRepository {
                             (dict.getValue(SettingsKeys.THEME_MODE) as? String)?.let {
                                 ThemeMode.valueOf(it)
                             } ?: ThemeMode.SYSTEM,
+                        dataSynchronization =
+                            (dict.getValue(SettingsKeys.DATA_SYNCHRONIZATION) as? String)?.let {
+                                DataSynchronization.valueOf(it)
+                            } ?: DataSynchronization.NO_SYNCHRONIZATION,
                     )
                 settingsFlow.value = settings
             }
@@ -54,6 +59,7 @@ class NativeSettingsRepository : SettingsRepository {
             val dict =
                 mutableMapOf(
                     SettingsKeys.THEME_MODE to settings.themeMode.name,
+                    SettingsKeys.DATA_SYNCHRONIZATION to settings.dataSynchronization.name,
                 )
 
             (dict as NSDictionary).writeToFile(settingsFile, true)

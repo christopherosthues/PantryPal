@@ -14,6 +14,7 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import pantrypal.composeapp.generated.resources.*
 import pantrypal.composeapp.generated.resources.Res
+import pantrypal.composeapp.generated.resources.arrow_drop_down
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -86,6 +87,7 @@ fun SettingsView(
             } else if (uiState.hasData) {
                 SettingsContent(
                     settings = uiState.data!!,
+                    onDataSynchronizationSelected = viewModel::onDataSynchronizationSelected,
                     onThemeModeSelected = viewModel::onThemeModeSelected
                 )
             }
@@ -96,7 +98,8 @@ fun SettingsView(
 @Composable
 private fun SettingsContent(
     settings: Settings,
-    onThemeModeSelected: (ThemeMode) -> Unit
+    onDataSynchronizationSelected: (DataSynchronization) -> Unit,
+    onThemeModeSelected: (ThemeMode) -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -105,6 +108,21 @@ private fun SettingsContent(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
+        Column {
+            Text(
+                text = stringResource(Res.string.settings_data_synchronization),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            DataSynchronizationDropdown(
+                selectedDataSynchronization = settings.dataSynchronization,
+                onDataSynchronizationSelected = onDataSynchronizationSelected
+            )
+        }
+
+        HorizontalDivider()
+
         // Theme Section
         Column {
             Text(
@@ -117,6 +135,52 @@ private fun SettingsContent(
                 selectedTheme = settings.themeMode,
                 onThemeSelected = onThemeModeSelected
             )
+        }
+    }
+}
+
+@Composable
+private fun DataSynchronizationDropdown(
+    selectedDataSynchronization: DataSynchronization,
+    onDataSynchronizationSelected: (DataSynchronization) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Box {
+        OutlinedTextField(
+            value = stringResource(selectedDataSynchronization.toStringResource()),
+            onValueChange = {},
+            readOnly = true,
+            label = { Text(stringResource(Res.string.settings_default_data_synchronization)) },
+            modifier = Modifier.fillMaxWidth(),
+            trailingIcon = {
+                IconButton(onClick = { expanded = true }) {
+                    Icon(
+                        painter = painterResource(Res.drawable.arrow_drop_down),
+                        contentDescription = stringResource(Res.string.settings_select_data_synchronization)
+                    )
+                }
+            }
+        )
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .clickable { expanded = true }
+        )
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            modifier = Modifier.fillMaxWidth(0.9f)
+        ) {
+            DataSynchronization.entries.forEach { unit ->
+                DropdownMenuItem(
+                    text = { Text(stringResource(unit.toStringResource())) },
+                    onClick = {
+                        onDataSynchronizationSelected(unit)
+                        expanded = false
+                    }
+                )
+            }
         }
     }
 }

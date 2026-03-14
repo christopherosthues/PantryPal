@@ -1,8 +1,8 @@
 <resources>
     <string name="settings_title">Einstellungen</string>
-    <string name="settings_measurement_unit">Maßeinheit</string>
-    <string name="settings_default_unit">Standardeinheit</string>
-    <string name="settings_select_unit">Einheit auswählen</string>
+    <string name="settings_data_synchronization">Datensynchronisierung</string>
+    <string name="settings_default_data_synchronization">Synchronization</string>
+    <string name="settings_select_data_synchronization">Datensynchronization auswählen</string>
     <string name="settings_theme">Design</string>
     <string name="settings_error_loading">Fehler beim Laden der Einstellungen</string>
     <string name="settings_error_saving">Fehler beim Speichern der Einstellungen</string>
@@ -10,22 +10,11 @@
     <string name="settings_content_description_reset">Zurücksetzen</string>
     <string name="settings_content_description_save">Speichern</string>
 
-
-    <!-- Weight Units -->
-    <string name="measure_unit_g">Gramm</string>
-    <string name="measure_unit_kg">Kilogramm</string>
-    <string name="measure_unit_oz">Unze</string>
-    <string name="measure_unit_lb">Pfund</string>
-
-    <!-- Volume Units -->
-    <string name="measure_unit_ml">Milliliter</string>
-    <string name="measure_unit_l">Liter</string>
-    <string name="measure_unit_tbsp">Esslöffel</string>
-    <string name="measure_unit_tsp">Teelöffel</string>
-    <string name="measure_unit_cup">Tasse</string>
-
-    <!-- Other Units -->
-    <string name="measure_unit_piece">Stück</string>
+    <!-- Data synchronization -->
+    <string name="settings_no_synchronization">Keine Synchronisierung</string>
+    <string name="settings_only_upload">Nur Hochladen</string>
+    <string name="settings_only_download">Nur Herunterladen</string>
+    <string name="settings_upload_and_download">Vollständige Synchronisierung</string>
 
     <!-- Theme -->
     <string name="theme_light">Hell</string>

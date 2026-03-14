@@ -35,6 +35,10 @@ class JvmSettingsRepository : SettingsRepository {
                             getProperty(SettingsKeys.THEME_MODE)?.let {
                                 ThemeMode.valueOf(it)
                             } ?: ThemeMode.SYSTEM,
+                        dataSynchronization =
+                            getProperty(SettingsKeys.DATA_SYNCHRONIZATION)?.let {
+                                DataSynchronization.valueOf(it)
+                            } ?: DataSynchronization.NO_SYNCHRONIZATION,
                     )
                 settingsFlow.value = settings
             }
@@ -46,6 +50,7 @@ class JvmSettingsRepository : SettingsRepository {
             runCatching {
                 Properties().apply {
                     setProperty(SettingsKeys.THEME_MODE, settings.themeMode.name)
+                    setProperty(SettingsKeys.DATA_SYNCHRONIZATION, settings.dataSynchronization.name)
                     settingsFile.outputStream().use { store(it, null) }
                 }
                 settingsFlow.value = settings

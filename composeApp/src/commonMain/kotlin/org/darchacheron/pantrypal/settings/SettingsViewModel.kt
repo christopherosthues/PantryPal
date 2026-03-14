@@ -45,6 +45,12 @@ class SettingsViewModel(
         }
     }
 
+    fun onDataSynchronizationSelected(dataSynchronization: DataSynchronization) {
+        _settingsFlow.update { state ->
+            state.data?.let { UiState.success(it.copy(dataSynchronization = dataSynchronization)) } ?: state
+        }
+    }
+
     fun saveSettings(onSuccess: () -> Unit) {
         val currentSettings = settingsFlow.value.data ?: return
         viewModelScope.launch {

@@ -18,11 +18,13 @@ class AndroidSettingsRepository(
 ) : SettingsRepository {
     private object PreferencesKeys {
         val THEME_MODE = stringPreferencesKey(SettingsKeys.THEME_MODE)
+        val DATA_SYNCHRONIZATION = stringPreferencesKey(SettingsKeys.DATA_SYNCHRONIZATION)
     }
 
     override suspend fun saveSettings(settings: Settings) {
         context.dataStore.edit { preferences ->
             preferences[PreferencesKeys.THEME_MODE] = settings.themeMode.name
+            preferences[PreferencesKeys.DATA_SYNCHRONIZATION] = settings.dataSynchronization.name
         }
     }
 
@@ -38,6 +40,10 @@ class AndroidSettingsRepository(
                         preferences[PreferencesKeys.THEME_MODE]?.let {
                             ThemeMode.valueOf(it)
                         } ?: ThemeMode.SYSTEM,
+                    dataSynchronization =
+                        preferences[PreferencesKeys.DATA_SYNCHRONIZATION]?.let {
+                            DataSynchronization.valueOf(it)
+                        } ?: DataSynchronization.NO_SYNCHRONIZATION,
                 )
             }
 }
