@@ -13,6 +13,8 @@ internal val navConfig = SavedStateConfiguration {
             subclass(NavRoute.SimpleCamera::class, NavRoute.SimpleCamera.serializer())
             subclass(NavRoute.OcrCamera::class, NavRoute.OcrCamera.serializer())
             subclass(NavRoute.Settings::class, NavRoute.Settings.serializer())
+            subclass(NavRoute.Login::class, NavRoute.Login.serializer())
+            subclass(NavRoute.Register::class, NavRoute.Register.serializer())
         }
     }
 }

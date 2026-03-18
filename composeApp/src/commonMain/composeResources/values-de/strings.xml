@@ -126,4 +126,11 @@
     <string name="nutrient_tag_salt">Salz:</string>
 
     <string name="date_format">dd.MM.uuuu</string>
+
+    <!-- Login -->
+    <string name="login_title">Anmelden</string>
+    <string name="login_login">Anmelden</string>
+    <string name="login_username_or_email">Benutzername or E-Mail</string>
+    <string name="login_password">Passwort</string>
+    <string name="login_error">Ein unerwarteter Fehler ist aufgetreten</string>
 </resources>

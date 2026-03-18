@@ -128,4 +128,11 @@
     <string name="nutrient_tag_salt">Salt:</string>
 
     <string name="date_format">uuuu-MM-dd</string>
+
+    <!-- Login -->
+    <string name="login_title">Login</string>
+    <string name="login_login">Log in</string>
+    <string name="login_username_or_email">Username or Email</string>
+    <string name="login_password">Password</string>
+    <string name="login_error">An unexpected error occurred</string>
 </resources>

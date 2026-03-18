@@ -19,6 +19,12 @@ sealed interface NavRoute : NavKey {
 
     @Serializable
     data object Settings : NavRoute
+
+    @Serializable
+    data object Login : NavRoute
+
+    @Serializable
+    data object Register : NavRoute
 }
 
 @Serializable

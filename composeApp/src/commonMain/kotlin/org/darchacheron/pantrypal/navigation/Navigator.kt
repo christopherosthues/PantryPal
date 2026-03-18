@@ -15,7 +15,12 @@ class Navigator {
 
     @Composable
     fun Initialize() {
-        _backStack = rememberNavBackStack(navConfig, NavRoute.FoodList)
+        _backStack = rememberNavBackStack(navConfig, NavRoute.Login)
+    }
+
+    fun goToFoodList() {
+        _backStack?.clear()
+        _backStack?.add(NavRoute.FoodList)
     }
 
     fun goToFoodDetail(foodId: String? = null) {
@@ -45,6 +50,14 @@ class Navigator {
 
     fun goToSettings() {
         _backStack?.add(NavRoute.Settings)
+    }
+
+    fun goToLogin() {
+        _backStack?.add(NavRoute.Login)
+    }
+
+    fun goToRegister() {
+        _backStack?.add(NavRoute.Register)
     }
 
     fun goBack() {
