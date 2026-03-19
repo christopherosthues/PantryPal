@@ -6,20 +6,25 @@ import org.darchacheron.pantrypal.authentication.dtos.RefreshTokenDto
 import org.darchacheron.pantrypal.authentication.dtos.RegistrationDto
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
+import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.ClientRequestException
 import io.ktor.client.plugins.RedirectResponseException
 import io.ktor.client.plugins.ServerResponseException
+import io.ktor.client.plugins.logging.DEFAULT
+import io.ktor.client.plugins.logging.LogLevel
+import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
+import io.ktor.http.Headers
+import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import kotlinx.coroutines.flow.lastOrNull
 import pantrypal.composeapp.generated.resources.Res
 
 class AuthenticationService(
-    private val client: HttpClient,
     private val preferencesRepository: AuthenticationPreferencesRepository
 ) {
     private val authenticationTag = "Authentication"
@@ -28,11 +33,13 @@ class AuthenticationService(
         val loginUrl = "https://localhost:8080/login"
 
         try {
-            val response: HttpResponse = client.post(loginUrl) {
-                contentType(ContentType.Application.Json)
-                setBody(
-                    LoginDto(username, password)
-                )
+            val response: HttpResponse = createHttpClient().use { client ->
+                client.post(loginUrl) {
+                    contentType(ContentType.Application.Json)
+                    setBody(
+                        LoginDto(username, password)
+                    )
+                }
             }
 
             if (response.status == HttpStatusCode.OK) {
@@ -64,6 +71,14 @@ class AuthenticationService(
         return Result.success(false)
     }
 
+    private fun createHttpClient(): HttpClient = HttpClient(CIO) {
+        install(Logging) {
+            level = LogLevel.INFO
+            sanitizeHeader { header -> header == HttpHeaders.Authorization }
+        }
+        expectSuccess = true
+    }
+
     suspend fun logout(): Result<Boolean> {
         try {
             preferencesRepository.updateAccessPreferences("", "", 0, 0)
@@ -82,11 +97,13 @@ class AuthenticationService(
                     ?: // TODO: logout / navigate to login screen
                     return Result.success(false)
 
-            val response: HttpResponse = client.post(refreshUrl) {
-                contentType(ContentType.Application.Json)
-                setBody(
-                    RefreshTokenDto(authenticationPreferences.refreshToken)
-                )
+            val response: HttpResponse = createHttpClient().use {
+                it.post(refreshUrl) {
+                    contentType(ContentType.Application.Json)
+                    setBody(
+                        RefreshTokenDto(authenticationPreferences.refreshToken)
+                    )
+                }
             }
 
             if (response.status == HttpStatusCode.OK) {
@@ -126,18 +143,18 @@ class AuthenticationService(
         val registerUrl = "https://localhost:8080/register"
 
         try {
-            val response: HttpResponse = client.post(registerUrl) {
-                contentType(ContentType.Application.Json)
-                setBody(
-                    RegistrationDto(username, email, password, firstName, lastName)
-                )
+            val response: HttpResponse = createHttpClient().use {
+                it.post(registerUrl) {
+                    contentType(ContentType.Application.Json)
+                    setBody(
+                        RegistrationDto(username, email, password, firstName, lastName)
+                    )
+                }
             }
 
             if (response.status == HttpStatusCode.OK) {
                 // TODO: redirect to login page
                 return Result.success(true)
-            } else {
-                // TODO: notify user could not be registered
             }
         } catch (e: RedirectResponseException) {
             Logger.withTag(authenticationTag).e(e) { "Error registering user $username" }

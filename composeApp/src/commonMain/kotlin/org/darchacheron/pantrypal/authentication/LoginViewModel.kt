@@ -28,8 +28,12 @@ class LoginViewModel(
         loginState.value = loginState.value.copy(data = loginState.value.data?.copy(password = password))
     }
 
-    fun login(username: String, password: String) {
+    fun login() {
         viewModelScope.launch {
+            val uiState = loginState.value
+            val username = uiState.data?.username ?: ""
+            val password = uiState.data?.password ?: ""
+
             try {
                 loginState.emit(UiState.loading())
                 val result = authenticationService.login(username, password)

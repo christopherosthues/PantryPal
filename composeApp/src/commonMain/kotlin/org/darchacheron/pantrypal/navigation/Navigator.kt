@@ -53,10 +53,12 @@ class Navigator {
     }
 
     fun goToLogin() {
+        _backStack?.clear()
         _backStack?.add(NavRoute.Login)
     }
 
     fun goToRegister() {
+        _backStack?.clear()
         _backStack?.add(NavRoute.Register)
     }
 

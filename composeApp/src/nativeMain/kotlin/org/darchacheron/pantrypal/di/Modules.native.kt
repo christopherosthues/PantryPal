@@ -1,5 +1,6 @@
 package org.darchacheron.pantrypal.di
 
+import org.darchacheron.pantrypal.authentication.createAuthenticationDataStore
 import org.darchacheron.pantrypal.database.PantryPalDatabaseFactory
 import org.darchacheron.pantrypal.settings.NativeSettingsRepository
 import org.darchacheron.pantrypal.settings.SettingsRepository
@@ -9,4 +10,5 @@ actual val platformModule =
     module {
         single { PantryPalDatabaseFactory() }
         single<SettingsRepository> { NativeSettingsRepository() }
+        single { createAuthenticationDataStore() }
     }

@@ -132,5 +132,12 @@
     <string name="login_login">Anmelden</string>
     <string name="login_username_or_email">Benutzername or E-Mail</string>
     <string name="login_password">Passwort</string>
+    <string name="login_login_or_register">oder</string>
+    <string name="login_register">Registrieren</string>
     <string name="login_error">Ein unerwarteter Fehler ist aufgetreten</string>
+
+    <!-- Registration -->
+    <string name="registration_title">Registrierung</string>
+    <string name="registration_register">Registrieren</string>
+    <string name="registration_error">Ein unerwarteter Fehler ist aufgetreten</string>
 </resources>

@@ -19,6 +19,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.navigation3.runtime.metadata
 import androidx.navigation3.ui.NavDisplay
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
+import org.darchacheron.pantrypal.authentication.AuthenticationPreferencesRepository
+import org.darchacheron.pantrypal.authentication.AuthenticationService
+import org.darchacheron.pantrypal.authentication.LoginView
+import org.darchacheron.pantrypal.authentication.LoginViewModel
+import org.darchacheron.pantrypal.authentication.RegistrationView
+import org.darchacheron.pantrypal.authentication.RegistrationViewModel
 import org.darchacheron.pantrypal.database.PantryPalDatabase
 import org.darchacheron.pantrypal.database.PantryPalDatabaseFactory
 import org.darchacheron.pantrypal.food.FoodDetailView
@@ -125,12 +131,33 @@ val navigationModule = module {
             }
         )
     }
+
+    navigation<NavRoute.Login>(
+        metadata = NavDisplay.transitionSpec {
+            slideInVertically(initialOffsetY = { it }) togetherWith ExitTransition.KeepUntilTransitionsFinished
+        } + NavDisplay.popTransitionSpec {
+            EnterTransition.None togetherWith slideOutVertically(targetOffsetY = { it })
+        }
+    ) {
+        LoginView(loginViewModel = koinViewModel())
+    }
+
+    navigation<NavRoute.Register>(
+        metadata = NavDisplay.transitionSpec {
+            slideInVertically(initialOffsetY = { it }) togetherWith ExitTransition.KeepUntilTransitionsFinished
+        } + NavDisplay.popTransitionSpec {
+            EnterTransition.None togetherWith slideOutVertically(targetOffsetY = { it })
+        }
+    ) {
+        RegistrationView(registrationViewModel = koinViewModel())
+    }
 }
 
 val sharedModule =
     module {
         includes(navigationModule)
         factoryOf(::FoodRepository)
+        factoryOf(::AuthenticationPreferencesRepository)
 
         single {
             get<PantryPalDatabaseFactory>()
@@ -154,4 +181,8 @@ val sharedModule =
         viewModelOf(::FoodDetailViewModel)
         viewModelOf(::OcrCameraViewModel)
         viewModelOf(::SimpleCameraViewModel)
+        viewModelOf(::LoginViewModel)
+        viewModelOf(::RegistrationViewModel)
+
+        factoryOf(::AuthenticationService)
     }
