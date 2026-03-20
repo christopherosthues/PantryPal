@@ -45,8 +45,6 @@ class LoginViewModel(
             try {
                 loginState.emit(UiState.loading())
                 
-                val existingProfile = profileRepository.getProfile().firstOrNull()
-                
                 if (authenticationService.isRemoteEnabled()) {
                     val result = authenticationService.login(username, password)
 
@@ -55,8 +53,9 @@ class LoginViewModel(
                         if (loginResponse != null) {
                             val serverUuid = Uuid.parse(loginResponse.user.id)
                             
+                            val existingProfile = profileRepository.getProfileByServerId(serverUuid).firstOrNull()
+                            
                             val profile = existingProfile?.copy(
-                                serverId = serverUuid,
                                 username = loginResponse.user.username,
                                 email = loginResponse.user.email
                             ) ?: Profile(
@@ -74,25 +73,32 @@ class LoginViewModel(
                         loginState.emit(UiState.error(Res.string.login_error))
                     }
                 } else {
-                    // Local only mode: Create/Get a local profile
-                    val profile = existingProfile?.copy(
-                        username = username.ifBlank { "Local User" }
-                    ) ?: Profile(
-                        id = Uuid.generateV7(),
-                        serverId = null,
-                        username = username.ifBlank { "Local User" },
-                        email = "",
-                        createdAt = Clock.System.now()
-                    )
-                    profileRepository.upsert(profile)
-                    loginState.emit(UiState.success(Login(username, password)))
-                    navigator.goToFoodList()
+                    // Local only mode: Try to find local profile by username
+                    val existingProfile = profileRepository.getProfileByUsername(username).firstOrNull()
+                    
+                    if (existingProfile != null) {
+                        val inputHash = hashPassword(password)
+                        if (existingProfile.passwordHash == inputHash) {
+                            loginState.emit(UiState.success(Login(username, password)))
+                            navigator.goToFoodList()
+                        } else {
+                            loginState.emit(UiState.error(Res.string.login_error))
+                        }
+                    } else {
+                        loginState.emit(UiState.error(Res.string.login_error))
+                    }
                 }
             } catch (exception: Exception) {
                 Logger.withTag(loginTag).e(exception) { "Error login user: $username" }
                 loginState.emit(UiState.error(Res.string.login_error))
             }
         }
+    }
+
+    private fun hashPassword(password: String): String {
+        // Dummy hash for demonstration. Use a secure library in production.
+        // TODO: use something like scrypt, bcrypt or argon2id
+        return password.reversed()
     }
 
     fun openRegister() {

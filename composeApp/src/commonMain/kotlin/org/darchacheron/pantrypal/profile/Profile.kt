@@ -10,5 +10,6 @@ data class Profile(
     val serverId: Uuid?,
     val username: String,
     val email: String,
+    val passwordHash: String? = null,
     val createdAt: Instant
 )

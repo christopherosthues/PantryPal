@@ -13,6 +13,7 @@ data class ProfileEntity(
     val serverId: Uuid?,
     val username: String,
     val email: String,
+    val passwordHash: String? = null,
     val createdAt: Instant
 ) {
     fun toProfile(): Profile = Profile(
@@ -20,6 +21,7 @@ data class ProfileEntity(
         serverId = serverId,
         username = username,
         email = email,
+        passwordHash = passwordHash,
         createdAt = createdAt
     )
 }
@@ -30,5 +32,6 @@ fun Profile.toProfileEntity(): ProfileEntity = ProfileEntity(
     serverId = serverId,
     username = username,
     email = email,
+    passwordHash = passwordHash,
     createdAt = createdAt
 )
