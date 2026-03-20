@@ -7,6 +7,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import org.darchacheron.pantrypal.navigation.Navigator
+import org.darchacheron.pantrypal.profile.ProfileRepository
 import org.darchacheron.pantrypal.ui.UiState
 import org.jetbrains.compose.resources.StringResource
 import pantrypal.composeapp.generated.resources.Res
@@ -29,6 +30,7 @@ data class Message(
 @OptIn(ExperimentalUuidApi::class)
 class FoodListViewModel(
     private val foodRepository: FoodRepository,
+    private val profileRepository: ProfileRepository,
     private val navigator: Navigator,
 ) : ViewModel() {
     private val _searchQuery = MutableStateFlow("")
@@ -49,26 +51,39 @@ class FoodListViewModel(
     private val loggerTag = "FoodList"
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    val uiState: StateFlow<UiState<List<Food>>> = combine(
-        _searchQuery,
-        _sortOrder,
-        _sortDirection,
-        _filter
-    ) { query, sort, direction, filter ->
-        DataParams(query, sort, direction, filter)
-    }.flatMapLatest { params ->
-        foodRepository.getFilteredAndSorted(params.query, params.filter, params.sort, params.direction)
-            .map { foods -> UiState.success(foods) }
-            .onStart { emit(UiState.loading()) }
-            .catch { e ->
-                Logger.withTag(loggerTag).e { "Error loading foods: ${e.message}" }
-                emit(UiState.error(Res.string.food_list_error_loading))
+    val uiState: StateFlow<UiState<List<Food>>> = profileRepository.getProfile()
+        .flatMapLatest { profile ->
+            if (profile == null) {
+                flowOf(UiState.success(emptyList()))
+            } else {
+                combine(
+                    _searchQuery,
+                    _sortOrder,
+                    _sortDirection,
+                    _filter
+                ) { query, sort, direction, filter ->
+                    DataParams(query, sort, direction, filter)
+                }.flatMapLatest { params ->
+                    foodRepository.getFilteredAndSorted(
+                        profile.id,
+                        params.query,
+                        params.filter,
+                        params.sort,
+                        params.direction
+                    )
+                        .map { foods -> UiState.success(foods) }
+                        .onStart { emit(UiState.loading()) }
+                        .catch { e ->
+                            Logger.withTag(loggerTag).e { "Error loading foods: ${e.message}" }
+                            emit(UiState.error(Res.string.food_list_error_loading))
+                        }
+                }
             }
-    }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
-        initialValue = UiState.loading()
-    )
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = UiState.loading()
+        )
 
     private data class DataParams(
         val query: String,

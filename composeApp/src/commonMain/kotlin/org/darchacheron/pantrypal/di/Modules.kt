@@ -16,9 +16,10 @@ import androidx.compose.material3.adaptive.navigation3.ListDetailSceneStrategy
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
-import androidx.navigation3.runtime.metadata
 import androidx.navigation3.ui.NavDisplay
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
+import okio.FileSystem
+import okio.SYSTEM
 import org.darchacheron.pantrypal.authentication.AuthenticationPreferencesRepository
 import org.darchacheron.pantrypal.authentication.AuthenticationService
 import org.darchacheron.pantrypal.authentication.LoginView
@@ -157,6 +158,7 @@ val navigationModule = module {
 val sharedModule =
     module {
         includes(navigationModule)
+        single { FileSystem.SYSTEM }
         factoryOf(::FoodRepository)
         factoryOf(::ProfileRepository)
         factoryOf(::AuthenticationPreferencesRepository)
