@@ -61,9 +61,15 @@ class RegistrationViewModel(
                 if (authenticationService.isRemoteEnabled()) {
                     val result = authenticationService.registerUser(userName, email, password)
 
-                    if (result.isSuccess && result.getOrDefault(false)) {
+                    if (result.isSuccess) {
+                        val registrationResponse = result.getOrNull()
+                        val serverUuid = registrationResponse?.let {
+                            val serverIdFromToken = JwtUtils.getUserIdFromToken(it.tokenResponse.accessToken)
+                            serverIdFromToken?.let { id -> Uuid.parse(id) } ?: Uuid.parse(it.user.id)
+                        }
+                        
                         // Create local profile too for remote registration
-                        createLocalProfile(userName, email, password)
+                        createLocalProfile(userName, email, password, serverUuid)
                         registrationState.emit(UiState.success(Registration(userName, email, password)))
                         navigator.goToLogin()
                     } else {
@@ -81,10 +87,10 @@ class RegistrationViewModel(
         }
     }
 
-    private suspend fun createLocalProfile(userName: String, email: String, password: String) {
+    private suspend fun createLocalProfile(userName: String, email: String, password: String, serverId: Uuid? = null) {
         val profile = Profile(
             id = Uuid.generateV7(),
-            serverId = null,
+            serverId = serverId,
             username = userName,
             email = email,
             passwordHash = hashPassword(password),

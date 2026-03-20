@@ -38,6 +38,12 @@ data class LoginResponse(
     val user: UserResponse
 )
 
+@Serializable
+data class RegistrationResponse(
+    val tokenResponse: TokenResponse,
+    val user: UserResponse
+)
+
 @OptIn(ExperimentalUuidApi::class)
 class AuthenticationService(
     private val preferencesRepository: AuthenticationPreferencesRepository,
@@ -152,8 +158,8 @@ class AuthenticationService(
         username: String,
         email: String,
         password: String,
-    ): Result<Boolean> {
-        if (!isRemoteEnabled()) return Result.success(true)
+    ): Result<RegistrationResponse?> {
+        if (!isRemoteEnabled()) return Result.success(null)
 
         val settings = settingsRepository.getSettings()
         val registerUrl = "${settings.serverUrl}/register"
@@ -169,13 +175,20 @@ class AuthenticationService(
             }
 
             if (response.status == HttpStatusCode.OK) {
-                return Result.success(true)
+                val registrationResponse = response.body<RegistrationResponse>()
+                preferencesRepository.updateAccessPreferences(
+                    registrationResponse.tokenResponse.accessToken,
+                    registrationResponse.tokenResponse.refreshToken,
+                    registrationResponse.tokenResponse.expiresIn,
+                    registrationResponse.tokenResponse.refreshExpiresIn
+                )
+                return Result.success(registrationResponse)
             }
         } catch (e: Exception) {
             Logger.withTag(authenticationTag).e(e) { "Error registering user $username" }
             return Result.failure(e)
         }
 
-        return Result.success(false)
+        return Result.failure(Exception("Registration failed"))
     }
 }

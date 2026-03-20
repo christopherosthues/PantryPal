@@ -51,7 +51,8 @@ class LoginViewModel(
                     if (result.isSuccess) {
                         val loginResponse = result.getOrNull()
                         if (loginResponse != null) {
-                            val serverUuid = Uuid.parse(loginResponse.user.id)
+                            val serverIdFromToken = JwtUtils.getUserIdFromToken(loginResponse.tokenResponse.accessToken)
+                            val serverUuid = serverIdFromToken?.let { Uuid.parse(it) } ?: Uuid.parse(loginResponse.user.id)
                             
                             val existingProfile = profileRepository.getProfileByServerId(serverUuid).firstOrNull()
                             
