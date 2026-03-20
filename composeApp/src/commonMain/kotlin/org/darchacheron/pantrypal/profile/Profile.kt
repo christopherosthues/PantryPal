@@ -5,4 +5,10 @@ import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 @OptIn(ExperimentalUuidApi::class)
-data class Profile(val id: Uuid, val serverId: Uuid?, val username: String, val email: String, val createdAt: Instant)
+data class Profile(
+    val id: Uuid = Uuid.generateV7(),
+    val serverId: Uuid?,
+    val username: String,
+    val email: String,
+    val createdAt: Instant
+)

@@ -9,7 +9,7 @@ import kotlin.uuid.Uuid
 @OptIn(ExperimentalUuidApi::class)
 @Entity(tableName = "profile")
 data class ProfileEntity(
-    @PrimaryKey val id: Uuid,
+    @PrimaryKey val id: Uuid = Uuid.generateV7(),
     val serverId: Uuid?,
     val username: String,
     val email: String,

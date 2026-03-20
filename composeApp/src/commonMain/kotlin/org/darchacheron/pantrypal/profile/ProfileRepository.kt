@@ -17,6 +17,4 @@ class ProfileRepository(
 
     suspend fun delete() =
         profileDao.delete()
-
-    fun getCurrentInstant() = Clock.System.now()
 }
