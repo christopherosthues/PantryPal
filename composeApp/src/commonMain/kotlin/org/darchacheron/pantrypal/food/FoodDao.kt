@@ -14,7 +14,8 @@ import kotlin.uuid.Uuid
 interface FoodDao {
     @Query("""
         SELECT * FROM food 
-        WHERE (:query = '' OR name LIKE '%' || :query || '%')
+        WHERE profileId = :profileId
+        AND (:query = '' OR name LIKE '%' || :query || '%')
         AND (
             :filter = 'ALL' 
             OR (:filter = 'OPENED' AND openedAt IS NOT NULL)
@@ -28,6 +29,7 @@ interface FoodDao {
         CASE WHEN :sort = 'DATE' AND :direction = 'DESCENDING' THEN bestBeforeUsedByDate END DESC
     """)
     fun getFilteredAndSorted(
+        profileId: Uuid,
         query: String,
         filter: String,
         sort: String,

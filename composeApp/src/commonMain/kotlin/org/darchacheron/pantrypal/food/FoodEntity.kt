@@ -1,16 +1,31 @@
 package org.darchacheron.pantrypal.food
 
 import androidx.room.Entity
+import androidx.room.ForeignKey
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import kotlinx.datetime.LocalDate
+import org.darchacheron.pantrypal.profile.ProfileEntity
 import kotlin.time.Instant
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 @OptIn(ExperimentalUuidApi::class)
-@Entity(tableName = "food")
+@Entity(
+    tableName = "food",
+    foreignKeys = [
+        ForeignKey(
+            entity = ProfileEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["profileId"],
+            onDelete = ForeignKey.CASCADE
+        )
+    ],
+    indices = [Index(value = ["profileId"])]
+)
 data class FoodEntity(
     @PrimaryKey(autoGenerate = false) val id: Uuid = Uuid.generateV7(),
+    val profileId: Uuid,
     val name: String,
     val amount: Int = 1,
     val kiloCalories: Int?,
@@ -34,6 +49,7 @@ data class FoodEntity(
 ) {
     fun toFood(): Food = Food(
         id = id,
+        profileId = profileId,
         name = name,
         amount = amount,
         kiloCalories = kiloCalories,
@@ -60,6 +76,7 @@ data class FoodEntity(
 @OptIn(ExperimentalUuidApi::class)
 fun Food.toFoodEntity(): FoodEntity = FoodEntity(
     id = id,
+    profileId = profileId,
     name = name,
     amount = amount,
     kiloCalories = kiloCalories,

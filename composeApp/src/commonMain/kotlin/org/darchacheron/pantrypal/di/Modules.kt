@@ -38,6 +38,7 @@ import org.darchacheron.pantrypal.food.SimpleCameraView
 import org.darchacheron.pantrypal.food.SimpleCameraViewModel
 import org.darchacheron.pantrypal.navigation.NavRoute
 import org.darchacheron.pantrypal.navigation.Navigator
+import org.darchacheron.pantrypal.profile.ProfileRepository
 import org.darchacheron.pantrypal.settings.SettingsView
 import org.darchacheron.pantrypal.settings.SettingsViewModel
 import org.jetbrains.compose.resources.stringResource
@@ -157,6 +158,7 @@ val sharedModule =
     module {
         includes(navigationModule)
         factoryOf(::FoodRepository)
+        factoryOf(::ProfileRepository)
         factoryOf(::AuthenticationPreferencesRepository)
 
         single {
@@ -169,12 +171,17 @@ val sharedModule =
 //                        { get<WorkoutTemplateDao>() }
 //                    )
 //                )
-                .addMigrations(PantryPalDatabase.MIGRATION_1_2)
+                .addMigrations(
+                    PantryPalDatabase.MIGRATION_1_2,
+                    PantryPalDatabase.MIGRATION_2_3,
+                    PantryPalDatabase.MIGRATION_3_4
+                )
                 .setDriver(BundledSQLiteDriver())
                 .build()
         }
 
         single { get<PantryPalDatabase>().foodDao }
+        single { get<PantryPalDatabase>().profileDao }
 
         viewModelOf(::SettingsViewModel)
         viewModelOf(::FoodListViewModel)

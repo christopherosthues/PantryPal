@@ -11,6 +11,7 @@ import kotlin.uuid.Uuid
 @OptIn(ExperimentalUuidApi::class)
 data class Food(
     val id: Uuid = Uuid.generateV7(),
+    val profileId: Uuid,
     val name: String,
     val amount: Int = 1,
     val kiloCalories: Int?,
