@@ -42,12 +42,13 @@ class NativeSettingsRepository : SettingsRepository {
                     Settings(
                         themeMode =
                             (dict.getValue(SettingsKeys.THEME_MODE) as? String)?.let {
-                                ThemeMode.valueOf(it)
+                                runCatching { ThemeMode.valueOf(it) }.getOrNull()
                             } ?: ThemeMode.SYSTEM,
                         dataSynchronization =
                             (dict.getValue(SettingsKeys.DATA_SYNCHRONIZATION) as? String)?.let {
-                                DataSynchronization.valueOf(it)
+                                runCatching { DataSynchronization.valueOf(it) }.getOrNull()
                             } ?: DataSynchronization.NO_SYNCHRONIZATION,
+                        serverUrl = (dict.getValue(SettingsKeys.SERVER_URL) as? String) ?: ""
                     )
                 settingsFlow.value = settings
             }
@@ -60,6 +61,7 @@ class NativeSettingsRepository : SettingsRepository {
                 mutableMapOf(
                     SettingsKeys.THEME_MODE to settings.themeMode.name,
                     SettingsKeys.DATA_SYNCHRONIZATION to settings.dataSynchronization.name,
+                    SettingsKeys.SERVER_URL to settings.serverUrl
                 )
 
             (dict as NSDictionary).writeToFile(settingsFile, true)

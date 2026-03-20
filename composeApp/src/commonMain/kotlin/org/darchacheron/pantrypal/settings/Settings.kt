@@ -6,4 +6,5 @@ import kotlin.uuid.ExperimentalUuidApi
 data class Settings(
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val dataSynchronization: DataSynchronization = DataSynchronization.NO_SYNCHRONIZATION,
+    val serverUrl: String = ""
 )

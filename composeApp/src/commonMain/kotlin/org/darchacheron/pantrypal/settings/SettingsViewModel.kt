@@ -22,7 +22,7 @@ class SettingsViewModel(
     private val _settingsFlow = MutableStateFlow<UiState<Settings>>(UiState.loading())
     val settingsFlow: StateFlow<UiState<Settings>> = _settingsFlow.asStateFlow()
 
-    private lateinit var _originalSettings: Settings
+    private var _originalSettings: Settings = Settings()
 
     init {
         viewModelScope.launch {
@@ -48,6 +48,12 @@ class SettingsViewModel(
     fun onDataSynchronizationSelected(dataSynchronization: DataSynchronization) {
         _settingsFlow.update { state ->
             state.data?.let { UiState.success(it.copy(dataSynchronization = dataSynchronization)) } ?: state
+        }
+    }
+
+    fun onServerUrlChanged(serverUrl: String) {
+        _settingsFlow.update { state ->
+            state.data?.let { UiState.success(it.copy(serverUrl = serverUrl)) } ?: state
         }
     }
 

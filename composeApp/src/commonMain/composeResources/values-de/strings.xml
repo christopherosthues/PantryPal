@@ -139,5 +139,6 @@
     <!-- Registration -->
     <string name="registration_title">Registrierung</string>
     <string name="registration_register">Registrieren</string>
+    <string name="registration_email">Email</string>
     <string name="registration_error">Ein unerwarteter Fehler ist aufgetreten</string>
 </resources>

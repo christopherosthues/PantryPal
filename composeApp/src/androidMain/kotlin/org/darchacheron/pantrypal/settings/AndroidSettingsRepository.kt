@@ -19,31 +19,33 @@ class AndroidSettingsRepository(
     private object PreferencesKeys {
         val THEME_MODE = stringPreferencesKey(SettingsKeys.THEME_MODE)
         val DATA_SYNCHRONIZATION = stringPreferencesKey(SettingsKeys.DATA_SYNCHRONIZATION)
+        val SERVER_URL = stringPreferencesKey(SettingsKeys.SERVER_URL)
     }
 
     override suspend fun saveSettings(settings: Settings) {
         context.dataStore.edit { preferences ->
             preferences[PreferencesKeys.THEME_MODE] = settings.themeMode.name
             preferences[PreferencesKeys.DATA_SYNCHRONIZATION] = settings.dataSynchronization.name
+            preferences[PreferencesKeys.SERVER_URL] = settings.serverUrl
         }
     }
 
     override fun getSettingsFlow(): Flow<Settings> =
         context.dataStore.data
             .catch { exception ->
-                // Log the error and emit default settings
                 exception.printStackTrace()
                 emit(emptyPreferences())
             }.map { preferences ->
                 Settings(
                     themeMode =
                         preferences[PreferencesKeys.THEME_MODE]?.let {
-                            ThemeMode.valueOf(it)
+                            runCatching { ThemeMode.valueOf(it) }.getOrNull()
                         } ?: ThemeMode.SYSTEM,
                     dataSynchronization =
                         preferences[PreferencesKeys.DATA_SYNCHRONIZATION]?.let {
-                            DataSynchronization.valueOf(it)
+                            runCatching { DataSynchronization.valueOf(it) }.getOrNull()
                         } ?: DataSynchronization.NO_SYNCHRONIZATION,
+                    serverUrl = preferences[PreferencesKeys.SERVER_URL] ?: ""
                 )
             }
 }

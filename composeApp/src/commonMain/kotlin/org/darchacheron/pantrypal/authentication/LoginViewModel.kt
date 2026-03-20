@@ -4,16 +4,24 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import co.touchlab.kermit.Logger
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import org.darchacheron.pantrypal.navigation.Navigator
+import org.darchacheron.pantrypal.profile.Profile
+import org.darchacheron.pantrypal.profile.ProfileRepository
 import org.darchacheron.pantrypal.ui.UiState
 import pantrypal.composeapp.generated.resources.Res
 import pantrypal.composeapp.generated.resources.login_error
+import kotlin.time.Clock
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
 data class Login(val username: String, val password: String)
 
+@OptIn(ExperimentalUuidApi::class)
 class LoginViewModel(
     private val authenticationService: AuthenticationService,
+    private val profileRepository: ProfileRepository,
     private val navigator: Navigator,
 ) : ViewModel() {
     private val loginTag = "Login"
@@ -36,20 +44,49 @@ class LoginViewModel(
 
             try {
                 loginState.emit(UiState.loading())
-                val result = authenticationService.login(username, password)
+                
+                val existingProfile = profileRepository.getProfile().firstOrNull()
+                
+                if (authenticationService.isRemoteEnabled()) {
+                    val result = authenticationService.login(username, password)
 
-                if (result.isFailure) {
-                    // TODO: specific error message
-                    loginState.emit(UiState.error(Res.string.login_error))
-                    return@launch
-                } else if (result.isSuccess) {
-                    if (result.getOrDefault(false)) {
+                    if (result.isSuccess) {
+                        val loginResponse = result.getOrNull()
+                        if (loginResponse != null) {
+                            val serverUuid = Uuid.parse(loginResponse.user.id)
+                            
+                            val profile = existingProfile?.copy(
+                                serverId = serverUuid,
+                                username = loginResponse.user.username,
+                                email = loginResponse.user.email
+                            ) ?: Profile(
+                                id = Uuid.generateV7(),
+                                serverId = serverUuid,
+                                username = loginResponse.user.username,
+                                email = loginResponse.user.email,
+                                createdAt = Clock.System.now()
+                            )
+                            profileRepository.upsert(profile)
+                        }
                         loginState.emit(UiState.success(Login(username, password)))
                         navigator.goToFoodList()
                     } else {
-                        // TODO: error message Login failed
                         loginState.emit(UiState.error(Res.string.login_error))
                     }
+                } else {
+                    // Local only mode: Create/Get a local profile
+                    val profile = existingProfile?.copy(
+                        username = username.ifBlank { "Local User" }
+                    ) ?: Profile(
+                        id = Uuid.generateV7(),
+                        serverId = null,
+                        username = username.ifBlank { "Local User" },
+                        email = "",
+                        createdAt = Clock.System.now()
+                    )
+                    profileRepository.upsert(profile)
+                    loginState.emit(UiState.success(Login(username, password)))
+                    navigator.goToFoodList()
                 }
             } catch (exception: Exception) {
                 Logger.withTag(loginTag).e(exception) { "Error login user: $username" }

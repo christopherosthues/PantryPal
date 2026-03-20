@@ -1,36 +1,60 @@
 package org.darchacheron.pantrypal.authentication
 
 import co.touchlab.kermit.Logger
-import org.darchacheron.pantrypal.authentication.dtos.LoginDto
-import org.darchacheron.pantrypal.authentication.dtos.RefreshTokenDto
-import org.darchacheron.pantrypal.authentication.dtos.RegistrationDto
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.cio.CIO
-import io.ktor.client.plugins.ClientRequestException
-import io.ktor.client.plugins.RedirectResponseException
-import io.ktor.client.plugins.ServerResponseException
-import io.ktor.client.plugins.logging.DEFAULT
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
-import io.ktor.http.Headers
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
-import kotlinx.coroutines.flow.lastOrNull
-import pantrypal.composeapp.generated.resources.Res
+import io.ktor.serialization.kotlinx.json.json
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+import org.darchacheron.pantrypal.authentication.dtos.LoginDto
+import org.darchacheron.pantrypal.authentication.dtos.RefreshTokenDto
+import org.darchacheron.pantrypal.authentication.dtos.RegistrationDto
+import org.darchacheron.pantrypal.settings.DataSynchronization
+import org.darchacheron.pantrypal.settings.SettingsRepository
+import kotlin.uuid.ExperimentalUuidApi
 
+@Serializable
+data class UserResponse(
+    val id: String,
+    val username: String,
+    val email: String
+)
+
+@Serializable
+data class LoginResponse(
+    val tokenResponse: TokenResponse,
+    val user: UserResponse
+)
+
+@OptIn(ExperimentalUuidApi::class)
 class AuthenticationService(
-    private val preferencesRepository: AuthenticationPreferencesRepository
+    private val preferencesRepository: AuthenticationPreferencesRepository,
+    private val settingsRepository: SettingsRepository
 ) {
     private val authenticationTag = "Authentication"
 
-    suspend fun login(username: String, password: String): Result<Boolean> {
-        val loginUrl = "https://localhost:8080/login"
+    suspend fun isRemoteEnabled(): Boolean {
+        val settings = settingsRepository.getSettings()
+        return settings.serverUrl.isNotBlank() && settings.dataSynchronization != DataSynchronization.NO_SYNCHRONIZATION
+    }
+
+    suspend fun login(username: String, password: String): Result<LoginResponse?> {
+        if (!isRemoteEnabled()) return Result.success(null)
+
+        val settings = settingsRepository.getSettings()
+        val loginUrl = "${settings.serverUrl}/login"
 
         try {
             val response: HttpResponse = createHttpClient().use { client ->
@@ -43,35 +67,33 @@ class AuthenticationService(
             }
 
             if (response.status == HttpStatusCode.OK) {
-                val tokenResponse = response.body<TokenResponse>()
+                val loginResponse = response.body<LoginResponse>()
                 preferencesRepository.updateAccessPreferences(
-                    tokenResponse.accessToken,
-                    tokenResponse.refreshToken,
-                    tokenResponse.expiresIn,
-                    tokenResponse.refreshExpiresIn
+                    loginResponse.tokenResponse.accessToken,
+                    loginResponse.tokenResponse.refreshToken,
+                    loginResponse.tokenResponse.expiresIn,
+                    loginResponse.tokenResponse.refreshExpiresIn
                 )
                 Logger.withTag(authenticationTag).d("Login successful")
 
-                return Result.success(true)
+                return Result.success(loginResponse)
             }
-        } catch (e: RedirectResponseException) {
-            Logger.withTag(authenticationTag).e(e) { "Error logging in user $username" }
-            return Result.failure(e)
-        } catch (e: ClientRequestException) {
-            Logger.withTag(authenticationTag).e(e) { "Error logging in user $username" }
-            return Result.failure(e)
-        } catch (e: ServerResponseException) {
-            Logger.withTag(authenticationTag).e(e) { "Error logging in user $username" }
-            return Result.failure(e)
         } catch (e: Exception) {
             Logger.withTag(authenticationTag).e(e) { "Error logging in user $username" }
             return Result.failure(e)
         }
 
-        return Result.success(false)
+        return Result.failure(Exception("Login failed with status ${HttpStatusCode.Unauthorized}"))
     }
 
     private fun createHttpClient(): HttpClient = HttpClient(CIO) {
+        install(ContentNegotiation) {
+            json(Json {
+                ignoreUnknownKeys = true
+                prettyPrint = true
+                isLenient = true
+            })
+        }
         install(Logging) {
             level = LogLevel.INFO
             sanitizeHeader { header -> header == HttpHeaders.Authorization }
@@ -89,13 +111,15 @@ class AuthenticationService(
     }
 
     suspend fun refreshToken(): Result<Boolean> {
-        val refreshUrl = "https://localhost:8080/refresh"
+        if (!isRemoteEnabled()) return Result.success(false)
+
+        val settings = settingsRepository.getSettings()
+        val refreshUrl = "${settings.serverUrl}/refresh"
 
         try {
             val authenticationPreferences =
-                preferencesRepository.authenticationPreferencesFlow.lastOrNull()
-                    ?: // TODO: logout / navigate to login screen
-                    return Result.success(false)
+                preferencesRepository.authenticationPreferencesFlow.firstOrNull()
+                    ?: return Result.success(false)
 
             val response: HttpResponse = createHttpClient().use {
                 it.post(refreshUrl) {
@@ -116,15 +140,6 @@ class AuthenticationService(
                 )
                 return Result.success(true)
             }
-        } catch (e: RedirectResponseException) {
-            Logger.withTag(authenticationTag).e(e) { "Error refreshing token" }
-            return Result.failure(e)
-        } catch (e: ClientRequestException) {
-            Logger.withTag(authenticationTag).e(e) { "Error refreshing token" }
-            return Result.failure(e)
-        } catch (e: ServerResponseException) {
-            Logger.withTag(authenticationTag).e(e) { "Error refreshing token" }
-            return Result.failure(e)
         } catch (e: Exception) {
             Logger.withTag(authenticationTag).e(e) { "Error refreshing token" }
             return Result.failure(e)
@@ -137,34 +152,25 @@ class AuthenticationService(
         username: String,
         email: String,
         password: String,
-        firstName: String,
-        lastName: String
     ): Result<Boolean> {
-        val registerUrl = "https://localhost:8080/register"
+        if (!isRemoteEnabled()) return Result.success(true)
+
+        val settings = settingsRepository.getSettings()
+        val registerUrl = "${settings.serverUrl}/register"
 
         try {
             val response: HttpResponse = createHttpClient().use {
                 it.post(registerUrl) {
                     contentType(ContentType.Application.Json)
                     setBody(
-                        RegistrationDto(username, email, password, firstName, lastName)
+                        RegistrationDto(username, email, password)
                     )
                 }
             }
 
             if (response.status == HttpStatusCode.OK) {
-                // TODO: redirect to login page
                 return Result.success(true)
             }
-        } catch (e: RedirectResponseException) {
-            Logger.withTag(authenticationTag).e(e) { "Error registering user $username" }
-            return Result.failure(e)
-        } catch (e: ClientRequestException) {
-            Logger.withTag(authenticationTag).e(e) { "Error registering user $username" }
-            return Result.failure(e)
-        } catch (e: ServerResponseException) {
-            Logger.withTag(authenticationTag).e(e) { "Error registering user $username" }
-            return Result.failure(e)
         } catch (e: Exception) {
             Logger.withTag(authenticationTag).e(e) { "Error registering user $username" }
             return Result.failure(e)
