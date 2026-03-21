@@ -238,14 +238,35 @@ fun FoodListView(
                                 )
                             }
                         } else {
-                            items(state.data, key = { it.id.toString() }) { food ->
-                                FoodItem(
-                                    food = food,
-                                    onClick = { foodListViewModel.goToFoodDetail(food.id.toString()) },
-                                    onDelete = { foodListViewModel.deleteFood(it) },
-                                    onConsume = { foodListViewModel.consumeFood(it) },
-                                    onCopy = { foodListViewModel.copyFood(it) }
-                                )
+                            val groupedFoods = state.data.groupBy { it.name }
+                            groupedFoods.forEach { (name, foods) ->
+                                if (foods.size > 1) {
+                                    item(key = "header_$name") {
+                                        BadgedBox(
+                                            badge = {
+                                                Badge {
+                                                    Text(text = "${foods.size}")
+                                                }
+                                            }
+                                        ) {
+                                            Text(
+                                                text = name,
+                                                style = MaterialTheme.typography.titleSmall,
+                                                color = MaterialTheme.colorScheme.secondary,
+                                                modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
+                                            )
+                                        }
+                                    }
+                                }
+                                items(foods, key = { it.id.toString() }) { food ->
+                                    FoodItem(
+                                        food = food,
+                                        onClick = { foodListViewModel.goToFoodDetail(food.id.toString()) },
+                                        onDelete = { foodListViewModel.deleteFood(it) },
+                                        onConsume = { foodListViewModel.consumeFood(it) },
+                                        onCopy = { foodListViewModel.copyFood(it) }
+                                    )
+                                }
                             }
                         }
                     }
@@ -524,22 +545,12 @@ fun FoodItem(
                         }
                     },
                     headlineContent = {
-                        BadgedBox(
-                            badge = {
-                                if (food.amount > 1) {
-                                    Badge {
-                                        Text(text = "x${food.amount}")
-                                    }
-                                }
-                            }
-                        ) {
-                            Text(
-                                text = food.name,
-                                style = MaterialTheme.typography.titleMedium,
-                                maxLines = 1,
-                                modifier = Modifier.padding(end = 12.dp)
-                            )
-                        }
+                        Text(
+                            text = food.name,
+                            style = MaterialTheme.typography.titleMedium,
+                            maxLines = 1,
+                            modifier = Modifier.padding(end = 12.dp)
+                        )
                     },
                     supportingContent = {
                         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {

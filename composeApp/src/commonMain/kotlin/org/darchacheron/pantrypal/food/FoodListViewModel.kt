@@ -152,14 +152,9 @@ class FoodListViewModel(
     }
 
     fun consumeFood(food: Food) {
-        val food = food.copy(amount = food.amount - 1)
         viewModelScope.launch {
             try {
-                if (food.amount >= 1) {
-                    foodRepository.upsert(food)
-                } else {
-                    foodRepository.delete(food.id)
-                }
+                foodRepository.delete(food.id)
                 _messages.value = Message(Res.string.food_list_card_consume_success, food.name)
             } catch (exception: Exception) {
                 Logger.withTag(loggerTag).e { "Error deleting food: ${exception.message}" }

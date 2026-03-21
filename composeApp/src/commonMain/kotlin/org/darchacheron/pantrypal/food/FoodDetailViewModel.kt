@@ -38,7 +38,6 @@ class FoodDetailViewModel(
 
     val isAdding by derivedStateOf { originalFood == null }
 
-    var amountStr by mutableStateOf("1")
     var kiloCaloriesStr by mutableStateOf("")
     var kiloJouleStr by mutableStateOf("")
     var fatInGramsStr by mutableStateOf("")
@@ -55,7 +54,6 @@ class FoodDetailViewModel(
             id = foodId,
             profileId = Uuid.NIL, // Placeholder, will be updated in init
             name = "",
-            amount = 1,
             kiloCalories = null,
             kiloJoule = null,
             carbsInGrams = null,
@@ -133,7 +131,6 @@ class FoodDetailViewModel(
     }
 
     private fun updateStringsFromFood(food: Food) {
-        amountStr = food.amount.toString()
         kiloCaloriesStr = food.kiloCalories?.toString() ?: ""
         kiloJouleStr = food.kiloJoule?.toString() ?: ""
         fatInGramsStr = food.fatInGrams?.toString() ?: ""
@@ -148,7 +145,6 @@ class FoodDetailViewModel(
 
     private fun syncFoodFromStrings() {
         food = food.copy(
-            amount = amountStr.toIntOrNull() ?: 1,
             kiloCalories = kiloCaloriesStr.toIntOrNull(),
             kiloJoule = kiloJouleStr.toIntOrNull(),
             fatInGrams = fatInGramsStr.replace(',', '.').toFloatOrNull(),
@@ -203,24 +199,6 @@ class FoodDetailViewModel(
     fun updateName(name: String) {
         food = food.copy(name = name)
         _uiState.value = UiState.success(food)
-    }
-
-    fun updateAmount(value: String) {
-        amountStr = value
-        syncFoodFromStrings()
-        _uiState.value = UiState.success(food)
-    }
-
-    fun incrementAmount() {
-        val currentAmount = amountStr.toIntOrNull() ?: 1
-        updateAmount((currentAmount + 1).toString())
-    }
-
-    fun decrementAmount() {
-        val currentAmount = amountStr.toIntOrNull() ?: 1
-        if (currentAmount > 1) {
-            updateAmount((currentAmount - 1).toString())
-        }
     }
 
     fun updateKiloCalories(value: String) {
