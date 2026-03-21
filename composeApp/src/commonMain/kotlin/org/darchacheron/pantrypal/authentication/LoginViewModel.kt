@@ -6,6 +6,7 @@ import co.touchlab.kermit.Logger
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
+import kotlinx.serialization.Serializable
 import org.darchacheron.pantrypal.navigation.Navigator
 import org.darchacheron.pantrypal.profile.Profile
 import org.darchacheron.pantrypal.profile.ProfileRepository
@@ -16,12 +17,14 @@ import kotlin.time.Clock
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
+@Serializable
 data class Login(val username: String, val password: String)
 
 @OptIn(ExperimentalUuidApi::class)
 class LoginViewModel(
     private val authenticationService: AuthenticationService,
     private val profileRepository: ProfileRepository,
+    private val preferencesRepository: AuthenticationPreferencesRepository,
     private val navigator: Navigator,
 ) : ViewModel() {
     private val loginTag = "Login"
@@ -67,6 +70,15 @@ class LoginViewModel(
                                 createdAt = Clock.System.now()
                             )
                             profileRepository.upsert(profile)
+                            
+                            // Mark this profile as current
+                            preferencesRepository.updateAccessPreferences(
+                                loginResponse.tokenResponse.accessToken,
+                                loginResponse.tokenResponse.refreshToken,
+                                loginResponse.tokenResponse.expiresIn,
+                                loginResponse.tokenResponse.refreshExpiresIn,
+                                profile.id.toString()
+                            )
                         }
                         loginState.emit(UiState.success(Login(username, password)))
                         navigator.goToFoodList()
@@ -80,6 +92,10 @@ class LoginViewModel(
                     if (existingProfile != null) {
                         val inputHash = hashPassword(password)
                         if (existingProfile.passwordHash == inputHash) {
+                            // Mark this profile as current
+                            preferencesRepository.updateAccessPreferences(
+                                "", "", 0, 0, existingProfile.id.toString()
+                            )
                             loginState.emit(UiState.success(Login(username, password)))
                             navigator.goToFoodList()
                         } else {

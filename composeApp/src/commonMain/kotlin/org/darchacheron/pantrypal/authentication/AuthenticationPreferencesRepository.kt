@@ -22,20 +22,31 @@ class AuthenticationPreferencesRepository(private val dataStore: DataStore<Prefe
             val refreshToken = it[AuthenticationPreferencesKeys.REFRESH_TOKEN] ?: ""
             val expiresIn = it[AuthenticationPreferencesKeys.EXPIRES_IN] ?: 0
             val refreshExpiresIn = it[AuthenticationPreferencesKeys.REFRESH_EXPIRES_IN] ?: 0
-            AuthenticationPreferences(accessToken, refreshToken, expiresIn, refreshExpiresIn)
+            val localProfileId = it[AuthenticationPreferencesKeys.LOCAL_PROFILE_ID] ?: ""
+            AuthenticationPreferences(accessToken, refreshToken, expiresIn, refreshExpiresIn, localProfileId)
         }
 
     suspend fun updateAccessPreferences(
         accessToken: String,
         refreshToken: String,
         expiresIn: Int,
-        refreshExpiresIn: Int
+        refreshExpiresIn: Int,
+        localProfileId: String = ""
     ) {
         dataStore.edit {
             it[AuthenticationPreferencesKeys.ACCESS_TOKEN] = accessToken
             it[AuthenticationPreferencesKeys.REFRESH_TOKEN] = refreshToken
             it[AuthenticationPreferencesKeys.EXPIRES_IN] = expiresIn
             it[AuthenticationPreferencesKeys.REFRESH_EXPIRES_IN] = refreshExpiresIn
+            if (localProfileId.isNotBlank()) {
+                it[AuthenticationPreferencesKeys.LOCAL_PROFILE_ID] = localProfileId
+            }
+        }
+    }
+
+    suspend fun clearProfile() {
+        dataStore.edit {
+            it.remove(AuthenticationPreferencesKeys.LOCAL_PROFILE_ID)
         }
     }
 }

@@ -6,6 +6,7 @@ import co.touchlab.kermit.Logger
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import org.darchacheron.pantrypal.authentication.AuthenticationPreferencesRepository
 import org.darchacheron.pantrypal.navigation.Navigator
 import org.darchacheron.pantrypal.profile.ProfileRepository
 import org.darchacheron.pantrypal.ui.UiState
@@ -31,6 +32,7 @@ data class Message(
 class FoodListViewModel(
     private val foodRepository: FoodRepository,
     private val profileRepository: ProfileRepository,
+    private val authenticationPreferencesRepository: AuthenticationPreferencesRepository,
     private val navigator: Navigator,
 ) : ViewModel() {
     private val _searchQuery = MutableStateFlow("")
@@ -51,21 +53,24 @@ class FoodListViewModel(
     private val loggerTag = "FoodList"
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    val uiState: StateFlow<UiState<List<Food>>> = profileRepository.getProfile()
-        .flatMapLatest { profile ->
-            if (profile == null) {
+    val uiState: StateFlow<UiState<List<Food>>> = authenticationPreferencesRepository.authenticationPreferencesFlow
+        .map { it.localProfileId }
+        .distinctUntilChanged()
+        .flatMapLatest { profileId ->
+            if (profileId.isBlank()) {
                 flowOf(UiState.success(emptyList()))
             } else {
+                val uuid = Uuid.parse(profileId)
                 combine(
                     _searchQuery,
                     _sortOrder,
                     _sortDirection,
                     _filter
                 ) { query, sort, direction, filter ->
-                    DataParams(query, sort, direction, filter)
+                    DataParams(query, sort, direction, filter, uuid)
                 }.flatMapLatest { params ->
                     foodRepository.getFilteredAndSorted(
-                        profile.id,
+                        params.profileId,
                         params.query,
                         params.filter,
                         params.sort,
@@ -89,7 +94,8 @@ class FoodListViewModel(
         val query: String,
         val sort: FoodSortOrder,
         val direction: FoodSortDirection,
-        val filter: FoodFilter
+        val filter: FoodFilter,
+        val profileId: Uuid
     )
 
     fun setSearchQuery(query: String) {

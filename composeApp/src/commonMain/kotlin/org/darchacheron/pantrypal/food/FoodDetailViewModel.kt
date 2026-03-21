@@ -10,9 +10,11 @@ import co.touchlab.kermit.Logger
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.format.byUnicodePattern
+import org.darchacheron.pantrypal.authentication.AuthenticationPreferencesRepository
 import org.darchacheron.pantrypal.navigation.NavRoute
 import org.darchacheron.pantrypal.navigation.Navigator
 import org.darchacheron.pantrypal.navigation.OcrType
@@ -27,6 +29,7 @@ import kotlin.uuid.Uuid
 class FoodDetailViewModel(
     val navigationRoute: NavRoute.FoodDetail,
     private val foodRepository: FoodRepository,
+    private val authenticationPreferencesRepository: AuthenticationPreferencesRepository,
     private val navigator: Navigator,
 ) : ViewModel() {
     var foodId by mutableStateOf(if (navigationRoute.foodId != null) Uuid.parse(navigationRoute.foodId) else Uuid.generateV7())
@@ -50,6 +53,7 @@ class FoodDetailViewModel(
     private var food by mutableStateOf(
         Food(
             id = foodId,
+            profileId = Uuid.NIL, // Placeholder, will be updated in init
             name = "",
             amount = 1,
             kiloCalories = null,
@@ -91,28 +95,39 @@ class FoodDetailViewModel(
     }
 
     init {
-        foodId.let {
-            viewModelScope.launch {
-                _uiState.value = UiState.loading()
-                try {
-                    if (navigationRoute.foodId != null) {
-                        val loadedFood = foodRepository.getById(it)
-                        if (loadedFood != null) {
-                            food = loadedFood
-                            originalFood = loadedFood.copy()
-                            updateStringsFromFood(loadedFood)
-                            _uiState.value = UiState.success(food)
-                        } else {
-                            Logger.withTag(foodDetailLoggerTag).e { "Error loading food: $it" }
-                            _uiState.value = UiState.error(Res.string.food_detail_error_loading)
-                        }
-                    } else {
-                        _uiState.value = UiState.success(food)
-                    }
-                } catch (e: Exception) {
-                    Logger.withTag(foodDetailLoggerTag).e { "Error loading food: ${e.message}" }
-                    _uiState.value = UiState.error(Res.string.food_detail_error_loading)
+        viewModelScope.launch {
+            _uiState.value = UiState.loading()
+            try {
+                val preferences = authenticationPreferencesRepository.authenticationPreferencesFlow.first()
+                val currentProfileId = if (preferences.localProfileId.isNotBlank()) {
+                    Uuid.parse(preferences.localProfileId)
+                } else {
+                    null
                 }
+
+                if (currentProfileId == null) {
+                    _uiState.value = UiState.error(Res.string.food_detail_error_loading)
+                    return@launch
+                }
+
+                if (navigationRoute.foodId != null) {
+                    val loadedFood = foodRepository.getById(foodId)
+                    if (loadedFood != null) {
+                        food = loadedFood
+                        originalFood = loadedFood.copy()
+                        updateStringsFromFood(loadedFood)
+                        _uiState.value = UiState.success(food)
+                    } else {
+                        Logger.withTag(foodDetailLoggerTag).e { "Error loading food: $foodId" }
+                        _uiState.value = UiState.error(Res.string.food_detail_error_loading)
+                    }
+                } else {
+                    food = food.copy(profileId = currentProfileId)
+                    _uiState.value = UiState.success(food)
+                }
+            } catch (e: Exception) {
+                Logger.withTag(foodDetailLoggerTag).e { "Error loading food: ${e.message}" }
+                _uiState.value = UiState.error(Res.string.food_detail_error_loading)
             }
         }
     }

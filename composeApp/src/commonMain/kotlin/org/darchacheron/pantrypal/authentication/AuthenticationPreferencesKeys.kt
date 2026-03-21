@@ -8,4 +8,5 @@ internal object AuthenticationPreferencesKeys {
     val REFRESH_TOKEN = stringPreferencesKey("refresh_token")
     val EXPIRES_IN = intPreferencesKey("expires_in")
     val REFRESH_EXPIRES_IN = intPreferencesKey("refresh_expires_in")
+    val LOCAL_PROFILE_ID = stringPreferencesKey("local_profile_id")
 }
