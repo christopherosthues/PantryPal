@@ -90,8 +90,7 @@ class LoginViewModel(
                     val existingProfile = profileRepository.getProfileByUsername(username).firstOrNull()
                     
                     if (existingProfile != null) {
-                        val inputHash = hashPassword(password)
-                        if (existingProfile.passwordHash == inputHash) {
+                        if (verifyPassword(password, existingProfile.passwordHash)) {
                             // Mark this profile as current
                             preferencesRepository.updateAccessPreferences(
                                 "", "", 0, 0, existingProfile.id.toString()
@@ -110,12 +109,6 @@ class LoginViewModel(
                 loginState.emit(UiState.error(Res.string.login_error))
             }
         }
-    }
-
-    private fun hashPassword(password: String): String {
-        // Dummy hash for demonstration. Use a secure library in production.
-        // TODO: use something like scrypt, bcrypt or argon2id
-        return password.reversed()
     }
 
     fun openRegister() {

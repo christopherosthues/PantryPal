@@ -19,9 +19,6 @@ interface ProfileDao {
     @Query("SELECT * FROM profile WHERE username = :username")
     fun getProfileByUsername(username: String): Flow<ProfileEntity?>
 
-    @Query("SELECT * FROM profile LIMIT 1")
-    fun getAnyProfile(): Flow<ProfileEntity?>
-
     @Upsert
     suspend fun upsert(profile: ProfileEntity)
 

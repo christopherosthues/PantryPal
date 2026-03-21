@@ -15,13 +15,16 @@ import org.darchacheron.pantrypal.food.FoodDao
 import org.darchacheron.pantrypal.food.FoodEntity
 import org.darchacheron.pantrypal.profile.ProfileDao
 import org.darchacheron.pantrypal.profile.ProfileEntity
+import kotlin.time.Clock
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
 @Database(
     entities = [
         FoodEntity::class,
         ProfileEntity::class
     ],
-    version = 4
+    version = 3
 )
 @TypeConverters(
     InstantConverter::class,
@@ -44,23 +47,26 @@ abstract class PantryPalDatabase : RoomDatabase() {
             }
         }
 
+        @OptIn(ExperimentalUuidApi::class)
         val MIGRATION_2_3 = object : Migration(2, 3) {
             override fun migrate(connection: SQLiteConnection) {
+                // 1. Create profile table with all columns
                 connection.execSQL(
-                    "CREATE TABLE IF NOT EXISTS `profile` (`id` TEXT NOT NULL, `serverId` TEXT, `username` TEXT NOT NULL, `email` TEXT NOT NULL, `createdAt` TEXT NOT NULL, PRIMARY KEY(`id`))"
+                    "CREATE TABLE IF NOT EXISTS `profile` (`id` TEXT NOT NULL, `serverId` TEXT, `username` TEXT NOT NULL, `email` TEXT NOT NULL, `passwordHash` TEXT, `createdAt` TEXT NOT NULL, PRIMARY KEY(`id`))"
                 )
-            }
-        }
 
-        val MIGRATION_3_4 = object : Migration(3, 4) {
-            override fun migrate(connection: SQLiteConnection) {
-                // Add profileId column to food table
-                connection.execSQL("ALTER TABLE food ADD COLUMN profileId TEXT NOT NULL DEFAULT ''")
-                // Create index for profileId
+                // 2. Ensure a default profile exists to associate legacy data with
+                val defaultProfileId = Uuid.generateV7()
+                val createdAt = Clock.System.now()
+                connection.execSQL(
+                    "INSERT OR IGNORE INTO `profile` (id, username, email, passwordHash, createdAt) VALUES ('$defaultProfileId', 'Local User', '', NULL, '$createdAt')"
+                )
+
+                // 3. Add profileId column to food table
+                connection.execSQL("ALTER TABLE food ADD COLUMN profileId TEXT NOT NULL DEFAULT '$defaultProfileId'")
+
+                // 4. Create index for profileId
                 connection.execSQL("CREATE INDEX IF NOT EXISTS `index_food_profileId` ON `food` (`profileId`)")
-                // Note: Foreign key constraints cannot be added via ALTER TABLE in SQLite. 
-                // Full table recreation would be needed for a strict FK constraint if required by Room validation at runtime.
-                // However, Room often accepts the schema if the column and index exist.
             }
         }
     }

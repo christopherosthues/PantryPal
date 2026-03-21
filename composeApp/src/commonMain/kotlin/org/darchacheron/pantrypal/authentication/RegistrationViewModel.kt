@@ -98,10 +98,4 @@ class RegistrationViewModel(
         )
         profileRepository.upsert(profile)
     }
-
-    private fun hashPassword(password: String): String {
-        // Dummy hash for demonstration. Use a secure library in production.
-        // TODO: use something like scrypt, bcrypt or argon2id
-        return password.reversed() 
-    }
 }

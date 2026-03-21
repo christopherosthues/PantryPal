@@ -8,7 +8,6 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import org.darchacheron.pantrypal.authentication.AuthenticationPreferencesRepository
 import org.darchacheron.pantrypal.navigation.Navigator
-import org.darchacheron.pantrypal.profile.ProfileRepository
 import org.darchacheron.pantrypal.ui.UiState
 import org.jetbrains.compose.resources.StringResource
 import pantrypal.composeapp.generated.resources.Res
@@ -31,7 +30,6 @@ data class Message(
 @OptIn(ExperimentalUuidApi::class)
 class FoodListViewModel(
     private val foodRepository: FoodRepository,
-    private val profileRepository: ProfileRepository,
     private val authenticationPreferencesRepository: AuthenticationPreferencesRepository,
     private val navigator: Navigator,
 ) : ViewModel() {

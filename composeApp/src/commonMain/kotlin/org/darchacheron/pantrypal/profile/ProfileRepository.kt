@@ -18,9 +18,6 @@ class ProfileRepository(
     fun getProfileByUsername(username: String): Flow<Profile?> =
         profileDao.getProfileByUsername(username).map { it?.toProfile() }
 
-    fun getAnyProfile(): Flow<Profile?> =
-        profileDao.getAnyProfile().map { it?.toProfile() }
-
     suspend fun upsert(profile: Profile) =
         profileDao.upsert(profile.toProfileEntity())
 
