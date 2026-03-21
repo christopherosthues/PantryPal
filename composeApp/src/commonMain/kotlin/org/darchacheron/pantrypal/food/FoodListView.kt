@@ -229,7 +229,7 @@ fun FoodListView(
                             }
                         }
 
-                        if (state.data.isNullOrEmpty()) {
+                        if (state.data.isEmpty()) {
                             item {
                                 Text(
                                     text = stringResource(Res.string.food_list_empty),

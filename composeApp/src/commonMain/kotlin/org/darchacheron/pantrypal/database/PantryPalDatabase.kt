@@ -56,16 +56,73 @@ abstract class PantryPalDatabase : RoomDatabase() {
                 )
 
                 // 2. Ensure a default profile exists to associate legacy data with
-                val defaultProfileId = Uuid.generateV7()
-                val createdAt = Clock.System.now()
+                val defaultProfileId = Uuid.generateV7().toString()
+                val createdAtNow = Clock.System.now().toString()
                 connection.execSQL(
-                    "INSERT OR IGNORE INTO `profile` (id, username, email, passwordHash, createdAt) VALUES ('$defaultProfileId', 'Local User', '', NULL, '$createdAt')"
+                    "INSERT OR IGNORE INTO `profile` (id, username, email, passwordHash, createdAt) VALUES ('$defaultProfileId', 'Local User', '', NULL, '$createdAtNow')"
                 )
 
                 // 3. Add profileId column to food table
                 connection.execSQL("ALTER TABLE food ADD COLUMN profileId TEXT NOT NULL DEFAULT '$defaultProfileId'")
 
-                // 4. Create index for profileId
+                // 4. Duplicate food items based on amount and remove openedAt for copies
+                val selectSql = "SELECT id, name, amount, kiloCalories, kiloJoule, fatInGrams, saturatedFattyAcidsInGrams, carbsInGrams, sugarInGrams, dietaryFiberInGrams, proteinInGrams, saltInGrams, fillingQuantity, isLiquid, bestBeforeUsedByDate, isUseBy, createdAt, lastModifiedAt, imagePath, additionalImagePaths, profileId FROM food WHERE amount > 1"
+                connection.prepare(selectSql).use { statement ->
+                    while (statement.step()) {
+                        val id = statement.getText(0)
+                        val name = statement.getText(1)
+                        val amount = statement.getLong(2)
+                        val kiloCalories = if (statement.isNull(3)) "NULL" else statement.getLong(3)
+                        val kiloJoule = if (statement.isNull(4)) "NULL" else statement.getLong(4)
+                        val fatInGrams = if (statement.isNull(5)) "NULL" else statement.getDouble(5)
+                        val saturatedFattyAcidsInGrams = if (statement.isNull(6)) "NULL" else statement.getDouble(6)
+                        val carbsInGrams = if (statement.isNull(7)) "NULL" else statement.getDouble(7)
+                        val sugarInGrams = if (statement.isNull(8)) "NULL" else statement.getDouble(8)
+                        val dietaryFiberInGrams = if (statement.isNull(9)) "NULL" else statement.getDouble(9)
+                        val proteinInGrams = if (statement.isNull(10)) "NULL" else statement.getDouble(10)
+                        val saltInGrams = if (statement.isNull(11)) "NULL" else statement.getDouble(11)
+                        val fillingQuantity = if (statement.isNull(12)) "NULL" else statement.getDouble(12)
+                        val isLiquid = statement.getLong(13)
+                        val bestBeforeUsedByDate = if (statement.isNull(14)) "NULL" else "'${statement.getText(14)}'"
+                        val isUseBy = statement.getLong(15)
+                        val createdAtStr = statement.getText(16)
+                        val lastModifiedAtStr = statement.getText(17)
+                        val imagePath = if (statement.isNull(18)) "NULL" else "'${statement.getText(18)}'"
+                        val additionalImagePaths = statement.getText(19)
+                        val profileId = statement.getText(20)
+
+                        for (i in 1 until amount) {
+                            val newId = Uuid.generateV7().toString()
+                            connection.execSQL(
+                                """
+                                INSERT INTO food (id, name, amount, kiloCalories, kiloJoule, fatInGrams, saturatedFattyAcidsInGrams, carbsInGrams, sugarInGrams, dietaryFiberInGrams, proteinInGrams, saltInGrams, fillingQuantity, isLiquid, bestBeforeUsedByDate, isUseBy, openedAt, createdAt, lastModifiedAt, imagePath, additionalImagePaths, profileId)
+                                VALUES ('$newId', '$name', 1, $kiloCalories, $kiloJoule, $fatInGrams, $saturatedFattyAcidsInGrams, $carbsInGrams, $sugarInGrams, $dietaryFiberInGrams, $proteinInGrams, $saltInGrams, $fillingQuantity, $isLiquid, $bestBeforeUsedByDate, $isUseBy, NULL, '$createdAtStr', '$lastModifiedAtStr', $imagePath, '$additionalImagePaths', '$profileId')
+                                """.trimIndent()
+                            )
+                        }
+                        // Set the amount of the original row to 1
+                        connection.execSQL("UPDATE food SET amount = 1 WHERE id = '$id'")
+                    }
+                }
+
+                // 5. Create new food table without amount
+                connection.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `food_new` (`id` TEXT NOT NULL, `profileId` TEXT NOT NULL, `name` TEXT NOT NULL, `kiloCalories` INTEGER, `kiloJoule` INTEGER, `fatInGrams` REAL, `saturatedFattyAcidsInGrams` REAL, `carbsInGrams` REAL, `sugarInGrams` REAL, `dietaryFiberInGrams` REAL, `proteinInGrams` REAL, `saltInGrams` REAL, `fillingQuantity` REAL, `isLiquid` INTEGER NOT NULL, `bestBeforeUsedByDate` TEXT, `isUseBy` INTEGER NOT NULL, `openedAt` TEXT, `createdAt` TEXT NOT NULL, `lastModifiedAt` TEXT NOT NULL, `imagePath` TEXT, `additionalImagePaths` TEXT NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`profileId`) REFERENCES `profile`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )"
+                )
+
+                // 6. Copy data to new table (excluding amount)
+                connection.execSQL(
+                    """
+                    INSERT INTO food_new (id, profileId, name, kiloCalories, kiloJoule, fatInGrams, saturatedFattyAcidsInGrams, carbsInGrams, sugarInGrams, dietaryFiberInGrams, proteinInGrams, saltInGrams, fillingQuantity, isLiquid, bestBeforeUsedByDate, isUseBy, openedAt, createdAt, lastModifiedAt, imagePath, additionalImagePaths)
+                    SELECT id, profileId, name, kiloCalories, kiloJoule, fatInGrams, saturatedFattyAcidsInGrams, carbsInGrams, sugarInGrams, dietaryFiberInGrams, proteinInGrams, saltInGrams, fillingQuantity, isLiquid, bestBeforeUsedByDate, isUseBy, openedAt, createdAt, lastModifiedAt, imagePath, additionalImagePaths FROM food
+                    """.trimIndent()
+                )
+
+                // 7. Drop old table and rename new one
+                connection.execSQL("DROP TABLE food")
+                connection.execSQL("ALTER TABLE food_new RENAME TO food")
+
+                // 8. Create index for profileId
                 connection.execSQL("CREATE INDEX IF NOT EXISTS `index_food_profileId` ON `food` (`profileId`)")
             }
         }
