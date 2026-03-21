@@ -6,41 +6,48 @@ import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.rememberNavBackStack
 
 class Navigator {
-    private var _backStack: NavBackStack<NavKey>? = null
+    private var _mainBackStack: NavBackStack<NavKey>? = null
+    private var _bottomBackStack: NavBackStack<NavKey>? = null
+    private var _foodBackStack: NavBackStack<NavKey>? = null
 
-    val backStack get() = _backStack
+
+    val backStack get() = _mainBackStack // TODO: return correct backstack
 
     private var simpleCameraCallback: ((String) -> Unit)? = null
     private var ocrCameraCallback: ((String) -> Unit)? = null
 
     @Composable
     fun Initialize() {
-        _backStack = rememberNavBackStack(navConfig, NavRoute.Login)
+        _mainBackStack = rememberNavBackStack(navConfig, NavRoute.Login)
+        _bottomBackStack = rememberNavBackStack(bottomNavConfig, BottomNavRoute.FoodList)
+        _foodBackStack = rememberNavBackStack(foodNavConfig, FoodNavRoute.FoodDetail())
     }
 
+    // TODO: Handle multiple backstacks
+
     fun goToMain() {
-        _backStack?.clear()
-        _backStack?.add(NavRoute.Main)
+        _mainBackStack?.clear()
+        _mainBackStack?.add(NavRoute.Main)
     }
 
     fun goToFoodList() {
-        _backStack?.removeAll { it is NavRoute.FoodList }
-        _backStack?.add(NavRoute.FoodList)
+        _mainBackStack?.removeAll { it is BottomNavRoute.FoodList }
+        _mainBackStack?.add(BottomNavRoute.FoodList)
     }
 
     fun goToFoodDetail(foodId: String? = null) {
-        _backStack?.removeAll { it is NavRoute.FoodDetail }
-        _backStack?.add(NavRoute.FoodDetail(foodId))
+        _mainBackStack?.removeAll { it is FoodNavRoute.FoodDetail }
+        _mainBackStack?.add(FoodNavRoute.FoodDetail(foodId))
     }
 
     fun goToSimpleCamera(onSuccess: (String) -> Unit) {
         simpleCameraCallback = onSuccess
-        _backStack?.add(NavRoute.SimpleCamera)
+        _mainBackStack?.add(FoodNavRoute.SimpleCamera)
     }
 
     fun goToOcrCamera(type: OcrType, onRecognized: (String) -> Unit) {
         ocrCameraCallback = onRecognized
-        _backStack?.add(NavRoute.OcrCamera(type))
+        _mainBackStack?.add(FoodNavRoute.OcrCamera(type))
     }
 
     fun onSimpleCameraResult(result: String) {
@@ -54,25 +61,25 @@ class Navigator {
     }
 
     fun goToSettings() {
-        _backStack?.add(NavRoute.Settings)
+        _mainBackStack?.add(NavRoute.Settings)
     }
 
     fun goToLogin() {
-        _backStack?.clear()
-        _backStack?.add(NavRoute.Login)
+        _mainBackStack?.clear()
+        _mainBackStack?.add(NavRoute.Login)
     }
 
     fun goToRegister() {
-        _backStack?.clear()
-        _backStack?.add(NavRoute.Register)
+        _mainBackStack?.clear()
+        _mainBackStack?.add(NavRoute.Register)
     }
 
     fun goToProfile() {
-        _backStack?.removeAll { it is NavRoute.Profile }
-        _backStack?.add(NavRoute.Profile)
+        _mainBackStack?.removeAll { it is BottomNavRoute.Profile }
+        _mainBackStack?.add(BottomNavRoute.Profile)
     }
 
     fun goBack() {
-        _backStack?.removeLastOrNull()
+        _mainBackStack?.removeLastOrNull()
     }
 }

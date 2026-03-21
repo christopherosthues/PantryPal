@@ -9,14 +9,29 @@ internal val navConfig = SavedStateConfiguration {
     serializersModule = SerializersModule {
         polymorphic(NavKey::class) {
             subclass(NavRoute.Main::class, NavRoute.Main.serializer())
-            subclass(NavRoute.FoodList::class, NavRoute.FoodList.serializer())
-            subclass(NavRoute.FoodDetail::class, NavRoute.FoodDetail.serializer())
-            subclass(NavRoute.SimpleCamera::class, NavRoute.SimpleCamera.serializer())
-            subclass(NavRoute.OcrCamera::class, NavRoute.OcrCamera.serializer())
             subclass(NavRoute.Settings::class, NavRoute.Settings.serializer())
             subclass(NavRoute.Login::class, NavRoute.Login.serializer())
             subclass(NavRoute.Register::class, NavRoute.Register.serializer())
-            subclass(NavRoute.Profile::class, NavRoute.Profile.serializer())
+        }
+    }
+}
+
+internal val bottomNavConfig = SavedStateConfiguration {
+    serializersModule = SerializersModule {
+        polymorphic(NavKey::class) {
+            subclass(BottomNavRoute.FoodList::class, BottomNavRoute.FoodList.serializer())
+            subclass(BottomNavRoute.InventoryList::class, BottomNavRoute.InventoryList.serializer())
+            subclass(BottomNavRoute.Profile::class, BottomNavRoute.Profile.serializer())
+        }
+    }
+}
+
+internal val foodNavConfig = SavedStateConfiguration {
+    serializersModule = SerializersModule {
+        polymorphic(NavKey::class) {
+            subclass(FoodNavRoute.FoodDetail::class, FoodNavRoute.FoodDetail.serializer())
+            subclass(FoodNavRoute.SimpleCamera::class, FoodNavRoute.SimpleCamera.serializer())
+            subclass(FoodNavRoute.OcrCamera::class, FoodNavRoute.OcrCamera.serializer())
         }
     }
 }
