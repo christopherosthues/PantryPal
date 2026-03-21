@@ -14,7 +14,9 @@ object JwtUtils {
     fun getUserIdFromToken(token: String): String? {
         return try {
             val parts = token.split(".")
-            if (parts.size < 2) return null
+            if (parts.size < 2) {
+                return null
+            }
             
             // JWT payload is the second part
             val payloadBase64 = parts[1]
