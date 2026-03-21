@@ -18,8 +18,13 @@ class Navigator {
         _backStack = rememberNavBackStack(navConfig, NavRoute.Login)
     }
 
-    fun goToFoodList() {
+    fun goToMain() {
         _backStack?.clear()
+        _backStack?.add(NavRoute.Main)
+    }
+
+    fun goToFoodList() {
+        _backStack?.removeAll { it is NavRoute.FoodList }
         _backStack?.add(NavRoute.FoodList)
     }
 
@@ -60,6 +65,11 @@ class Navigator {
     fun goToRegister() {
         _backStack?.clear()
         _backStack?.add(NavRoute.Register)
+    }
+
+    fun goToProfile() {
+        _backStack?.removeAll { it is NavRoute.Profile }
+        _backStack?.add(NavRoute.Profile)
     }
 
     fun goBack() {

@@ -81,7 +81,7 @@ class LoginViewModel(
                             )
                         }
                         loginState.emit(UiState.success(Login(username, password)))
-                        navigator.goToFoodList()
+                        navigator.goToMain()
                     } else {
                         loginState.emit(UiState.error(Res.string.login_error))
                     }
@@ -96,7 +96,7 @@ class LoginViewModel(
                                 "", "", 0, 0, existingProfile.id.toString()
                             )
                             loginState.emit(UiState.success(Login(username, password)))
-                            navigator.goToFoodList()
+                            navigator.goToMain()
                         } else {
                             loginState.emit(UiState.error(Res.string.login_error))
                         }

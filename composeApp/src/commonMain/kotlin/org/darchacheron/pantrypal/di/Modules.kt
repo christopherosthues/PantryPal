@@ -20,6 +20,7 @@ import androidx.navigation3.ui.NavDisplay
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import okio.FileSystem
 import okio.SYSTEM
+import org.darchacheron.pantrypal.MainView
 import org.darchacheron.pantrypal.authentication.AuthenticationPreferencesRepository
 import org.darchacheron.pantrypal.authentication.AuthenticationService
 import org.darchacheron.pantrypal.authentication.LoginView
@@ -40,6 +41,8 @@ import org.darchacheron.pantrypal.food.SimpleCameraViewModel
 import org.darchacheron.pantrypal.navigation.NavRoute
 import org.darchacheron.pantrypal.navigation.Navigator
 import org.darchacheron.pantrypal.profile.ProfileRepository
+import org.darchacheron.pantrypal.profile.ProfileView
+import org.darchacheron.pantrypal.profile.ProfileViewModel
 import org.darchacheron.pantrypal.settings.SettingsView
 import org.darchacheron.pantrypal.settings.SettingsViewModel
 import org.jetbrains.compose.resources.stringResource
@@ -58,6 +61,10 @@ expect val platformModule: Module
 val navigationModule = module {
     single { Navigator() }
 
+    navigation<NavRoute.Main> {
+        MainView()
+    }
+
     navigation<NavRoute.FoodList>(
         metadata = ListDetailSceneStrategy.listPane(
             detailPlaceholder = {
@@ -74,6 +81,14 @@ val navigationModule = module {
     ) {
         FoodListView(
             foodListViewModel = koinViewModel(),
+        )
+    }
+
+    navigation<NavRoute.Profile> {
+        val navigator = get<Navigator>()
+        ProfileView(
+            viewModel = koinViewModel(),
+            onGoToSettings = { navigator.goToSettings() }
         )
     }
 
@@ -192,6 +207,7 @@ val sharedModule =
         viewModelOf(::SimpleCameraViewModel)
         viewModelOf(::LoginViewModel)
         viewModelOf(::RegistrationViewModel)
+        viewModelOf(::ProfileViewModel)
 
         factoryOf(::AuthenticationService)
     }

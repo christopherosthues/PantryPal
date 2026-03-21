@@ -143,4 +143,18 @@
     <string name="registration_register">Register</string>
     <string name="registration_email">Email</string>
     <string name="registration_error">An unexpected error occurred</string>
+
+    <!-- Main -->
+    <string name="main_tab_food">Food</string>
+    <string name="main_tab_profile">Profile</string>
+
+    <!-- Profile -->
+    <string name="profile_title">Profile</string>
+    <string name="profile_username_label">Username</string>
+    <string name="profile_email_label">Email</string>
+    <string name="profile_password_label">New Password</string>
+    <string name="profile_save_button">Save Changes</string>
+    <string name="profile_logout_button">Logout</string>
+    <string name="profile_delete_button">Delete Account</string>
+    <string name="profile_error_update">Failed to update profile</string>
 </resources>

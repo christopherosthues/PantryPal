@@ -6,16 +6,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 sealed interface NavRoute : NavKey {
     @Serializable
-    data object FoodList : NavRoute
-
-    @Serializable
-    data class FoodDetail(val foodId: String? = null) : NavRoute
-
-    @Serializable
-    data object SimpleCamera : NavRoute
-
-    @Serializable
-    data class OcrCamera(val type: OcrType) : NavRoute
+    data object Main : NavRoute
 
     @Serializable
     data object Settings : NavRoute
@@ -25,9 +16,4 @@ sealed interface NavRoute : NavKey {
 
     @Serializable
     data object Register : NavRoute
-}
-
-@Serializable
-enum class OcrType {
-    NAME, AMOUNT, NUTRIENTS, DATE
 }

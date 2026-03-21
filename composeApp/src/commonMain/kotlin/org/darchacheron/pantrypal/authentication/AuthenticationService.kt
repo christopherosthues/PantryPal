@@ -7,6 +7,9 @@ import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logging
+import io.ktor.client.request.delete
+import io.ktor.client.request.header
+import io.ktor.client.request.patch
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
@@ -42,6 +45,13 @@ data class LoginResponse(
 data class RegistrationResponse(
     val tokenResponse: TokenResponse,
     val user: UserResponse
+)
+
+@Serializable
+data class UpdateUserDto(
+    val username: String? = null,
+    val email: String? = null,
+    val password: String? = null
 )
 
 @OptIn(ExperimentalUuidApi::class)
@@ -190,5 +200,49 @@ class AuthenticationService(
         }
 
         return Result.failure(Exception("Registration failed"))
+    }
+
+    suspend fun updateUser(
+        username: String? = null,
+        email: String? = null,
+        password: String? = null
+    ): Result<Boolean> {
+        if (!isRemoteEnabled()) return Result.success(true)
+
+        val settings = settingsRepository.getSettings()
+        val updateUrl = "${settings.serverUrl}/users/me"
+
+        try {
+            val prefs = preferencesRepository.authenticationPreferencesFlow.firstOrNull() ?: return Result.failure(Exception("Not authenticated"))
+            val response: HttpResponse = createHttpClient().use {
+                it.patch(updateUrl) {
+                    header(HttpHeaders.Authorization, "Bearer ${prefs.accessToken}")
+                    contentType(ContentType.Application.Json)
+                    setBody(UpdateUserDto(username, email, password))
+                }
+            }
+            return if (response.status == HttpStatusCode.OK) Result.success(true) else Result.failure(Exception("Update failed"))
+        } catch (e: Exception) {
+            return Result.failure(e)
+        }
+    }
+
+    suspend fun deleteUser(): Result<Boolean> {
+        if (!isRemoteEnabled()) return Result.success(true)
+
+        val settings = settingsRepository.getSettings()
+        val deleteUrl = "${settings.serverUrl}/users/me"
+
+        try {
+            val prefs = preferencesRepository.authenticationPreferencesFlow.firstOrNull() ?: return Result.failure(Exception("Not authenticated"))
+            val response: HttpResponse = createHttpClient().use {
+                it.delete(deleteUrl) {
+                    header(HttpHeaders.Authorization, "Bearer ${prefs.accessToken}")
+                }
+            }
+            return if (response.status == HttpStatusCode.NoContent || response.status == HttpStatusCode.OK) Result.success(true) else Result.failure(Exception("Delete failed"))
+        } catch (e: Exception) {
+            return Result.failure(e)
+        }
     }
 }

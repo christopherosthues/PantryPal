@@ -8,6 +8,7 @@ import kotlinx.serialization.modules.polymorphic
 internal val navConfig = SavedStateConfiguration {
     serializersModule = SerializersModule {
         polymorphic(NavKey::class) {
+            subclass(NavRoute.Main::class, NavRoute.Main.serializer())
             subclass(NavRoute.FoodList::class, NavRoute.FoodList.serializer())
             subclass(NavRoute.FoodDetail::class, NavRoute.FoodDetail.serializer())
             subclass(NavRoute.SimpleCamera::class, NavRoute.SimpleCamera.serializer())
@@ -15,6 +16,7 @@ internal val navConfig = SavedStateConfiguration {
             subclass(NavRoute.Settings::class, NavRoute.Settings.serializer())
             subclass(NavRoute.Login::class, NavRoute.Login.serializer())
             subclass(NavRoute.Register::class, NavRoute.Register.serializer())
+            subclass(NavRoute.Profile::class, NavRoute.Profile.serializer())
         }
     }
 }

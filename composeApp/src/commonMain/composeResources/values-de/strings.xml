@@ -141,4 +141,18 @@
     <string name="registration_register">Registrieren</string>
     <string name="registration_email">Email</string>
     <string name="registration_error">Ein unerwarteter Fehler ist aufgetreten</string>
+
+    <!-- Main -->
+    <string name="main_tab_food">Lebensmittel</string>
+    <string name="main_tab_profile">Profil</string>
+
+    <!-- Profile -->
+    <string name="profile_title">Profil</string>
+    <string name="profile_username_label">Nutzername</string>
+    <string name="profile_email_label">E-Mail</string>
+    <string name="profile_password_label">Neues Passwort</string>
+    <string name="profile_save_button">Änderungen speichern</string>
+    <string name="profile_logout_button">Logout</string>
+    <string name="profile_delete_button">Konto löschen</string>
+    <string name="profile_error_update">Fehler beim Aktualisieren des Profils</string>
 </resources>
