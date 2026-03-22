@@ -14,11 +14,15 @@ interface InventoryItemDao {
         SELECT * FROM inventory_item 
         WHERE profileId = :profileId
         AND (:query = '' OR name LIKE '%' || :query || '%')
-        ORDER BY name ASC
+        ORDER BY 
+        CASE WHEN :sort = 'NAME' AND :direction = 'ASCENDING' THEN name END ASC,
+        CASE WHEN :sort = 'NAME' AND :direction = 'DESCENDING' THEN name END DESC
     """)
     fun getFilteredAndSorted(
         profileId: Uuid,
-        query: String
+        query: String,
+        sort: String,
+        direction: String,
     ): Flow<List<InventoryItemEntity>>
 
     @Query("SELECT * FROM inventory_item WHERE id = :id")

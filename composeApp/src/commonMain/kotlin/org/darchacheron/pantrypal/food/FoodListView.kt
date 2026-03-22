@@ -450,6 +450,7 @@ fun FoodItem(
             radius = 250f,
         ),
         leftRevealActions = listOf(
+            // TODO: Move consume to delete and add an add to inventory
             SwipeAction(
                 label = stringResource(Res.string.food_list_card_content_description_consume, food.name),
                 onAction = { onConsume(food) },

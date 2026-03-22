@@ -168,8 +168,10 @@
     <string name="inventory_list_empty">No templates found. Create one!</string>
     <string name="inventory_list_search_placeholder">Search templates...</string>
     <string name="inventory_list_error_loading">Error loading templates</string>
-    <string name="inventory_list_content_description_delete">Delete template</string>
-    <string name="inventory_list_content_description_add_to_pantry">Add to Pantry</string>
+    <string name="inventory_list_card_content_description_delete">Delete template</string>
+    <string name="inventory_list_card_content_description_add_to_pantry">Add to Pantry</string>
+    <string name="inventory_list_sort_name_asc">Name (A-Z)</string>
+    <string name="inventory_list_sort_name_desc">Name (Z-A)</string>
 
     <string name="inventory_detail_title_add">Add Template</string>
     <string name="inventory_detail_title_edit">Edit Template</string>

@@ -8,12 +8,17 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import org.darchacheron.pantrypal.authentication.AuthenticationPreferencesRepository
 import org.darchacheron.pantrypal.food.Food
+import org.darchacheron.pantrypal.food.FoodFilter
 import org.darchacheron.pantrypal.food.FoodRepository
+import org.darchacheron.pantrypal.food.FoodSortDirection
+import org.darchacheron.pantrypal.food.FoodSortOrder
+import org.darchacheron.pantrypal.food.Message
 import org.darchacheron.pantrypal.navigation.Navigator
 import org.darchacheron.pantrypal.ui.UiState
 import org.jetbrains.compose.resources.StringResource
 import pantrypal.composeapp.generated.resources.Res
 import pantrypal.composeapp.generated.resources.food_list_error_loading
+import kotlin.collections.emptyList
 import kotlin.time.Clock
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -28,6 +33,15 @@ class InventoryListViewModel(
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
+    private val _sortOrder = MutableStateFlow(InventorySortOrder.Name)
+    val sortOrder: StateFlow<InventorySortOrder> = _sortOrder.asStateFlow()
+
+    private val _sortDirection = MutableStateFlow(InventorySortDirection.Ascending)
+    val sortDirection: StateFlow<InventorySortDirection> = _sortDirection.asStateFlow()
+
+    private val _messages = MutableStateFlow<Message?>(null)
+    val messages: StateFlow<Message?> = _messages
+
     private val loggerTag = "InventoryList"
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -39,8 +53,19 @@ class InventoryListViewModel(
                 flowOf(UiState.success(emptyList()))
             } else {
                 val uuid = Uuid.parse(profileId)
-                _searchQuery.flatMapLatest { query ->
-                    inventoryRepository.getFilteredAndSorted(uuid, query)
+                combine(
+                    _searchQuery,
+                    _sortOrder,
+                    _sortDirection
+                ) { query, sort, direction ->
+                    DataParams(query, sort, direction, uuid)
+                }.flatMapLatest { params ->
+                    inventoryRepository.getFilteredAndSorted(
+                        params.profileId,
+                        params.query,
+                        params.sort,
+                        params.direction
+                    )
                         .map { items -> UiState.success(items) }
                         .onStart { emit(UiState.loading()) }
                         .catch { e ->
@@ -55,8 +80,20 @@ class InventoryListViewModel(
             initialValue = UiState.loading()
         )
 
+    private data class DataParams(
+        val query: String,
+        val sort: InventorySortOrder,
+        val direction: InventorySortDirection,
+        val profileId: Uuid
+    )
+
     fun setSearchQuery(query: String) {
         _searchQuery.value = query
+    }
+
+    fun setSort(order: InventorySortOrder, direction: InventorySortDirection) {
+        _sortOrder.value = order
+        _sortDirection.value = direction
     }
 
     fun deleteItem(item: InventoryItem) {
@@ -101,6 +138,14 @@ class InventoryListViewModel(
                 Logger.withTag(loggerTag).e { "Error adding to food list: ${e.message}" }
             }
         }
+    }
+
+    fun clearMessage() {
+        _messages.value = null
+    }
+
+    fun goToItemDetails(itemId: String? = null) {
+        navigator.goToInventoryDetail(itemId)
     }
 
     fun goToSettings() {
