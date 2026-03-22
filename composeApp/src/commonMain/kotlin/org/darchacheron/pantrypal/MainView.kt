@@ -13,8 +13,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import org.darchacheron.pantrypal.food.FoodListView
+import org.darchacheron.pantrypal.navigation.BottomNavRoute
 import org.darchacheron.pantrypal.navigation.Navigator
 import org.darchacheron.pantrypal.profile.ProfileView
 import org.jetbrains.compose.resources.DrawableResource
@@ -32,13 +35,13 @@ import pantrypal.composeapp.generated.resources.main_tab_profile
 fun MainView(
     navigator: Navigator = koinInject()
 ) {
-    var selectedTab by remember { mutableStateOf(MainTab.Food) }
+    var selectedTab: BottomNavRoute by remember { mutableStateOf(BottomNavRoute.FoodList) }
 
     Scaffold(
         topBar = {},
         bottomBar = {
             NavigationBar {
-                MainTab.entries.forEach { tab ->
+                BottomNavRoute.items.forEach { tab ->
                     NavigationBarItem(
                         selected = selectedTab == tab,
                         onClick = { selectedTab = tab },
@@ -59,16 +62,14 @@ fun MainView(
                 .fillMaxSize()
         ) {
             when (selectedTab) {
-                MainTab.Food -> FoodListView()
-                MainTab.Profile -> ProfileView(
+                BottomNavRoute.FoodList -> FoodListView()
+                BottomNavRoute.InventoryList -> {
+                    Text(text = "Placeholder Inventory", modifier = Modifier.fillMaxSize(), color = Color.White)
+                }
+                BottomNavRoute.Profile -> ProfileView(
                     onGoToSettings = { navigator.goToSettings() }
                 )
             }
         }
     }
-}
-
-enum class MainTab(val label: StringResource, val icon: DrawableResource) {
-    Food(Res.string.main_tab_food, Res.drawable.ic_food),
-    Profile(Res.string.main_tab_profile, Res.drawable.ic_settings) // Using ic_settings as placeholder for profile
 }

@@ -2,14 +2,48 @@ package org.darchacheron.pantrypal.navigation
 
 import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable
+import org.jetbrains.compose.resources.DrawableResource
+import org.jetbrains.compose.resources.StringResource
+import pantrypal.composeapp.generated.resources.Res
+import pantrypal.composeapp.generated.resources.ic_food
+import pantrypal.composeapp.generated.resources.ic_inventory
+import pantrypal.composeapp.generated.resources.ic_profile
+import pantrypal.composeapp.generated.resources.main_tab_food
+import pantrypal.composeapp.generated.resources.main_tab_inventory
+import pantrypal.composeapp.generated.resources.main_tab_profile
 
 sealed interface BottomNavRoute : NavKey {
-    @Serializable
-    data object FoodList : NavRoute
+    val icon: DrawableResource
+    val label: StringResource
 
     @Serializable
-    data object InventoryList : NavRoute
+    data object FoodList : BottomNavRoute {
+        override val icon: DrawableResource
+            get() = Res.drawable.ic_food
+
+        override val label: StringResource
+            get() = Res.string.main_tab_food
+    }
 
     @Serializable
-    data object Profile : NavRoute
+    data object InventoryList : BottomNavRoute {
+        override val icon: DrawableResource
+            get() = Res.drawable.ic_inventory
+
+        override val label: StringResource
+            get() = Res.string.main_tab_inventory
+    }
+
+    @Serializable
+    data object Profile : BottomNavRoute {
+        override val icon: DrawableResource
+            get() = Res.drawable.ic_profile
+
+        override val label: StringResource
+            get() = Res.string.main_tab_profile
+    }
+
+    companion object {
+        val items = listOf(FoodList, InventoryList, Profile)
+    }
 }

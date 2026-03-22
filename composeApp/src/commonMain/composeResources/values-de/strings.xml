@@ -145,6 +145,7 @@
 
     <!-- Main -->
     <string name="main_tab_food">Lebensmittel</string>
+    <string name="main_tab_inventory">Inventar</string>
     <string name="main_tab_profile">Profil</string>
 
     <!-- Profile -->

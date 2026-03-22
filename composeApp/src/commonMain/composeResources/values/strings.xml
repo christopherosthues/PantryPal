@@ -147,6 +147,7 @@
 
     <!-- Main -->
     <string name="main_tab_food">Food</string>
+    <string name="main_tab_inventory">Inventory</string>
     <string name="main_tab_profile">Profile</string>
 
     <!-- Profile -->
