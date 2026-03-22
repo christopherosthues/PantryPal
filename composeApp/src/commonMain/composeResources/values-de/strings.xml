@@ -135,6 +135,7 @@
     <string name="login_login_or_register">oder</string>
     <string name="login_register">Registrieren</string>
     <string name="login_error">Ein unerwarteter Fehler ist aufgetreten</string>
+    <string name="login_wrong_username_or_password">Falscher Benutzername oder Passwort</string>
 
     <!-- Registration -->
     <string name="registration_title">Registrierung</string>

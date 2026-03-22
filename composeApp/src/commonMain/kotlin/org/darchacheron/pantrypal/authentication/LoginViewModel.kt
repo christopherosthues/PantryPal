@@ -13,6 +13,7 @@ import org.darchacheron.pantrypal.profile.ProfileRepository
 import org.darchacheron.pantrypal.ui.UiState
 import pantrypal.composeapp.generated.resources.Res
 import pantrypal.composeapp.generated.resources.login_error
+import pantrypal.composeapp.generated.resources.login_wrong_username_or_password
 import kotlin.time.Clock
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -83,7 +84,7 @@ class LoginViewModel(
                         loginState.emit(UiState.success(Login(username, password)))
                         navigator.goToMain()
                     } else {
-                        loginState.emit(uiState.copy(error = Res.string.login_error))
+                        loginState.emit(uiState.copy(error = Res.string.login_wrong_username_or_password))
                     }
                 } else {
                     // Local only mode: Try to find local profile by username
@@ -98,10 +99,10 @@ class LoginViewModel(
                             loginState.emit(UiState.success(Login(username, password)))
                             navigator.goToMain()
                         } else {
-                            loginState.emit(uiState.copy(error = Res.string.login_error))
+                            loginState.emit(uiState.copy(error = Res.string.login_wrong_username_or_password))
                         }
                     } else {
-                        loginState.emit(uiState.copy(error = Res.string.login_error))
+                        loginState.emit(uiState.copy(error = Res.string.login_wrong_username_or_password))
                     }
                 }
             } catch (exception: Exception) {

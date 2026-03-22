@@ -33,6 +33,7 @@ fun MainView(
     var selectedTab by remember { mutableStateOf(MainTab.Food) }
 
     Scaffold(
+        topBar = {},
         bottomBar = {
             NavigationBar {
                 MainTab.entries.forEach { tab ->
@@ -50,11 +51,10 @@ fun MainView(
                 }
             }
         }
-    ) { padding ->
+    ) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
         ) {
             when (selectedTab) {
                 MainTab.Food -> FoodListView()
