@@ -1,9 +1,19 @@
 package org.darchacheron.pantrypal.food
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -11,43 +21,84 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.*
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
-import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.toSize
 import coil3.compose.AsyncImage
 import kotlinx.datetime.LocalDate
 import org.darchacheron.pantrypal.navigation.OcrType
+import org.darchacheron.pantrypal.ui.AdaptiveRow
+import org.darchacheron.pantrypal.ui.calculateWindowSizeClass
 import org.darchacheron.pantrypal.utils.format
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
-import pantrypal.composeapp.generated.resources.*
+import pantrypal.composeapp.generated.resources.Res
+import pantrypal.composeapp.generated.resources.food_detail_add_image
+import pantrypal.composeapp.generated.resources.food_detail_additional_images
+import pantrypal.composeapp.generated.resources.food_detail_best_before
+import pantrypal.composeapp.generated.resources.food_detail_content_description_cancel_editing
+import pantrypal.composeapp.generated.resources.food_detail_content_description_delete
+import pantrypal.composeapp.generated.resources.food_detail_content_description_open_camera
+import pantrypal.composeapp.generated.resources.food_detail_content_description_remove_image
+import pantrypal.composeapp.generated.resources.food_detail_content_description_save
+import pantrypal.composeapp.generated.resources.food_detail_name
+import pantrypal.composeapp.generated.resources.food_detail_nutritional_header_volume
+import pantrypal.composeapp.generated.resources.food_detail_nutritional_header_weight
+import pantrypal.composeapp.generated.resources.food_detail_opened_at
+import pantrypal.composeapp.generated.resources.food_detail_title_add
+import pantrypal.composeapp.generated.resources.food_detail_title_edit
+import pantrypal.composeapp.generated.resources.food_detail_use_by
+import pantrypal.composeapp.generated.resources.food_detail_volume
+import pantrypal.composeapp.generated.resources.food_detail_weight
+import pantrypal.composeapp.generated.resources.ic_back
+import pantrypal.composeapp.generated.resources.ic_calendar
+import pantrypal.composeapp.generated.resources.ic_camera
+import pantrypal.composeapp.generated.resources.ic_cancel
+import pantrypal.composeapp.generated.resources.ic_delete
+import pantrypal.composeapp.generated.resources.ic_save
+import pantrypal.composeapp.generated.resources.nutrient_calories
+import pantrypal.composeapp.generated.resources.nutrient_carbs
+import pantrypal.composeapp.generated.resources.nutrient_fat
+import pantrypal.composeapp.generated.resources.nutrient_fiber
+import pantrypal.composeapp.generated.resources.nutrient_kj
+import pantrypal.composeapp.generated.resources.nutrient_protein
+import pantrypal.composeapp.generated.resources.nutrient_salt
+import pantrypal.composeapp.generated.resources.nutrient_saturated_fat
+import pantrypal.composeapp.generated.resources.nutrient_sugar
+import pantrypal.composeapp.generated.resources.settings_content_description_back
 import kotlin.uuid.ExperimentalUuidApi
-
-@OptIn(ExperimentalComposeUiApi::class)
-@Composable
-@ExperimentalMaterial3WindowSizeClassApi
-fun calculateWindowSizeClass(): WindowSizeClass {
-    val density = LocalDensity.current
-    val windowInfo = LocalWindowInfo.current
-    val size = with(density) { windowInfo.containerSize.toSize().toDpSize() }
-    return WindowSizeClass.calculateFromSize(size)
-}
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalUuidApi::class, ExperimentalMaterial3WindowSizeClassApi::class)
 @Composable
@@ -371,145 +422,117 @@ fun FoodDetailView(
                 }
             }
 
-            AdaptiveRow(
-                useTwoColumns = useTwoColumns,
-                leftContent = {
-                    OutlinedTextField(
-                        value = food.kiloCalories?.toString() ?: "",
-                        onValueChange = { viewModel.updateKiloCalories(it) },
-                        label = { Text(stringResource(Res.string.food_detail_calories)) },
-                        modifier = Modifier.weight(1f),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        singleLine = true
-                    )
-                },
-                rightContent = {
-                    OutlinedTextField(
-                        value = food.kiloJoule?.toString() ?: "",
-                        onValueChange = { viewModel.updateKiloJoule(it) },
-                        label = { Text(stringResource(Res.string.food_detail_kj)) },
-                        modifier = Modifier.weight(1f),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        singleLine = true
-                    )
-                }
-            )
-
-            AdaptiveRow(
-                useTwoColumns = useTwoColumns,
-                isDependent = true,
-                leftContent = {
-                    OutlinedTextField(
-                        value = viewModel.carbsInGramsStr,
-                        onValueChange = { viewModel.updateCarbsInGrams(it) },
-                        label = { Text(stringResource(Res.string.food_detail_carbs)) },
-                        modifier = Modifier.weight(1f),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        singleLine = true
-                    )
-                },
-                rightContent = {
-                    OutlinedTextField(
-                        value = viewModel.sugarInGramsStr,
-                        onValueChange = { viewModel.updateSugarInGrams(it) },
-                        label = { Text(stringResource(Res.string.food_detail_sugar)) },
-                        modifier = Modifier.weight(1f),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        singleLine = true
-                    )
-                }
-            )
-
-            AdaptiveRow(
-                useTwoColumns = useTwoColumns,
-                isDependent = true,
-                leftContent = {
-                    OutlinedTextField(
-                        value = viewModel.fatInGramsStr,
-                        onValueChange = { viewModel.updateFatInGrams(it) },
-                        label = { Text(stringResource(Res.string.food_detail_fat)) },
-                        modifier = Modifier.weight(1f),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        singleLine = true
-                    )
-                },
-                rightContent = {
-                    OutlinedTextField(
-                        value = viewModel.saturatedFattyAcidsInGramsStr,
-                        onValueChange = { viewModel.updateSaturatedFattyAcidsInGrams(it) },
-                        label = { Text(stringResource(Res.string.food_detail_saturated_fat)) },
-                        modifier = Modifier.weight(1f),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        singleLine = true
-                    )
-                }
-            )
-
-            OutlinedTextField(
-                value = viewModel.dietaryFiberInGramsStr,
-                onValueChange = { viewModel.updateDietaryFiberInGrams(it) },
-                label = { Text(stringResource(Res.string.food_detail_fiber)) },
-                modifier = Modifier.fillMaxWidth(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                singleLine = true
-            )
-
-            OutlinedTextField(
-                value = viewModel.proteinInGramsStr,
-                onValueChange = { viewModel.updateProteinInGrams(it) },
-                label = { Text(stringResource(Res.string.food_detail_protein)) },
-                modifier = Modifier.fillMaxWidth(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                singleLine = true
-            )
-
-            OutlinedTextField(
-                value = viewModel.saltInGramsStr,
-                onValueChange = { viewModel.updateSaltInGrams(it) },
-                label = { Text(stringResource(Res.string.food_detail_salt)) },
-                modifier = Modifier.fillMaxWidth(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                singleLine = true
-            )
+            NutrientFields(useTwoColumns, food, viewModel)
         }
     }
 }
 
 @Composable
-fun AdaptiveRow(
+private fun NutrientFields(
     useTwoColumns: Boolean,
-    isDependent: Boolean = false,
-    leftContent: @Composable RowScope.() -> Unit,
-    rightContent: @Composable RowScope.() -> Unit
+    food: Food,
+    viewModel: FoodDetailViewModel
 ) {
-    if (useTwoColumns) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            leftContent()
-            rightContent()
+    AdaptiveRow(
+        useTwoColumns = useTwoColumns,
+        leftContent = {
+            OutlinedTextField(
+                value = food.kiloCalories?.toString() ?: "",
+                onValueChange = { viewModel.updateKiloCalories(it) },
+                label = { Text(stringResource(Res.string.nutrient_calories)) },
+                modifier = Modifier.weight(1f),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                singleLine = true
+            )
+        },
+        rightContent = {
+            OutlinedTextField(
+                value = food.kiloJoule?.toString() ?: "",
+                onValueChange = { viewModel.updateKiloJoule(it) },
+                label = { Text(stringResource(Res.string.nutrient_kj)) },
+                modifier = Modifier.weight(1f),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                singleLine = true
+            )
         }
-    } else {
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-               leftContent()
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth()
-                    .padding(start = if (isDependent) 16.dp else 0.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                rightContent()
-            }
+    )
+
+    AdaptiveRow(
+        useTwoColumns = useTwoColumns,
+        isDependent = true,
+        leftContent = {
+            OutlinedTextField(
+                value = viewModel.fatInGramsStr,
+                onValueChange = { viewModel.updateFatInGrams(it) },
+                label = { Text(stringResource(Res.string.nutrient_fat)) },
+                modifier = Modifier.weight(1f),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                singleLine = true
+            )
+        },
+        rightContent = {
+            OutlinedTextField(
+                value = viewModel.saturatedFattyAcidsInGramsStr,
+                onValueChange = { viewModel.updateSaturatedFattyAcidsInGrams(it) },
+                label = { Text(stringResource(Res.string.nutrient_saturated_fat)) },
+                modifier = Modifier.weight(1f),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                singleLine = true
+            )
         }
-    }
+    )
+
+    AdaptiveRow(
+        useTwoColumns = useTwoColumns,
+        isDependent = true,
+        leftContent = {
+            OutlinedTextField(
+                value = viewModel.carbsInGramsStr,
+                onValueChange = { viewModel.updateCarbsInGrams(it) },
+                label = { Text(stringResource(Res.string.nutrient_carbs)) },
+                modifier = Modifier.weight(1f),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                singleLine = true
+            )
+        },
+        rightContent = {
+            OutlinedTextField(
+                value = viewModel.sugarInGramsStr,
+                onValueChange = { viewModel.updateSugarInGrams(it) },
+                label = { Text(stringResource(Res.string.nutrient_sugar)) },
+                modifier = Modifier.weight(1f),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                singleLine = true
+            )
+        }
+    )
+
+    OutlinedTextField(
+        value = viewModel.dietaryFiberInGramsStr,
+        onValueChange = { viewModel.updateDietaryFiberInGrams(it) },
+        label = { Text(stringResource(Res.string.nutrient_fiber)) },
+        modifier = Modifier.fillMaxWidth(),
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+        singleLine = true
+    )
+
+    OutlinedTextField(
+        value = viewModel.proteinInGramsStr,
+        onValueChange = { viewModel.updateProteinInGrams(it) },
+        label = { Text(stringResource(Res.string.nutrient_protein)) },
+        modifier = Modifier.fillMaxWidth(),
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+        singleLine = true
+    )
+
+    OutlinedTextField(
+        value = viewModel.saltInGramsStr,
+        onValueChange = { viewModel.updateSaltInGrams(it) },
+        label = { Text(stringResource(Res.string.nutrient_salt)) },
+        modifier = Modifier.fillMaxWidth(),
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+        singleLine = true
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

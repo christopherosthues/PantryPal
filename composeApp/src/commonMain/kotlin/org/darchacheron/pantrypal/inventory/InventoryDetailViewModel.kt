@@ -34,6 +34,9 @@ class InventoryDetailViewModel(
     val canSave by derivedStateOf { item.name.isNotBlank() }
     val isAdding by derivedStateOf { itemId == null }
 
+    private val _isSaved = MutableStateFlow(false)
+    val isSaved: StateFlow<Boolean> = _isSaved.asStateFlow()
+
     var kiloCaloriesStr by mutableStateOf("")
     var kiloJouleStr by mutableStateOf("")
     var fatInGramsStr by mutableStateOf("")
@@ -143,6 +146,7 @@ class InventoryDetailViewModel(
             _uiState.value = UiState.loading()
             try {
                 inventoryRepository.upsert(item.copy(lastModifiedAt = Clock.System.now()))
+                _isSaved.value = true
                 navigator.goBack()
             } catch (e: Exception) {
                 Logger.withTag(loggerTag).e { "Error saving inventory item: ${e.message}" }
@@ -156,6 +160,7 @@ class InventoryDetailViewModel(
             _uiState.value = UiState.loading()
             try {
                 inventoryRepository.delete(id)
+                _isSaved.value = true
                 navigator.goBack()
             } catch (e: Exception) {
                 Logger.withTag(loggerTag).e { "Error deleting inventory item: ${e.message}" }
@@ -197,6 +202,66 @@ class InventoryDetailViewModel(
         navigator.goToOcrCamera(type) { text ->
             handleOcrResult(type, text)
         }
+    }
+
+    fun updateKiloCalories(value: String) {
+        kiloCaloriesStr = value
+        syncItemFromStrings()
+        _uiState.value = UiState.success(item)
+    }
+
+    fun updateKiloJoule(value: String) {
+        kiloJouleStr = value
+        syncItemFromStrings()
+        _uiState.value = UiState.success(item)
+    }
+
+    fun updateFatInGrams(value: String) {
+        fatInGramsStr = value
+        syncItemFromStrings()
+        _uiState.value = UiState.success(item)
+    }
+
+    fun updateSaturatedFattyAcidsInGrams(value: String) {
+        saturatedFattyAcidsInGramsStr = value
+        syncItemFromStrings()
+        _uiState.value = UiState.success(item)
+    }
+
+    fun updateCarbsInGrams(value: String) {
+        carbsInGramsStr = value
+        syncItemFromStrings()
+        _uiState.value = UiState.success(item)
+    }
+
+    fun updateSugarInGrams(value: String) {
+        sugarInGramsStr = value
+        syncItemFromStrings()
+        _uiState.value = UiState.success(item)
+    }
+
+    fun updateDietaryFiberInGrams(value: String) {
+        dietaryFiberInGramsStr = value
+        syncItemFromStrings()
+        _uiState.value = UiState.success(item)
+    }
+
+    fun updateProteinInGrams(value: String) {
+        proteinInGramsStr = value
+        syncItemFromStrings()
+        _uiState.value = UiState.success(item)
+    }
+
+    fun updateSaltInGrams(value: String) {
+        saltInGramsStr = value
+        syncItemFromStrings()
+        _uiState.value = UiState.success(item)
+    }
+
+    fun updateFillingQuantity(value: String) {
+        fillingQuantityStr = value
+        syncItemFromStrings()
+        _uiState.value = UiState.success(item)
     }
 
     private val kcal = "kcal"
@@ -250,6 +315,10 @@ class InventoryDetailViewModel(
             }
             else -> {}
         }
+    }
+
+    fun cancelEditing() {
+        goBack()
     }
 
     fun goBack() = navigator.goBack()

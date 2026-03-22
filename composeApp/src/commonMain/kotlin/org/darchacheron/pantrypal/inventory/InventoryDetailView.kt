@@ -11,40 +11,63 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
+import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
+import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import org.darchacheron.pantrypal.navigation.OcrType
+import org.darchacheron.pantrypal.ui.AdaptiveRow
+import org.darchacheron.pantrypal.ui.calculateWindowSizeClass
+import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import pantrypal.composeapp.generated.resources.*
 import kotlin.uuid.ExperimentalUuidApi
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalUuidApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalUuidApi::class, ExperimentalMaterial3WindowSizeClassApi::class)
 @Composable
 fun InventoryDetailView(
     viewModel: InventoryDetailViewModel = koinInject()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val isSaved by viewModel.isSaved.collectAsState()
+    val snackbarMessage by viewModel.snackbarMessage.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+    val windowSizeClass = calculateWindowSizeClass()
+    val useTwoColumns = windowSizeClass.widthSizeClass > WindowWidthSizeClass.Medium
+
+    LaunchedEffect(snackbarMessage) {
+        snackbarMessage?.let { resource ->
+            val message = getString(resource)
+            snackbarHostState.showSnackbar(message)
+            viewModel.clearSnackbar()
+            if (isSaved) {
+                viewModel.goBack()
+            }
+        }
+    }
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = {
-                    Text(
-                        stringResource(
-                            if (viewModel.isAdding) Res.string.inventory_detail_title_add
-                            else Res.string.inventory_detail_title_edit
+                    if (!uiState.isLoading) {
+                        Text(
+                            stringResource(
+                                if (viewModel.isAdding) Res.string.food_detail_title_add
+                                else Res.string.food_detail_title_edit
+                            )
                         )
-                    )
+                    }
                 },
                 navigationIcon = {
                     IconButton(onClick = { viewModel.goBack() }) {
@@ -61,34 +84,93 @@ fun InventoryDetailView(
                             contentDescription = stringResource(Res.string.food_detail_content_description_open_camera)
                         )
                     }
+                    if (!viewModel.isAdding) {
+                        IconButton(onClick = {
+                            if (!uiState.isLoading) {
+                                viewModel.delete()
+                                viewModel.goBack()
+                            }
+                        }) {
+                            Icon(
+                                painter = painterResource(Res.drawable.ic_delete),
+                                contentDescription = stringResource(Res.string.food_detail_content_description_delete),
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
                 }
             )
         },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = { if (viewModel.canSave) viewModel.save() },
-                containerColor = if (viewModel.canSave) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 32.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Icon(
-                    painter = painterResource(Res.drawable.ic_save),
-                    contentDescription = stringResource(Res.string.food_detail_content_description_save)
-                )
+                Spacer(modifier = Modifier.weight(1f))
+
+                FloatingActionButton(
+                    onClick = { viewModel.cancelEditing() },
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                ) {
+                    Icon(
+                        painter = painterResource(Res.drawable.ic_cancel),
+                        contentDescription =
+                            stringResource(Res.string.food_detail_content_description_cancel_editing)
+                    )
+                }
+
+                FloatingActionButton(
+                    onClick = { if (viewModel.canSave && !uiState.isLoading) viewModel.save() },
+                    containerColor = if (viewModel.canSave && !uiState.isLoading) {
+                        MaterialTheme.colorScheme.primaryContainer
+                    } else {
+                        MaterialTheme.colorScheme.surfaceVariant
+                    },
+                    contentColor = if (viewModel.canSave && !uiState.isLoading) {
+                        MaterialTheme.colorScheme.onPrimaryContainer
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
+                    }
+                ) {
+                    if (uiState.isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Icon(
+                            painter = painterResource(Res.drawable.ic_save),
+                            contentDescription = stringResource(Res.string.food_detail_content_description_save)
+                        )
+                    }
+                }
             }
         }
     ) { padding ->
+        if (uiState.hasError) {
+            val errorMessage = stringResource(uiState.error!!)
+            LaunchedEffect(errorMessage) {
+                snackbarHostState.showSnackbar(errorMessage)
+            }
+        }
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
-                .padding(16.dp),
+                .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 72.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            val item = uiState.data ?: return@Scaffold
+            val food = uiState.data ?: return@Scaffold
 
-            if (item.imagePath != null) {
+            if (food.imagePath != null) {
                 AsyncImage(
-                    model = item.imagePath,
+                    model = food.imagePath,
                     contentDescription = null,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -98,107 +180,259 @@ fun InventoryDetailView(
                 )
             }
 
-            OutlinedTextField(
-                value = item.name,
-                onValueChange = { viewModel.updateName(it) },
-                label = { Text(stringResource(Res.string.food_detail_name)) },
-                modifier = Modifier.fillMaxWidth(),
-                trailingIcon = {
-                    IconButton(onClick = { viewModel.openOcrCamera(OcrType.NAME) }) {
-                        Icon(painter = painterResource(Res.drawable.ic_camera), contentDescription = null)
-                    }
-                }
-            )
-
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Checkbox(
-                    checked = item.isLiquid,
-                    onCheckedChange = { viewModel.updateIsLiquid(it) }
-                )
-                Text(
-                    text = stringResource(if (item.isLiquid) Res.string.food_detail_volume else Res.string.food_detail_weight),
-                    modifier = Modifier.clickable { viewModel.updateIsLiquid(!item.isLiquid) }
-                )
-            }
-
-            OutlinedTextField(
-                value = viewModel.fillingQuantityStr,
-                onValueChange = { viewModel.fillingQuantityStr = it },
-                label = { Text(stringResource(if (item.isLiquid) Res.string.food_detail_volume else Res.string.food_detail_weight)) },
-                modifier = Modifier.fillMaxWidth(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
-            )
-
-            Text(
-                text = stringResource(if (item.isLiquid) Res.string.food_detail_nutritional_header_volume else Res.string.food_detail_nutritional_header_weight),
-                style = MaterialTheme.typography.titleSmall
-            )
-
-            NutrientFields(viewModel)
-
             Text(
                 text = stringResource(Res.string.food_detail_additional_images),
-                style = MaterialTheme.typography.labelMedium
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.secondary
             )
 
             LazyRow(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = PaddingValues(end = 16.dp)
             ) {
-                items(item.additionalImagePaths) { path ->
-                    Box(modifier = Modifier.size(100.dp).clip(RoundedCornerShape(8.dp))) {
-                        AsyncImage(model = path, contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                items(food.additionalImagePaths) { path ->
+                    Box(
+                        modifier = Modifier
+                            .size(100.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                    ) {
+                        AsyncImage(
+                            model = path,
+                            contentDescription = null,
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
                         IconButton(
                             onClick = { viewModel.removeAdditionalImage(path) },
-                            modifier = Modifier.align(Alignment.TopEnd).size(24.dp).background(MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.7f), CircleShape)
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .size(24.dp)
+                                .background(
+                                    MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.7f),
+                                    CircleShape
+                                )
+                                .padding(4.dp)
                         ) {
-                            Icon(painter = painterResource(Res.drawable.ic_cancel), contentDescription = null, tint = MaterialTheme.colorScheme.onErrorContainer)
+                            Icon(
+                                painter = painterResource(Res.drawable.ic_cancel),
+                                contentDescription = stringResource(Res.string.food_detail_content_description_remove_image),
+                                tint = MaterialTheme.colorScheme.onErrorContainer,
+                                modifier = Modifier.size(16.dp)
+                            )
                         }
                     }
                 }
+
                 item {
                     Box(
-                        modifier = Modifier.size(100.dp).clip(RoundedCornerShape(8.dp)).background(MaterialTheme.colorScheme.surfaceVariant).clickable { viewModel.addAdditionalImage() },
+                        modifier = Modifier
+                            .size(100.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                            .clickable { viewModel.addAdditionalImage() },
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(painter = painterResource(Res.drawable.ic_add), contentDescription = null)
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(
+                                painter = painterResource(Res.drawable.ic_camera),
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = stringResource(Res.string.food_detail_add_image),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
             }
+
+            OutlinedTextField(
+                value = food.name,
+                onValueChange = { viewModel.updateName(it) },
+                label = { Text(stringResource(Res.string.food_detail_name)) },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                trailingIcon = {
+                    IconButton(onClick = { viewModel.openOcrCamera(OcrType.NAME) }) {
+                        Icon(
+                            painter = painterResource(Res.drawable.ic_camera),
+                            contentDescription = "OCR Name"
+                        )
+                    }
+                }
+            )
+
+            OutlinedTextField(
+                value = viewModel.fillingQuantityStr,
+                onValueChange = { viewModel.updateFillingQuantity(it) },
+                label = {
+                    Text(
+                        stringResource(
+                            if (food.isLiquid) Res.string.food_detail_volume
+                            else Res.string.food_detail_weight
+                        )
+                    )
+                },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                leadingIcon = {
+                    Switch(
+                        checked = food.isLiquid,
+                        onCheckedChange = { viewModel.updateIsLiquid(it) },
+                        modifier = Modifier.scale(0.8f)
+                    )
+                },
+                trailingIcon = {
+                    IconButton(onClick = { viewModel.openOcrCamera(OcrType.AMOUNT) }) {
+                        Icon(
+                            painter = painterResource(Res.drawable.ic_camera),
+                            contentDescription = "OCR Amount"
+                        )
+                    }
+                }
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = stringResource(
+                        if (food.isLiquid) Res.string.food_detail_nutritional_header_volume
+                        else Res.string.food_detail_nutritional_header_weight
+                    ),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.secondary,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+
+                TextButton(
+                    onClick = { viewModel.openOcrCamera(OcrType.NUTRIENTS) },
+                    contentPadding = PaddingValues(horizontal = 8.dp)
+                ) {
+                    Icon(
+                        painter = painterResource(Res.drawable.ic_camera),
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Text("Scan table", style = MaterialTheme.typography.labelMedium)
+                }
+            }
+
+            NutrientFields(useTwoColumns, food, viewModel)
         }
     }
 }
 
 @Composable
-fun NutrientFields(viewModel: InventoryDetailViewModel) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            NutrientField(value = viewModel.kiloCaloriesStr, onValueChange = { viewModel.kiloCaloriesStr = it }, label = stringResource(Res.string.food_detail_calories), modifier = Modifier.weight(1f))
-            NutrientField(value = viewModel.kiloJouleStr, onValueChange = { viewModel.kiloJouleStr = it }, label = stringResource(Res.string.food_detail_kj), modifier = Modifier.weight(1f))
+private fun NutrientFields(
+    useTwoColumns: Boolean,
+    item: InventoryItem,
+    viewModel: InventoryDetailViewModel
+) {
+    AdaptiveRow(
+        useTwoColumns = useTwoColumns,
+        leftContent = {
+            OutlinedTextField(
+                value = item.kiloCalories?.toString() ?: "",
+                onValueChange = { viewModel.updateKiloCalories(it) },
+                label = { Text(stringResource(Res.string.nutrient_calories)) },
+                modifier = Modifier.weight(1f),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                singleLine = true
+            )
+        },
+        rightContent = {
+            OutlinedTextField(
+                value = item.kiloJoule?.toString() ?: "",
+                onValueChange = { viewModel.updateKiloJoule(it) },
+                label = { Text(stringResource(Res.string.nutrient_kj)) },
+                modifier = Modifier.weight(1f),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                singleLine = true
+            )
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            NutrientField(value = viewModel.fatInGramsStr, onValueChange = { viewModel.fatInGramsStr = it }, label = stringResource(Res.string.food_detail_fat), modifier = Modifier.weight(1f))
-            NutrientField(value = viewModel.saturatedFattyAcidsInGramsStr, onValueChange = { viewModel.saturatedFattyAcidsInGramsStr = it }, label = stringResource(Res.string.food_detail_saturated_fat), modifier = Modifier.weight(1f))
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            NutrientField(value = viewModel.carbsInGramsStr, onValueChange = { viewModel.carbsInGramsStr = it }, label = stringResource(Res.string.food_detail_carbs), modifier = Modifier.weight(1f))
-            NutrientField(value = viewModel.sugarInGramsStr, onValueChange = { viewModel.sugarInGramsStr = it }, label = stringResource(Res.string.food_detail_sugar), modifier = Modifier.weight(1f))
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            NutrientField(value = viewModel.proteinInGramsStr, onValueChange = { viewModel.proteinInGramsStr = it }, label = stringResource(Res.string.food_detail_protein), modifier = Modifier.weight(1f))
-            NutrientField(value = viewModel.saltInGramsStr, onValueChange = { viewModel.saltInGramsStr = it }, label = stringResource(Res.string.food_detail_salt), modifier = Modifier.weight(1f))
-        }
-        NutrientField(value = viewModel.dietaryFiberInGramsStr, onValueChange = { viewModel.dietaryFiberInGramsStr = it }, label = stringResource(Res.string.food_detail_fiber))
-    }
-}
+    )
 
-@Composable
-fun NutrientField(value: String, onValueChange: (String) -> Unit, label: String, modifier: Modifier = Modifier) {
+    AdaptiveRow(
+        useTwoColumns = useTwoColumns,
+        isDependent = true,
+        leftContent = {
+            OutlinedTextField(
+                value = viewModel.fatInGramsStr,
+                onValueChange = { viewModel.updateFatInGrams(it) },
+                label = { Text(stringResource(Res.string.nutrient_fat)) },
+                modifier = Modifier.weight(1f),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                singleLine = true
+            )
+        },
+        rightContent = {
+            OutlinedTextField(
+                value = viewModel.saturatedFattyAcidsInGramsStr,
+                onValueChange = { viewModel.updateSaturatedFattyAcidsInGrams(it) },
+                label = { Text(stringResource(Res.string.nutrient_saturated_fat)) },
+                modifier = Modifier.weight(1f),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                singleLine = true
+            )
+        }
+    )
+
+    AdaptiveRow(
+        useTwoColumns = useTwoColumns,
+        isDependent = true,
+        leftContent = {
+            OutlinedTextField(
+                value = viewModel.carbsInGramsStr,
+                onValueChange = { viewModel.updateCarbsInGrams(it) },
+                label = { Text(stringResource(Res.string.nutrient_carbs)) },
+                modifier = Modifier.weight(1f),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                singleLine = true
+            )
+        },
+        rightContent = {
+            OutlinedTextField(
+                value = viewModel.sugarInGramsStr,
+                onValueChange = { viewModel.updateSugarInGrams(it) },
+                label = { Text(stringResource(Res.string.nutrient_sugar)) },
+                modifier = Modifier.weight(1f),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                singleLine = true
+            )
+        }
+    )
+
     OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        label = { Text(label) },
-        modifier = modifier.fillMaxWidth(),
+        value = viewModel.dietaryFiberInGramsStr,
+        onValueChange = { viewModel.updateDietaryFiberInGrams(it) },
+        label = { Text(stringResource(Res.string.nutrient_fiber)) },
+        modifier = Modifier.fillMaxWidth(),
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+        singleLine = true
+    )
+
+    OutlinedTextField(
+        value = viewModel.proteinInGramsStr,
+        onValueChange = { viewModel.updateProteinInGrams(it) },
+        label = { Text(stringResource(Res.string.nutrient_protein)) },
+        modifier = Modifier.fillMaxWidth(),
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+        singleLine = true
+    )
+
+    OutlinedTextField(
+        value = viewModel.saltInGramsStr,
+        onValueChange = { viewModel.updateSaltInGrams(it) },
+        label = { Text(stringResource(Res.string.nutrient_salt)) },
+        modifier = Modifier.fillMaxWidth(),
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
         singleLine = true
     )

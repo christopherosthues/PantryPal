@@ -57,18 +57,6 @@
     <string name="food_detail_title_add">Add Item</string>
     <string name="food_detail_title_edit">Edit Item</string>
     <string name="food_detail_name">Name</string>
-    <string name="food_detail_calories">Calories (kcal)</string>
-    <string name="food_detail_kj">Joule (kJ)</string>
-    <string name="food_detail_carbs">Carbs (g)</string>
-    <string name="food_detail_sugar">Sugar (g)</string>
-    <string name="food_detail_fat">Fat (g)</string>
-    <string name="food_detail_saturated_fat">Saturated Fat (g)</string>
-    <string name="food_detail_protein">Protein (g)</string>
-    <string name="food_detail_fiber">Fiber (g)</string>
-    <string name="food_detail_salt">Salt (g)</string>
-    <string name="food_detail_amount">Amount</string>
-    <string name="food_detail_content_description_increase_amount">Increase amount by one</string>
-    <string name="food_detail_content_description_decrease_amount">Decrease amount by one</string>
     <string name="food_detail_weight">Weight (g)</string>
     <string name="food_detail_volume">Volume (ml)</string>
     <string name="food_detail_best_before">Best Before</string>
@@ -89,6 +77,17 @@
     <string name="food_detail_add_image">Add Image</string>
     <string name="food_detail_content_description_remove_image">Remove image</string>
     <string name="food_detail_scan_table">Scan table</string>
+
+    <!-- Nutrients -->
+    <string name="nutrient_calories">Calories (kcal)</string>
+    <string name="nutrient_kj">Joule (kJ)</string>
+    <string name="nutrient_carbs">Carbs (g)</string>
+    <string name="nutrient_sugar">Sugar (g)</string>
+    <string name="nutrient_fat">Fat (g)</string>
+    <string name="nutrient_saturated_fat">Saturated Fat (g)</string>
+    <string name="nutrient_protein">Protein (g)</string>
+    <string name="nutrient_fiber">Fiber (g)</string>
+    <string name="nutrient_salt">Salt (g)</string>
 
     <!-- Simple Camera -->
     <string name="simple_camera_initializing">Initializing Camera...</string>

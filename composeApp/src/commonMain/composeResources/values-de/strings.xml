@@ -55,18 +55,6 @@
     <string name="food_detail_title_add">Eintrag hinzufügen</string>
     <string name="food_detail_title_edit">Eintrag bearbeiten</string>
     <string name="food_detail_name">Name</string>
-    <string name="food_detail_calories">Kalorien (kcal)</string>
-    <string name="food_detail_kj">Joule (kJ)</string>
-    <string name="food_detail_carbs">Kohlenhydrate (g)</string>
-    <string name="food_detail_sugar">davon Zucker (g)</string>
-    <string name="food_detail_fat">Fett (g)</string>
-    <string name="food_detail_saturated_fat">davon gesättigte Fettsäuren (g)</string>
-    <string name="food_detail_protein">Proteine (g)</string>
-    <string name="food_detail_fiber">Ballaststoffe (g)</string>
-    <string name="food_detail_salt">Salz (g)</string>
-    <string name="food_detail_amount">Anzahl</string>
-    <string name="food_detail_content_description_increase_amount">Anzahl um Eins erhöhen</string>
-    <string name="food_detail_content_description_decrease_amount">Anzahl um Eins verringern</string>
     <string name="food_detail_weight">Gewicht (g)</string>
     <string name="food_detail_volume">Volumen (ml)</string>
     <string name="food_detail_best_before">Mindestens haltbar bis</string>
@@ -87,6 +75,17 @@
     <string name="food_detail_add_image">Bild hinzufügen</string>
     <string name="food_detail_content_description_remove_image">Bild entfernen</string>
     <string name="food_detail_scan_table">Tabelle scannen</string>
+
+    <!-- Nutrients -->
+    <string name="nutrient_calories">Kalorien (kcal)</string>
+    <string name="nutrient_kj">Joule (kJ)</string>
+    <string name="nutrient_carbs">Kohlenhydrate (g)</string>
+    <string name="nutrient_sugar">davon Zucker (g)</string>
+    <string name="nutrient_fat">Fett (g)</string>
+    <string name="nutrient_saturated_fat">davon gesättigte Fettsäuren (g)</string>
+    <string name="nutrient_protein">Proteine (g)</string>
+    <string name="nutrient_fiber">Ballaststoffe (g)</string>
+    <string name="nutrient_salt">Salz (g)</string>
 
     <!-- Simple Camera -->
     <string name="simple_camera_initializing">Kamera wird initialisiert…</string>
