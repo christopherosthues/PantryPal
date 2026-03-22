@@ -7,6 +7,7 @@ import kotlin.uuid.Uuid
 @OptIn(ExperimentalUuidApi::class)
 data class InventoryItem(
     val id: Uuid = Uuid.generateV7(),
+    val serverId: Uuid? = null,
     val profileId: Uuid,
     val name: String,
     val kiloCalories: Int?,

@@ -24,6 +24,7 @@ import kotlin.uuid.Uuid
 )
 data class InventoryItemEntity(
     @PrimaryKey(autoGenerate = false) val id: Uuid = Uuid.generateV7(),
+    val serverId: Uuid?,
     val profileId: Uuid,
     val name: String,
     val kiloCalories: Int?,
@@ -44,6 +45,7 @@ data class InventoryItemEntity(
 ) {
     fun toInventoryItem(): InventoryItem = InventoryItem(
         id = id,
+        serverId = serverId,
         profileId = profileId,
         name = name,
         kiloCalories = kiloCalories,
@@ -67,6 +69,7 @@ data class InventoryItemEntity(
 @OptIn(ExperimentalUuidApi::class)
 fun InventoryItem.toInventoryItemEntity(): InventoryItemEntity = InventoryItemEntity(
     id = id,
+    serverId = serverId,
     profileId = profileId,
     name = name,
     kiloCalories = kiloCalories,

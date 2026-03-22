@@ -139,10 +139,12 @@ abstract class PantryPalDatabase : RoomDatabase() {
 
         val MIGRATION_4_5 = object : Migration(4, 5) {
             override fun migrate(connection: SQLiteConnection) {
+                connection.execSQL("ALTER TABLE food ADD COLUMN serverId TEXT")
                 connection.execSQL(
                     """
                     CREATE TABLE IF NOT EXISTS `inventory_item` (
                         `id` TEXT NOT NULL, 
+                        `serverId` TEXT,
                         `profileId` TEXT NOT NULL, 
                         `name` TEXT NOT NULL, 
                         `kiloCalories` INTEGER, 
