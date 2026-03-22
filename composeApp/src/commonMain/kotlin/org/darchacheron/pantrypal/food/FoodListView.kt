@@ -71,7 +71,7 @@ import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import pantrypal.composeapp.generated.resources.Res
-import pantrypal.composeapp.generated.resources.food_list_add_food
+import pantrypal.composeapp.generated.resources.food_list_content_description_add_food
 import pantrypal.composeapp.generated.resources.food_list_card_best_before_label
 import pantrypal.composeapp.generated.resources.food_list_card_content_description_consume
 import pantrypal.composeapp.generated.resources.food_list_card_content_description_copy
@@ -163,7 +163,7 @@ fun FoodListView(
             FloatingActionButton(onClick = { foodListViewModel.goToFoodDetail(null) }) {
                 Icon(
                     painter = painterResource(Res.drawable.ic_add),
-                    contentDescription = stringResource(Res.string.food_list_add_food)
+                    contentDescription = stringResource(Res.string.food_list_content_description_add_food)
                 )
             }
         }

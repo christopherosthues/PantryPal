@@ -76,6 +76,8 @@ import pantrypal.composeapp.generated.resources.food_detail_content_description_
 import pantrypal.composeapp.generated.resources.food_detail_name
 import pantrypal.composeapp.generated.resources.food_detail_nutritional_header_volume
 import pantrypal.composeapp.generated.resources.food_detail_nutritional_header_weight
+import pantrypal.composeapp.generated.resources.food_detail_ocr_amount
+import pantrypal.composeapp.generated.resources.food_detail_ocr_name
 import pantrypal.composeapp.generated.resources.food_detail_opened_at
 import pantrypal.composeapp.generated.resources.food_detail_title_add
 import pantrypal.composeapp.generated.resources.food_detail_title_edit
@@ -327,7 +329,7 @@ fun FoodDetailView(
                     IconButton(onClick = { viewModel.openOcrCamera(OcrType.NAME) }) {
                         Icon(
                             painter = painterResource(Res.drawable.ic_camera),
-                            contentDescription = "OCR Name"
+                            contentDescription = stringResource(Res.string.food_detail_ocr_name)
                         )
                     }
                 }
@@ -387,7 +389,7 @@ fun FoodDetailView(
                     IconButton(onClick = { viewModel.openOcrCamera(OcrType.AMOUNT) }) {
                         Icon(
                             painter = painterResource(Res.drawable.ic_camera),
-                            contentDescription = "OCR Amount"
+                            contentDescription = stringResource(Res.string.food_detail_ocr_amount)
                         )
                     }
                 }

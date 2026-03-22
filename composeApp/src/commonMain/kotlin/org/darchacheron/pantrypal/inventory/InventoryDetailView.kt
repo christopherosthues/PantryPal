@@ -63,8 +63,8 @@ fun InventoryDetailView(
                     if (!uiState.isLoading) {
                         Text(
                             stringResource(
-                                if (viewModel.isAdding) Res.string.food_detail_title_add
-                                else Res.string.food_detail_title_edit
+                                if (viewModel.isAdding) Res.string.inventory_detail_title_add
+                                else Res.string.inventory_detail_title_edit
                             )
                         )
                     }
@@ -81,7 +81,7 @@ fun InventoryDetailView(
                     IconButton(onClick = { viewModel.openCamera() }) {
                         Icon(
                             painter = painterResource(Res.drawable.ic_camera),
-                            contentDescription = stringResource(Res.string.food_detail_content_description_open_camera)
+                            contentDescription = stringResource(Res.string.inventory_detail_content_description_open_camera)
                         )
                     }
                     if (!viewModel.isAdding) {
@@ -93,7 +93,7 @@ fun InventoryDetailView(
                         }) {
                             Icon(
                                 painter = painterResource(Res.drawable.ic_delete),
-                                contentDescription = stringResource(Res.string.food_detail_content_description_delete),
+                                contentDescription = stringResource(Res.string.inventory_detail_content_description_delete),
                                 tint = MaterialTheme.colorScheme.error
                             )
                         }
@@ -118,7 +118,7 @@ fun InventoryDetailView(
                     Icon(
                         painter = painterResource(Res.drawable.ic_cancel),
                         contentDescription =
-                            stringResource(Res.string.food_detail_content_description_cancel_editing)
+                            stringResource(Res.string.inventory_detail_content_description_cancel_editing)
                     )
                 }
 
@@ -144,7 +144,7 @@ fun InventoryDetailView(
                     } else {
                         Icon(
                             painter = painterResource(Res.drawable.ic_save),
-                            contentDescription = stringResource(Res.string.food_detail_content_description_save)
+                            contentDescription = stringResource(Res.string.inventory_detail_content_description_save)
                         )
                     }
                 }
@@ -181,7 +181,7 @@ fun InventoryDetailView(
             }
 
             Text(
-                text = stringResource(Res.string.food_detail_additional_images),
+                text = stringResource(Res.string.inventory_detail_additional_images),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.secondary
             )
@@ -216,7 +216,7 @@ fun InventoryDetailView(
                         ) {
                             Icon(
                                 painter = painterResource(Res.drawable.ic_cancel),
-                                contentDescription = stringResource(Res.string.food_detail_content_description_remove_image),
+                                contentDescription = stringResource(Res.string.inventory_detail_content_description_remove_image),
                                 tint = MaterialTheme.colorScheme.onErrorContainer,
                                 modifier = Modifier.size(16.dp)
                             )
@@ -240,7 +240,7 @@ fun InventoryDetailView(
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Text(
-                                text = stringResource(Res.string.food_detail_add_image),
+                                text = stringResource(Res.string.inventory_detail_add_image),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -252,14 +252,14 @@ fun InventoryDetailView(
             OutlinedTextField(
                 value = food.name,
                 onValueChange = { viewModel.updateName(it) },
-                label = { Text(stringResource(Res.string.food_detail_name)) },
+                label = { Text(stringResource(Res.string.inventory_detail_name)) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 trailingIcon = {
                     IconButton(onClick = { viewModel.openOcrCamera(OcrType.NAME) }) {
                         Icon(
                             painter = painterResource(Res.drawable.ic_camera),
-                            contentDescription = "OCR Name"
+                            contentDescription = stringResource(Res.string.inventory_detail_ocr_name)
                         )
                     }
                 }
@@ -271,8 +271,8 @@ fun InventoryDetailView(
                 label = {
                     Text(
                         stringResource(
-                            if (food.isLiquid) Res.string.food_detail_volume
-                            else Res.string.food_detail_weight
+                            if (food.isLiquid) Res.string.inventory_detail_volume
+                            else Res.string.inventory_detail_weight
                         )
                     )
                 },
@@ -290,7 +290,7 @@ fun InventoryDetailView(
                     IconButton(onClick = { viewModel.openOcrCamera(OcrType.AMOUNT) }) {
                         Icon(
                             painter = painterResource(Res.drawable.ic_camera),
-                            contentDescription = "OCR Amount"
+                            contentDescription = stringResource(Res.string.inventory_detail_ocr_amount)
                         )
                     }
                 }
@@ -303,8 +303,8 @@ fun InventoryDetailView(
             ) {
                 Text(
                     text = stringResource(
-                        if (food.isLiquid) Res.string.food_detail_nutritional_header_volume
-                        else Res.string.food_detail_nutritional_header_weight
+                        if (food.isLiquid) Res.string.inventory_detail_nutritional_header_volume
+                        else Res.string.inventory_detail_nutritional_header_weight
                     ),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.secondary,
@@ -321,7 +321,10 @@ fun InventoryDetailView(
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(Modifier.width(4.dp))
-                    Text("Scan table", style = MaterialTheme.typography.labelMedium)
+                    Text(
+                        text = stringResource(Res.string.inventory_detail_scan_table),
+                        style = MaterialTheme.typography.labelMedium
+                    )
                 }
             }
 

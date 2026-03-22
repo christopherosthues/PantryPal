@@ -46,6 +46,9 @@ import pantrypal.composeapp.generated.resources.ic_fridge
 import pantrypal.composeapp.generated.resources.ic_search
 import pantrypal.composeapp.generated.resources.ic_settings
 import pantrypal.composeapp.generated.resources.ic_x
+import pantrypal.composeapp.generated.resources.inventory_list_content_description_add_food
+import pantrypal.composeapp.generated.resources.inventory_list_content_description_settings
+import pantrypal.composeapp.generated.resources.inventory_list_search_placeholder
 import pantrypal.composeapp.generated.resources.main_tab_inventory
 import kotlin.uuid.ExperimentalUuidApi
 
@@ -66,7 +69,7 @@ fun InventoryListView(
                     IconButton(onClick = { viewModel.goToSettings() }) {
                         Icon(
                             painter = painterResource(Res.drawable.ic_settings),
-                            contentDescription = null
+                            contentDescription = stringResource(Res.string.inventory_list_content_description_settings)
                         )
                     }
                 }
@@ -74,7 +77,10 @@ fun InventoryListView(
         },
         floatingActionButton = {
             FloatingActionButton(onClick = { navigator.goToInventoryDetail(null) }) {
-                Icon(painter = painterResource(Res.drawable.ic_add), contentDescription = null)
+                Icon(
+                    painter = painterResource(Res.drawable.ic_add),
+                    contentDescription = stringResource(Res.string.inventory_list_content_description_add_food)
+                )
             }
         }
     ) { padding ->
@@ -89,7 +95,7 @@ fun InventoryListView(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp),
-                placeholder = { Text("Search inventory...") },
+                placeholder = { Text(text = stringResource(Res.string.inventory_list_search_placeholder)) },
                 leadingIcon = { Icon(painter = painterResource(Res.drawable.ic_search), contentDescription = null) },
                 trailingIcon = {
                     if (searchQuery.isNotEmpty()) {

@@ -27,7 +27,7 @@
     <string name="food_list_title">Food Pantry</string>
     <string name="food_list_empty">No food found. Add some!</string>
     <string name="food_list_error_loading">Failed to load food list.</string>
-    <string name="food_list_add_food">Add Food</string>
+    <string name="food_list_content_description_add_food">Add Food</string>
     <string name="food_list_content_description_settings">Open settings</string>
     <string name="food_list_card_best_before_label">Best Before</string>
     <string name="food_list_card_use_by_label">Use By</string>
@@ -77,6 +77,8 @@
     <string name="food_detail_add_image">Add Image</string>
     <string name="food_detail_content_description_remove_image">Remove image</string>
     <string name="food_detail_scan_table">Scan table</string>
+    <string name="food_detail_ocr_name">Scan name</string>
+    <string name="food_detail_ocr_amount">Scan weight or volume</string>
 
     <!-- Nutrients -->
     <string name="nutrient_calories">Calories (kcal)</string>
@@ -161,8 +163,29 @@
 
     <!-- Inventory -->
     <string name="inventory_list_title">Inventory Templates</string>
+    <string name="inventory_list_content_description_add_item">Add inventory template</string>
+    <string name="inventory_list_content_description_settings">Open settings</string>
     <string name="inventory_list_empty">No templates found. Create one!</string>
-    <string name="inventory_list_add_to_pantry">Add to Pantry</string>
+    <string name="inventory_list_search_placeholder">Search templates...</string>
+    <string name="inventory_list_error_loading">Error loading templates</string>
+    <string name="inventory_list_content_description_delete">Delete template</string>
+    <string name="inventory_list_content_description_add_to_pantry">Add to Pantry</string>
+
     <string name="inventory_detail_title_add">Add Template</string>
     <string name="inventory_detail_title_edit">Edit Template</string>
+    <string name="inventory_detail_name">Name</string>
+    <string name="inventory_detail_weight">Weight (g)</string>
+    <string name="inventory_detail_volume">Volume (ml)</string>
+    <string name="inventory_detail_content_description_save">Save template</string>
+    <string name="inventory_detail_content_description_cancel_editing">Cancel editing</string>
+    <string name="inventory_detail_content_description_delete">Delete template</string>
+    <string name="inventory_detail_content_description_open_camera">Open camera</string>
+    <string name="inventory_detail_nutritional_header_weight">Nutritional values (per 100g)</string>
+    <string name="inventory_detail_nutritional_header_volume">Nutritional values (per 100ml)</string>
+    <string name="inventory_detail_additional_images">Additional Images</string>
+    <string name="inventory_detail_add_image">Add Image</string>
+    <string name="inventory_detail_content_description_remove_image">Remove image</string>
+    <string name="inventory_detail_scan_table">Scan table</string>
+    <string name="inventory_detail_ocr_name">Scan name</string>
+    <string name="inventory_detail_ocr_amount">Scan weight or volume</string>
 </resources>
