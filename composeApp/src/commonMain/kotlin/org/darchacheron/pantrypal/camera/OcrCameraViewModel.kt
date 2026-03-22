@@ -1,4 +1,4 @@
-package org.darchacheron.pantrypal.food
+package org.darchacheron.pantrypal.camera
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -21,7 +21,6 @@ import okio.FileSystem
 import okio.Path.Companion.toPath
 import okio.SYSTEM
 import org.darchacheron.pantrypal.navigation.FoodNavRoute
-import org.darchacheron.pantrypal.navigation.NavRoute
 import org.darchacheron.pantrypal.navigation.Navigator
 import org.jetbrains.compose.resources.decodeToImageBitmap
 import kotlin.time.Clock

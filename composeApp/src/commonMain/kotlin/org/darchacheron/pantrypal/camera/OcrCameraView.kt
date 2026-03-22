@@ -1,4 +1,4 @@
-package org.darchacheron.pantrypal.food
+package org.darchacheron.pantrypal.camera
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -16,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.layout
@@ -301,7 +302,7 @@ private fun EnhancedCameraScreen(
                             modifier = Modifier
                                 .graphicsLayer {
                                     rotationZ = 270f
-                                    transformOrigin = androidx.compose.ui.graphics.TransformOrigin.Center
+                                    transformOrigin = TransformOrigin.Center
                                 }
                                 .width(16.dp)
                                 .height(200.dp)

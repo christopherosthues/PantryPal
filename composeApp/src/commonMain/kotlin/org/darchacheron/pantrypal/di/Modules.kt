@@ -34,14 +34,12 @@ import org.darchacheron.pantrypal.food.FoodDetailViewModel
 import org.darchacheron.pantrypal.food.FoodListView
 import org.darchacheron.pantrypal.food.FoodListViewModel
 import org.darchacheron.pantrypal.food.FoodRepository
-import org.darchacheron.pantrypal.food.OcrCameraView
-import org.darchacheron.pantrypal.food.OcrCameraViewModel
-import org.darchacheron.pantrypal.food.SimpleCameraView
-import org.darchacheron.pantrypal.food.SimpleCameraViewModel
-import org.darchacheron.pantrypal.navigation.BottomNavRoute
-import org.darchacheron.pantrypal.navigation.FoodNavRoute
-import org.darchacheron.pantrypal.navigation.NavRoute
-import org.darchacheron.pantrypal.navigation.Navigator
+import org.darchacheron.pantrypal.camera.OcrCameraView
+import org.darchacheron.pantrypal.camera.OcrCameraViewModel
+import org.darchacheron.pantrypal.camera.SimpleCameraView
+import org.darchacheron.pantrypal.camera.SimpleCameraViewModel
+import org.darchacheron.pantrypal.inventory.*
+import org.darchacheron.pantrypal.navigation.*
 import org.darchacheron.pantrypal.profile.ProfileRepository
 import org.darchacheron.pantrypal.profile.ProfileView
 import org.darchacheron.pantrypal.profile.ProfileViewModel
@@ -83,6 +81,16 @@ val navigationModule = module {
     ) {
         FoodListView(
             foodListViewModel = koinViewModel(),
+        )
+    }
+
+    navigation<BottomNavRoute.InventoryList> {
+        InventoryListView()
+    }
+
+    navigation<InventoryNavRoute.InventoryDetail> { route ->
+        InventoryDetailView(
+            viewModel = koinViewModel { parametersOf(route.itemId) }
         )
     }
 
@@ -177,23 +185,18 @@ val sharedModule =
         includes(navigationModule)
         single { FileSystem.SYSTEM }
         factoryOf(::FoodRepository)
+        factoryOf(::InventoryRepository)
         factoryOf(::ProfileRepository)
         factoryOf(::AuthenticationPreferencesRepository)
 
         single {
             get<PantryPalDatabaseFactory>()
                 .create()
-//                .addCallback(
-//                    PrepopulateCallback(
-//                        { get<ExerciseDao>() },
-//                        { get<EquipmentDao>() },
-//                        { get<WorkoutTemplateDao>() }
-//                    )
-//                )
                 .addMigrations(
                     PantryPalDatabase.MIGRATION_1_2,
                     PantryPalDatabase.MIGRATION_2_3,
                     PantryPalDatabase.MIGRATION_3_4,
+                    PantryPalDatabase.MIGRATION_4_5,
                 )
                 .setDriver(BundledSQLiteDriver())
                 .build()
@@ -201,6 +204,7 @@ val sharedModule =
 
         single { get<PantryPalDatabase>().foodDao }
         single { get<PantryPalDatabase>().profileDao }
+        single { get<PantryPalDatabase>().inventoryItemDao }
 
         viewModelOf(::SettingsViewModel)
         viewModelOf(::FoodListViewModel)
@@ -210,6 +214,8 @@ val sharedModule =
         viewModelOf(::LoginViewModel)
         viewModelOf(::RegistrationViewModel)
         viewModelOf(::ProfileViewModel)
+        viewModelOf(::InventoryListViewModel)
+        viewModelOf(::InventoryDetailViewModel)
 
         factoryOf(::AuthenticationService)
     }

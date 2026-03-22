@@ -12,6 +12,13 @@ internal val navConfig = SavedStateConfiguration {
             subclass(NavRoute.Settings::class, NavRoute.Settings.serializer())
             subclass(NavRoute.Login::class, NavRoute.Login.serializer())
             subclass(NavRoute.Register::class, NavRoute.Register.serializer())
+            subclass(BottomNavRoute.FoodList::class, BottomNavRoute.FoodList.serializer())
+            subclass(BottomNavRoute.InventoryList::class, BottomNavRoute.InventoryList.serializer())
+            subclass(BottomNavRoute.Profile::class, BottomNavRoute.Profile.serializer())
+            subclass(FoodNavRoute.FoodDetail::class, FoodNavRoute.FoodDetail.serializer())
+            subclass(FoodNavRoute.SimpleCamera::class, FoodNavRoute.SimpleCamera.serializer())
+            subclass(FoodNavRoute.OcrCamera::class, FoodNavRoute.OcrCamera.serializer())
+            subclass(InventoryNavRoute.InventoryDetail::class, InventoryNavRoute.InventoryDetail.serializer())
         }
     }
 }

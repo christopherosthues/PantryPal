@@ -40,6 +40,11 @@ class Navigator {
         _mainBackStack?.add(FoodNavRoute.FoodDetail(foodId))
     }
 
+    fun goToInventoryDetail(itemId: String? = null) {
+        _mainBackStack?.removeAll { it is InventoryNavRoute.InventoryDetail }
+        _mainBackStack?.add(InventoryNavRoute.InventoryDetail(itemId))
+    }
+
     fun goToSimpleCamera(onSuccess: (String) -> Unit) {
         simpleCameraCallback = onSuccess
         _mainBackStack?.add(FoodNavRoute.SimpleCamera)

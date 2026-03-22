@@ -1,4 +1,4 @@
-package org.darchacheron.pantrypal.food
+package org.darchacheron.pantrypal.camera
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -45,6 +45,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
@@ -336,7 +337,7 @@ private fun EnhancedCameraScreen(
                         modifier = Modifier
                             .graphicsLayer {
                                 rotationZ = 270f
-                                transformOrigin = androidx.compose.ui.graphics.TransformOrigin.Center
+                                transformOrigin = TransformOrigin.Center
                             }
                             .width(16.dp) // Maintain width for sliding distance
                             .height(200.dp) // Provide enough height for the rotated slider to not overlap labels

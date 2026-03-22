@@ -1,4 +1,4 @@
-package org.darchacheron.pantrypal.food
+package org.darchacheron.pantrypal.camera
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope

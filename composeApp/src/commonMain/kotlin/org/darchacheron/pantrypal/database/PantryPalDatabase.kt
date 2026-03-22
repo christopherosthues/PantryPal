@@ -13,6 +13,8 @@ import org.darchacheron.pantrypal.database.converters.StringListConverter
 import org.darchacheron.pantrypal.database.converters.UuidConverter
 import org.darchacheron.pantrypal.food.FoodDao
 import org.darchacheron.pantrypal.food.FoodEntity
+import org.darchacheron.pantrypal.inventory.InventoryItemDao
+import org.darchacheron.pantrypal.inventory.InventoryItemEntity
 import org.darchacheron.pantrypal.profile.ProfileDao
 import org.darchacheron.pantrypal.profile.ProfileEntity
 import kotlin.time.Clock
@@ -22,9 +24,10 @@ import kotlin.uuid.Uuid
 @Database(
     entities = [
         FoodEntity::class,
-        ProfileEntity::class
+        ProfileEntity::class,
+        InventoryItemEntity::class
     ],
-    version = 4
+    version = 5
 )
 @TypeConverters(
     InstantConverter::class,
@@ -36,6 +39,7 @@ import kotlin.uuid.Uuid
 abstract class PantryPalDatabase : RoomDatabase() {
     abstract val foodDao: FoodDao
     abstract val profileDao: ProfileDao
+    abstract val inventoryItemDao: InventoryItemDao
 
     companion object {
         const val DB_NAME = "pantrypal.db"
@@ -130,6 +134,38 @@ abstract class PantryPalDatabase : RoomDatabase() {
         val MIGRATION_3_4 = object : Migration(3, 4) {
             override fun migrate(connection: SQLiteConnection) {
                 connection.execSQL("UPDATE profile SET passwordHash = '' WHERE passwordHash IS NULL")
+            }
+        }
+
+        val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(connection: SQLiteConnection) {
+                connection.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `inventory_item` (
+                        `id` TEXT NOT NULL, 
+                        `profileId` TEXT NOT NULL, 
+                        `name` TEXT NOT NULL, 
+                        `kiloCalories` INTEGER, 
+                        `kiloJoule` INTEGER, 
+                        `fatInGrams` REAL, 
+                        `saturatedFattyAcidsInGrams` REAL, 
+                        `carbsInGrams` REAL, 
+                        `sugarInGrams` REAL, 
+                        `dietaryFiberInGrams` REAL, 
+                        `proteinInGrams` REAL, 
+                        `saltInGrams` REAL, 
+                        `fillingQuantity` REAL, 
+                        `isLiquid` INTEGER NOT NULL, 
+                        `createdAt` TEXT NOT NULL, 
+                        `lastModifiedAt` TEXT NOT NULL, 
+                        `imagePath` TEXT, 
+                        `additionalImagePaths` TEXT NOT NULL, 
+                        PRIMARY KEY(`id`), 
+                        FOREIGN KEY(`profileId`) REFERENCES `profile`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE 
+                    )
+                    """.trimIndent()
+                )
+                connection.execSQL("CREATE INDEX IF NOT EXISTS `index_inventory_item_profileId` ON `inventory_item` (`profileId`)")
             }
         }
     }

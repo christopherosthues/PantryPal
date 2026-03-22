@@ -159,4 +159,11 @@
     <string name="profile_logout_button">Logout</string>
     <string name="profile_delete_button">Delete Account</string>
     <string name="profile_error_update">Failed to update profile</string>
+
+    <!-- Inventory -->
+    <string name="inventory_list_title">Inventory Templates</string>
+    <string name="inventory_list_empty">No templates found. Create one!</string>
+    <string name="inventory_list_add_to_pantry">Add to Pantry</string>
+    <string name="inventory_detail_title_add">Add Template</string>
+    <string name="inventory_detail_title_edit">Edit Template</string>
 </resources>
