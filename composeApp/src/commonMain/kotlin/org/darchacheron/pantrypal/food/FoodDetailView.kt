@@ -282,10 +282,6 @@ fun FoodDetailView(
                 }
             )
 
-            AmountControl(
-                viewModel = viewModel
-            )
-
             AdaptiveRow(
                 useTwoColumns = useTwoColumns,
                 leftContent = {
@@ -474,56 +470,6 @@ fun FoodDetailView(
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 singleLine = true
-            )
-        }
-    }
-}
-
-@Composable
-fun AmountControl(
-    viewModel: FoodDetailViewModel
-) {
-    SingleChoiceSegmentedButtonRow {
-        SegmentedButton(
-            selected = false,
-            onClick = { viewModel.decrementAmount() },
-            enabled = (viewModel.amountStr.toIntOrNull() ?: 0) > 1,
-            modifier = Modifier.size(48.dp).align(Alignment.CenterVertically),
-            shape = SegmentedButtonDefaults.itemShape(
-                index = 0,
-                count = 2,
-            )
-        ) {
-            Icon(
-                painter = painterResource(Res.drawable.ic_remove),
-                contentDescription = stringResource(Res.string.food_detail_content_description_decrease_amount),
-                modifier = Modifier.size(24.dp)
-            )
-        }
-
-        OutlinedTextField(
-            value = viewModel.amountStr,
-            onValueChange = { viewModel.updateAmount(it) },
-            label = { Text(text = stringResource(Res.string.food_detail_amount)) },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            singleLine = true,
-            textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Center),
-            modifier = Modifier.width(96.dp)
-        )
-
-        SegmentedButton(
-            selected = false,
-            onClick = { viewModel.incrementAmount() },
-            modifier = Modifier.size(48.dp).align(Alignment.CenterVertically),
-            shape = SegmentedButtonDefaults.itemShape(
-                index = 1,
-                count = 2,
-            )
-        ) {
-            Icon(
-                painter = painterResource(Res.drawable.ic_add),
-                contentDescription = stringResource(Res.string.food_detail_content_description_increase_amount),
-                modifier = Modifier.size(24.dp)
             )
         }
     }

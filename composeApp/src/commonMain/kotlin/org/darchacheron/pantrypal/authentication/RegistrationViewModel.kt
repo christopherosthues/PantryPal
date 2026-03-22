@@ -10,6 +10,7 @@ import org.darchacheron.pantrypal.profile.Profile
 import org.darchacheron.pantrypal.profile.ProfileRepository
 import org.darchacheron.pantrypal.ui.UiState
 import pantrypal.composeapp.generated.resources.Res
+import pantrypal.composeapp.generated.resources.login_error
 import pantrypal.composeapp.generated.resources.registration_error
 import kotlin.time.Clock
 import kotlin.uuid.ExperimentalUuidApi
@@ -54,7 +55,7 @@ class RegistrationViewModel(
                 // Check for local conflict first in both modes
                 val existingLocal = profileRepository.getProfileByUsername(userName).firstOrNull()
                 if (existingLocal != null) {
-                    registrationState.emit(UiState.error(Res.string.registration_error))
+                    registrationState.emit(uiState.copy(error = Res.string.registration_error))
                     return@launch
                 }
 
@@ -73,7 +74,7 @@ class RegistrationViewModel(
                         registrationState.emit(UiState.success(Registration(userName, email, password)))
                         navigator.goToLogin()
                     } else {
-                        registrationState.emit(UiState.error(Res.string.registration_error))
+                        registrationState.emit(uiState.copy(error = Res.string.registration_error))
                     }
                 } else {
                     // Local only mode
@@ -82,7 +83,7 @@ class RegistrationViewModel(
                     navigator.goToLogin()
                 }
             } catch (exception: Exception) {
-                registrationState.emit(UiState.error(Res.string.registration_error))
+                registrationState.emit(uiState.copy(error = Res.string.registration_error))
             }
         }
     }

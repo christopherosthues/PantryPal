@@ -83,7 +83,7 @@ class LoginViewModel(
                         loginState.emit(UiState.success(Login(username, password)))
                         navigator.goToMain()
                     } else {
-                        loginState.emit(UiState.error(Res.string.login_error))
+                        loginState.emit(uiState.copy(error = Res.string.login_error))
                     }
                 } else {
                     // Local only mode: Try to find local profile by username
@@ -98,15 +98,15 @@ class LoginViewModel(
                             loginState.emit(UiState.success(Login(username, password)))
                             navigator.goToMain()
                         } else {
-                            loginState.emit(UiState.error(Res.string.login_error))
+                            loginState.emit(uiState.copy(error = Res.string.login_error))
                         }
                     } else {
-                        loginState.emit(UiState.error(Res.string.login_error))
+                        loginState.emit(uiState.copy(error = Res.string.login_error))
                     }
                 }
             } catch (exception: Exception) {
                 Logger.withTag(loginTag).e(exception) { "Error login user: $username" }
-                loginState.emit(UiState.error(Res.string.login_error))
+                loginState.emit(uiState.copy(error = Res.string.login_error))
             }
         }
     }

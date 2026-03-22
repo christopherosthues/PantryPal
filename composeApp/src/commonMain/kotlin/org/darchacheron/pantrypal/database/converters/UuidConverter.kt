@@ -7,8 +7,8 @@ import kotlin.uuid.Uuid
 @OptIn(ExperimentalUuidApi::class)
 class UuidConverter {
     @TypeConverter
-    fun fromUUID(uuid: Uuid): String = uuid.toString()
+    fun fromUUID(uuid: Uuid?): String? = uuid?.toString()
 
     @TypeConverter
-    fun uuidFromString(string: String?): Uuid = Uuid.parse(string ?: "")
+    fun uuidFromString(string: String?): Uuid? = if (string != null) Uuid.parse(string) else null
 }

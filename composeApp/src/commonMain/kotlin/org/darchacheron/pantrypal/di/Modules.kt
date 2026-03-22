@@ -38,6 +38,8 @@ import org.darchacheron.pantrypal.food.OcrCameraView
 import org.darchacheron.pantrypal.food.OcrCameraViewModel
 import org.darchacheron.pantrypal.food.SimpleCameraView
 import org.darchacheron.pantrypal.food.SimpleCameraViewModel
+import org.darchacheron.pantrypal.navigation.BottomNavRoute
+import org.darchacheron.pantrypal.navigation.FoodNavRoute
 import org.darchacheron.pantrypal.navigation.NavRoute
 import org.darchacheron.pantrypal.navigation.Navigator
 import org.darchacheron.pantrypal.profile.ProfileRepository
@@ -65,7 +67,7 @@ val navigationModule = module {
         MainView()
     }
 
-    navigation<NavRoute.FoodList>(
+    navigation<BottomNavRoute.FoodList>(
         metadata = ListDetailSceneStrategy.listPane(
             detailPlaceholder = {
                 Surface {
@@ -84,7 +86,7 @@ val navigationModule = module {
         )
     }
 
-    navigation<NavRoute.Profile> {
+    navigation<BottomNavRoute.Profile> {
         val navigator = get<Navigator>()
         ProfileView(
             viewModel = koinViewModel(),
@@ -92,7 +94,7 @@ val navigationModule = module {
         )
     }
 
-    navigation<NavRoute.FoodDetail>(
+    navigation<FoodNavRoute.FoodDetail>(
         metadata = ListDetailSceneStrategy.detailPane()
     ) { route ->
         FoodDetailView(
@@ -100,7 +102,7 @@ val navigationModule = module {
         )
     }
 
-    navigation<NavRoute.SimpleCamera>(
+    navigation<FoodNavRoute.SimpleCamera>(
         metadata = NavDisplay.transitionSpec {
             slideInVertically(initialOffsetY = { it }) togetherWith ExitTransition.KeepUntilTransitionsFinished
         } + NavDisplay.popTransitionSpec {
@@ -118,7 +120,7 @@ val navigationModule = module {
         )
     }
 
-    navigation<NavRoute.OcrCamera>(
+    navigation<FoodNavRoute.OcrCamera>(
         metadata = NavDisplay.transitionSpec {
             slideInVertically(initialOffsetY = { it }) togetherWith ExitTransition.KeepUntilTransitionsFinished
         } + NavDisplay.popTransitionSpec {
@@ -191,7 +193,7 @@ val sharedModule =
                 .addMigrations(
                     PantryPalDatabase.MIGRATION_1_2,
                     PantryPalDatabase.MIGRATION_2_3,
-                    PantryPalDatabase.MIGRATION_3_4
+                    PantryPalDatabase.MIGRATION_3_4,
                 )
                 .setDriver(BundledSQLiteDriver())
                 .build()

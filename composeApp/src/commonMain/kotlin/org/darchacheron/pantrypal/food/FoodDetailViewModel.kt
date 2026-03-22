@@ -15,6 +15,7 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.format.byUnicodePattern
 import org.darchacheron.pantrypal.authentication.AuthenticationPreferencesRepository
+import org.darchacheron.pantrypal.navigation.FoodNavRoute
 import org.darchacheron.pantrypal.navigation.NavRoute
 import org.darchacheron.pantrypal.navigation.Navigator
 import org.darchacheron.pantrypal.navigation.OcrType
@@ -27,7 +28,7 @@ import kotlin.uuid.Uuid
 
 @OptIn(ExperimentalUuidApi::class)
 class FoodDetailViewModel(
-    val navigationRoute: NavRoute.FoodDetail,
+    val navigationRoute: FoodNavRoute.FoodDetail,
     private val foodRepository: FoodRepository,
     private val authenticationPreferencesRepository: AuthenticationPreferencesRepository,
     private val navigator: Navigator,

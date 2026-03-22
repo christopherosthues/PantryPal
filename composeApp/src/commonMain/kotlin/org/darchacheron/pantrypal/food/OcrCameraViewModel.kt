@@ -20,6 +20,7 @@ import kotlinx.coroutines.launch
 import okio.FileSystem
 import okio.Path.Companion.toPath
 import okio.SYSTEM
+import org.darchacheron.pantrypal.navigation.FoodNavRoute
 import org.darchacheron.pantrypal.navigation.NavRoute
 import org.darchacheron.pantrypal.navigation.Navigator
 import org.jetbrains.compose.resources.decodeToImageBitmap
@@ -79,7 +80,7 @@ data class OcrCameraUiState(
 }
 
 class OcrCameraViewModel(
-    val route: NavRoute.OcrCamera,
+    val route: FoodNavRoute.OcrCamera,
     private val navigator: Navigator,
 ) : ViewModel() {
 
