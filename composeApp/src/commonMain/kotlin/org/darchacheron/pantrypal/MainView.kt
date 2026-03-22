@@ -17,6 +17,8 @@ import androidx.compose.ui.Modifier
 import org.darchacheron.pantrypal.food.FoodListView
 import org.darchacheron.pantrypal.navigation.Navigator
 import org.darchacheron.pantrypal.profile.ProfileView
+import org.jetbrains.compose.resources.DrawableResource
+import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
@@ -66,7 +68,7 @@ fun MainView(
     }
 }
 
-enum class MainTab(val label: org.jetbrains.compose.resources.StringResource, val icon: org.jetbrains.compose.resources.DrawableResource) {
+enum class MainTab(val label: StringResource, val icon: DrawableResource) {
     Food(Res.string.main_tab_food, Res.drawable.ic_food),
     Profile(Res.string.main_tab_profile, Res.drawable.ic_settings) // Using ic_settings as placeholder for profile
 }
