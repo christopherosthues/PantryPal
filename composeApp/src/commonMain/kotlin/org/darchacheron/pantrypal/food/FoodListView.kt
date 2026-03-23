@@ -73,6 +73,7 @@ import org.koin.compose.koinInject
 import pantrypal.composeapp.generated.resources.Res
 import pantrypal.composeapp.generated.resources.food_list_content_description_add_food
 import pantrypal.composeapp.generated.resources.food_list_card_best_before_label
+import pantrypal.composeapp.generated.resources.food_list_card_content_description_add_to_inventory
 import pantrypal.composeapp.generated.resources.food_list_card_content_description_consume
 import pantrypal.composeapp.generated.resources.food_list_card_content_description_copy
 import pantrypal.composeapp.generated.resources.food_list_card_content_description_delete
@@ -98,6 +99,7 @@ import pantrypal.composeapp.generated.resources.ic_copy
 import pantrypal.composeapp.generated.resources.ic_delete
 import pantrypal.composeapp.generated.resources.ic_food
 import pantrypal.composeapp.generated.resources.ic_fridge
+import pantrypal.composeapp.generated.resources.ic_inventory
 import pantrypal.composeapp.generated.resources.ic_opened_can
 import pantrypal.composeapp.generated.resources.ic_search
 import pantrypal.composeapp.generated.resources.ic_settings
@@ -264,7 +266,8 @@ fun FoodListView(
                                         onClick = { foodListViewModel.goToFoodDetail(food.id.toString()) },
                                         onDelete = { foodListViewModel.deleteFood(it) },
                                         onConsume = { foodListViewModel.consumeFood(it) },
-                                        onCopy = { foodListViewModel.copyFood(it) }
+                                        onCopy = { foodListViewModel.copyFood(it) },
+                                        onAddToInventory = { foodListViewModel.addToInventory(it) }
                                     )
                                 }
                             }
@@ -413,6 +416,7 @@ fun FoodItem(
     onClick: () -> Unit,
     onDelete: (food: Food) -> Unit,
     onConsume: (food: Food) -> Unit,
+    onAddToInventory: (food: Food) -> Unit,
     onCopy: (food: Food) -> Unit,
 ) {
     val extraColors = PantryPalTheme.extraColors
@@ -452,10 +456,10 @@ fun FoodItem(
         leftRevealActions = listOf(
             // TODO: Move consume to delete and add an add to inventory
             SwipeAction(
-                label = stringResource(Res.string.food_list_card_content_description_consume, food.name),
-                onAction = { onConsume(food) },
+                label = stringResource(Res.string.food_list_card_content_description_add_to_inventory, food.name),
+                onAction = { onAddToInventory(food) },
                 customization = ActionCustomization(
-                    icon = Res.drawable.ic_food,
+                    icon = Res.drawable.ic_inventory,
                     iconColor = MaterialTheme.colorScheme.onPrimary,
                     containerColor = MaterialTheme.colorScheme.primary,
                     shape = MaterialTheme.shapes.medium
@@ -473,6 +477,16 @@ fun FoodItem(
             )
         ),
         rightRevealActions = listOf(
+            SwipeAction(
+                label = stringResource(Res.string.food_list_card_content_description_consume, food.name),
+                onAction = { onConsume(food) },
+                customization = ActionCustomization(
+                    icon = Res.drawable.ic_food,
+                    iconColor = MaterialTheme.colorScheme.onError,
+                    containerColor = MaterialTheme.colorScheme.error,
+                    shape = MaterialTheme.shapes.medium
+                )
+            ),
             SwipeAction(
                 label = stringResource(Res.string.food_list_card_content_description_delete, food.name),
                 onAction = { onDelete(food) },

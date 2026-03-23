@@ -7,6 +7,8 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import org.darchacheron.pantrypal.authentication.AuthenticationPreferencesRepository
+import org.darchacheron.pantrypal.inventory.InventoryItem
+import org.darchacheron.pantrypal.inventory.InventoryRepository
 import org.darchacheron.pantrypal.navigation.Navigator
 import org.darchacheron.pantrypal.ui.UiState
 import org.jetbrains.compose.resources.StringResource
@@ -30,6 +32,7 @@ data class Message(
 @OptIn(ExperimentalUuidApi::class)
 class FoodListViewModel(
     private val foodRepository: FoodRepository,
+    private val inventoryRepository: InventoryRepository,
     private val authenticationPreferencesRepository: AuthenticationPreferencesRepository,
     private val navigator: Navigator,
 ) : ViewModel() {
@@ -159,6 +162,37 @@ class FoodListViewModel(
             } catch (exception: Exception) {
                 Logger.withTag(loggerTag).e { "Error deleting food: ${exception.message}" }
                 _messages.value = Message(Res.string.food_list_card_consume_error, food.name)
+            }
+        }
+    }
+
+    fun addToInventory(food: Food) {
+        viewModelScope.launch {
+            try {
+                val inventoryItem = InventoryItem(
+                    profileId = food.profileId,
+                    name = food.name,
+                    kiloCalories = food.kiloCalories,
+                    kiloJoule = food.kiloJoule,
+                    fatInGrams = food.fatInGrams,
+                    saturatedFattyAcidsInGrams = food.saturatedFattyAcidsInGrams,
+                    carbsInGrams = food.carbsInGrams,
+                    sugarInGrams = food.sugarInGrams,
+                    dietaryFiberInGrams = food.dietaryFiberInGrams,
+                    proteinInGrams = food.proteinInGrams,
+                    saltInGrams = food.saltInGrams,
+                    fillingQuantity = food.fillingQuantity,
+                    isLiquid = food.isLiquid,
+                    createdAt = Clock.System.now(),
+                    lastModifiedAt = Clock.System.now(),
+                    imagePath = food.imagePath,
+                    additionalImagePaths = food.additionalImagePaths
+                )
+                inventoryRepository.upsert(inventoryItem)
+                // Optionally navigate to inventory detail to let user verify
+                navigator.goToInventoryDetail(inventoryItem.id.toString())
+            } catch (e: Exception) {
+                Logger.withTag(loggerTag).e { "Error adding to inventory list: ${e.message}" }
             }
         }
     }

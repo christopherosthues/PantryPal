@@ -33,11 +33,12 @@
     <string name="food_list_card_use_by_label">Use By</string>
     <string name="food_list_card_opened_at">Opened at</string>
     <string name="food_list_card_content_description_delete">Delete %1$s</string>
-    <string name="food_list_card_content_description_consume">Reduce the amount of %1$s by one</string>
+    <string name="food_list_card_content_description_consume">Consume %1$s</string>
+    <string name="food_list_card_content_description_add_to_inventory">Add %1$s to Inventory</string>
     <string name="food_list_card_content_description_copy">Copy %1$s</string>
     <string name="food_list_card_delete_success">%1$s deleted successfully</string>
     <string name="food_list_card_delete_error">Failed to delete %1$s</string>
-    <string name="food_list_card_consume_success">One %1$s successfully consumed</string>
+    <string name="food_list_card_consume_success">%1$s successfully consumed</string>
     <string name="food_list_card_consume_error">Failed to consume %1$s</string>
     <string name="food_list_card_copy_success">%1$s successfully duplicated</string>
     <string name="food_list_card_copy_error">Failed to duplicate %1$s</string>

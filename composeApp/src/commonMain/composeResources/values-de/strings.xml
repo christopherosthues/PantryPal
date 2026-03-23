@@ -31,11 +31,12 @@
     <string name="food_list_card_use_by_label">Verbr. bis</string>
     <string name="food_list_card_opened_at">Geöffnet am</string>
     <string name="food_list_card_content_description_delete">%1$s löschen</string>
-    <string name="food_list_card_content_description_consume">Anzahl von %1$s um eins verringern</string>
+    <string name="food_list_card_content_description_consume">%1$s konsumieren</string>
+    <string name="food_list_card_content_description_add_to_inventory">%1$s zum Inventar hinzufügen</string>
     <string name="food_list_card_content_description_copy">%1$s kopieren</string>
     <string name="food_list_card_delete_success">%1$s erfolgreich gelöscht</string>
     <string name="food_list_card_delete_error">Fehler beim Löschen von %1$s</string>
-    <string name="food_list_card_consume_success">Anzahl von %1$s erfolgreich um eins verringert</string>
+    <string name="food_list_card_consume_success">%1$s erfolgreich konsumiert</string>
     <string name="food_list_card_consume_error">Fehler beim Konsumieren von %1$s</string>
     <string name="food_list_card_copy_success">%1$s erfolgreich kopiert</string>
     <string name="food_list_card_copy_error">Fehler beim Kopieren von %1$s</string>
