@@ -10,17 +10,22 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.darchacheron.pantrypal.food.FoodRepository
 import org.darchacheron.pantrypal.ui.UiState
 import pantrypal.composeapp.generated.resources.Res
 import pantrypal.composeapp.generated.resources.settings_error_loading
 import pantrypal.composeapp.generated.resources.settings_error_saving
 
 class SettingsViewModel(
-    private val settingsRepository: SettingsRepository
+    private val settingsRepository: SettingsRepository,
+    private val foodRepository: FoodRepository
 ) : ViewModel() {
 
     private val _settingsFlow = MutableStateFlow<UiState<Settings>>(UiState.loading())
     val settingsFlow: StateFlow<UiState<Settings>> = _settingsFlow.asStateFlow()
+
+    private val _isSyncing = MutableStateFlow(false)
+    val isSyncing: StateFlow<Boolean> = _isSyncing.asStateFlow()
 
     private var _originalSettings: Settings = Settings()
 
@@ -36,6 +41,19 @@ class SettingsViewModel(
                     _originalSettings = settings
                     _settingsFlow.value = UiState.success(settings)
                 }
+        }
+    }
+
+    fun triggerSync() {
+        viewModelScope.launch {
+            _isSyncing.value = true
+            try {
+                foodRepository.syncWithServer()
+            } catch (e: Exception) {
+                Logger.withTag("Settings").e { "Manual sync failed: ${e.message}" }
+            } finally {
+                _isSyncing.value = false
+            }
         }
     }
 

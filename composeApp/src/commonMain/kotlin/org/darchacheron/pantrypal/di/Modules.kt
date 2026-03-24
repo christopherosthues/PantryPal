@@ -29,11 +29,7 @@ import org.darchacheron.pantrypal.authentication.RegistrationView
 import org.darchacheron.pantrypal.authentication.RegistrationViewModel
 import org.darchacheron.pantrypal.database.PantryPalDatabase
 import org.darchacheron.pantrypal.database.PantryPalDatabaseFactory
-import org.darchacheron.pantrypal.food.FoodDetailView
-import org.darchacheron.pantrypal.food.FoodDetailViewModel
-import org.darchacheron.pantrypal.food.FoodListView
-import org.darchacheron.pantrypal.food.FoodListViewModel
-import org.darchacheron.pantrypal.food.FoodRepository
+import org.darchacheron.pantrypal.food.*
 import org.darchacheron.pantrypal.camera.OcrCameraView
 import org.darchacheron.pantrypal.camera.OcrCameraViewModel
 import org.darchacheron.pantrypal.camera.SimpleCameraView
@@ -184,6 +180,7 @@ val sharedModule =
     module {
         includes(navigationModule)
         single { FileSystem.SYSTEM }
+        factoryOf(::FoodNetworkService)
         factoryOf(::FoodRepository)
         factoryOf(::InventoryRepository)
         factoryOf(::ProfileRepository)

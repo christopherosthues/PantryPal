@@ -6,6 +6,7 @@
     <string name="settings_theme">Design</string>
     <string name="settings_error_loading">Fehler beim Laden der Einstellungen</string>
     <string name="settings_error_saving">Fehler beim Speichern der Einstellungen</string>
+    <string name="settings_content_description_sync">Jetzt synchronisieren</string>
     <string name="settings_content_description_back">Zurück</string>
     <string name="settings_content_description_reset">Zurücksetzen</string>
     <string name="settings_content_description_save">Speichern</string>

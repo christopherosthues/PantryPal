@@ -23,6 +23,7 @@ fun SettingsView(
     onBack: () -> Unit = {}
 ) {
     val uiState by viewModel.settingsFlow.collectAsState()
+    val isSyncing by viewModel.isSyncing.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
     Scaffold(
@@ -41,7 +42,23 @@ fun SettingsView(
                         )
                     }
                 },
-                actions = {}
+                actions = {
+                    if (uiState.hasData && uiState.data!!.dataSynchronization != DataSynchronization.NO_SYNCHRONIZATION) {
+                        IconButton(
+                            onClick = { viewModel.triggerSync() },
+                            enabled = !isSyncing
+                        ) {
+                            if (isSyncing) {
+                                CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                            } else {
+                                Icon(
+                                    painter = painterResource(Res.drawable.ic_sync),
+                                    contentDescription = stringResource(Res.string.settings_content_description_sync)
+                                )
+                            }
+                        }
+                    }
+                }
             )
         },
         floatingActionButton = {

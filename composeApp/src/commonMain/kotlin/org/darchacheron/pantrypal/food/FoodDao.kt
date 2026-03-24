@@ -6,6 +6,7 @@ import androidx.room.Query
 import androidx.room.Upsert
 import kotlinx.coroutines.flow.Flow
 import kotlinx.datetime.LocalDate
+import kotlin.time.Instant
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -45,4 +46,10 @@ interface FoodDao {
 
     @Query("DELETE FROM food WHERE id = :id")
     suspend fun delete(id: Uuid)
+
+    @Query("SELECT * FROM food WHERE serverId IS NULL OR lastModifiedAt > :lastSyncTime")
+    suspend fun getDirtyRecords(lastSyncTime: Instant): List<FoodEntity>
+
+    @Query("UPDATE food SET serverId = :serverId WHERE id = :id")
+    suspend fun updateServerId(id: Uuid, serverId: Uuid)
 }

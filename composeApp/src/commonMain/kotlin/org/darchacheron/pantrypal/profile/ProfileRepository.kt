@@ -9,6 +9,7 @@ import kotlin.uuid.Uuid
 class ProfileRepository(
     private val profileDao: ProfileDao
 ) {
+    // TODO: Sync
     fun getProfileById(id: Uuid): Flow<Profile?> =
         profileDao.getProfileById(id).map { it?.toProfile() }
 

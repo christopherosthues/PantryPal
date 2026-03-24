@@ -11,6 +11,7 @@ import kotlin.uuid.Uuid
 class InventoryRepository(
     private val inventoryItemDao: InventoryItemDao
 ) {
+    // TODO: Sync
     fun getFilteredAndSorted(
         profileId: Uuid,
         query: String,
