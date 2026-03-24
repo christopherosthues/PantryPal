@@ -36,6 +36,7 @@ import org.darchacheron.pantrypal.camera.SimpleCameraView
 import org.darchacheron.pantrypal.camera.SimpleCameraViewModel
 import org.darchacheron.pantrypal.inventory.*
 import org.darchacheron.pantrypal.navigation.*
+import org.darchacheron.pantrypal.profile.*
 import org.darchacheron.pantrypal.profile.ProfileRepository
 import org.darchacheron.pantrypal.profile.ProfileView
 import org.darchacheron.pantrypal.profile.ProfileViewModel
@@ -181,8 +182,9 @@ val sharedModule =
         includes(navigationModule)
         single { FileSystem.SYSTEM }
         factoryOf(::FoodNetworkService)
-        factoryOf(::FoodRepository)
         factoryOf(::InventoryNetworkService)
+        factoryOf(::ProfileNetworkService)
+        factoryOf(::FoodRepository)
         factoryOf(::InventoryRepository)
         factoryOf(::ProfileRepository)
         factoryOf(::AuthenticationPreferencesRepository)
