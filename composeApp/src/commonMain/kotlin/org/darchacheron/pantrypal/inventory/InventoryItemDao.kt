@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Query
 import androidx.room.Upsert
 import kotlinx.coroutines.flow.Flow
+import kotlin.time.Instant
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -33,4 +34,10 @@ interface InventoryItemDao {
 
     @Query("DELETE FROM inventory_item WHERE id = :id")
     suspend fun delete(id: Uuid)
+
+    @Query("SELECT * FROM inventory_item WHERE serverId IS NULL OR lastModifiedAt > :lastSyncTime")
+    suspend fun getDirtyRecords(lastSyncTime: Instant): List<InventoryItemEntity>
+
+    @Query("UPDATE inventory_item SET serverId = :serverId WHERE id = :id")
+    suspend fun updateServerId(id: Uuid, serverId: Uuid)
 }

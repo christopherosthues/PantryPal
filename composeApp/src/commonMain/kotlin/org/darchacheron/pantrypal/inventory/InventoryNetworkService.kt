@@ -1,4 +1,4 @@
-package org.darchacheron.pantrypal.food
+package org.darchacheron.pantrypal.inventory
 
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -24,40 +24,40 @@ import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 @OptIn(ExperimentalUuidApi::class)
-class FoodNetworkService(private val preferencesRepository: AuthenticationPreferencesRepository) {
+class InventoryNetworkService(private val preferencesRepository: AuthenticationPreferencesRepository) {
 
-    suspend fun pushFoods(foods: List<Food>, serverUrl: String): List<Food> {
+    suspend fun pushInventoryItems(items: List<InventoryItem>, serverUrl: String): List<InventoryItem> {
         val auth = preferencesRepository.authenticationPreferencesFlow.firstOrNull()
         val token = auth?.accessToken
         if (token.isNullOrBlank()) return emptyList()
 
         return createHttpClient(token).use { client ->
-            client.post("$serverUrl/api/food/batch") {
+            client.post("$serverUrl/api/inventory/batch") {
                 contentType(ContentType.Application.Json)
-                setBody(foods)
+                setBody(items)
             }.body()
         }
     }
 
-    suspend fun fetchChanges(lastSync: Instant, serverUrl: String): List<Food> {
+    suspend fun fetchChanges(lastSync: Instant, serverUrl: String): List<InventoryItem> {
         val auth = preferencesRepository.authenticationPreferencesFlow.firstOrNull()
         val token = auth?.accessToken
         if (token.isNullOrBlank()) return emptyList()
 
         return createHttpClient(token).use { client ->
-            client.get("$serverUrl/api/food/sync") {
+            client.get("$serverUrl/api/inventory/sync") {
                 parameter("since", lastSync.toString())
             }.body()
         }
     }
 
-    suspend fun deleteFood(serverId: Uuid, serverUrl: String) {
+    suspend fun deleteInventoryItem(serverId: Uuid, serverUrl: String) {
         val auth = preferencesRepository.authenticationPreferencesFlow.firstOrNull()
         val token = auth?.accessToken
         if (token.isNullOrBlank()) return
 
         createHttpClient(token).use { client ->
-            client.delete("$serverUrl/api/food/$serverId")
+            client.delete("$serverUrl/api/inventory/$serverId")
         }
     }
 

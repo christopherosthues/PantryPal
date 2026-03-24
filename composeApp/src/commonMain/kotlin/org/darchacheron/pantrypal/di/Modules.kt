@@ -182,6 +182,7 @@ val sharedModule =
         single { FileSystem.SYSTEM }
         factoryOf(::FoodNetworkService)
         factoryOf(::FoodRepository)
+        factoryOf(::InventoryNetworkService)
         factoryOf(::InventoryRepository)
         factoryOf(::ProfileRepository)
         factoryOf(::AuthenticationPreferencesRepository)
