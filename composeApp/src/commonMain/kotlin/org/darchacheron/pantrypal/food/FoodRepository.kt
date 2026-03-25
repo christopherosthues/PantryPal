@@ -113,7 +113,7 @@ class FoodRepository(
             if (settings.dataSynchronization == DataSynchronization.UPLOAD_AND_DOWNLOAD || 
                 settings.dataSynchronization == DataSynchronization.ONLY_UPLOAD) {
                 
-                val dirtyEntities = foodDao.getDirtyRecords(Instant.fromEpochMilliseconds(0))
+                val dirtyEntities = foodDao.getDirtyRecords(Instant.fromEpochMilliseconds(0)) // TODO: store instant of last sync
                 if (dirtyEntities.isNotEmpty()) {
                     val dirtyFoods = dirtyEntities.map { it.toFood() }
                     try {

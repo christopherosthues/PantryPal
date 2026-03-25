@@ -41,6 +41,7 @@ class ProfileRepository(
         ) {
             scope.launch {
                 try {
+                    // TODO: what if the remote profile does not exist yet?
                     profileNetworkService.updateProfile(profile, settings.serverUrl)?.let { synced ->
                         profileDao.upsert(synced.toProfileEntity())
                     }
@@ -52,13 +53,16 @@ class ProfileRepository(
     }
 
     suspend fun delete() =
-        profileDao.delete()
+        profileDao.delete() // TODO: also delete remote profile?
 
     suspend fun syncWithServer() {
         val settings = settingsRepository.getSettings()
         if (settings.dataSynchronization == DataSynchronization.NO_SYNCHRONIZATION) return
 
         try {
+            // TODO: store instant of last sync
+            // TODO: Push changes
+
             // Since there is only one profile, we just fetch it from the server
             // The server knows which profile to return based on the access token
             if (settings.dataSynchronization == DataSynchronization.UPLOAD_AND_DOWNLOAD ||

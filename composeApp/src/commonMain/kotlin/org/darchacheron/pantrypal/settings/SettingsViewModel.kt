@@ -11,6 +11,8 @@ import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.darchacheron.pantrypal.food.FoodRepository
+import org.darchacheron.pantrypal.inventory.InventoryRepository
+import org.darchacheron.pantrypal.profile.ProfileRepository
 import org.darchacheron.pantrypal.ui.UiState
 import pantrypal.composeapp.generated.resources.Res
 import pantrypal.composeapp.generated.resources.settings_error_loading
@@ -18,8 +20,11 @@ import pantrypal.composeapp.generated.resources.settings_error_saving
 
 class SettingsViewModel(
     private val settingsRepository: SettingsRepository,
-    private val foodRepository: FoodRepository
+    private val foodRepository: FoodRepository,
+    private val inventoryRepository: InventoryRepository,
+    private val profileRepository: ProfileRepository
 ) : ViewModel() {
+    // TODO: ensure that there is a remote profile for data synchronization
 
     private val _settingsFlow = MutableStateFlow<UiState<Settings>>(UiState.loading())
     val settingsFlow: StateFlow<UiState<Settings>> = _settingsFlow.asStateFlow()
@@ -29,12 +34,14 @@ class SettingsViewModel(
 
     private var _originalSettings: Settings = Settings()
 
+    private val loggerTag = "Settings"
+
     init {
         viewModelScope.launch {
             settingsRepository.getSettingsFlow()
                 .onStart { _settingsFlow.value = UiState.loading() }
                 .catch {
-                    Logger.withTag("Settings").e { "Error loading settings: ${it.message}" }
+                    Logger.withTag(loggerTag).e { "Error loading settings: ${it.message}" }
                     _settingsFlow.value = UiState.error(Res.string.settings_error_loading)
                 }
                 .collect { settings ->
@@ -49,8 +56,10 @@ class SettingsViewModel(
             _isSyncing.value = true
             try {
                 foodRepository.syncWithServer()
+                inventoryRepository.syncWithServer()
+                profileRepository.syncWithServer()
             } catch (e: Exception) {
-                Logger.withTag("Settings").e { "Manual sync failed: ${e.message}" }
+                Logger.withTag(loggerTag).e { "Manual sync failed: ${e.message}" }
             } finally {
                 _isSyncing.value = false
             }
@@ -82,7 +91,7 @@ class SettingsViewModel(
                 settingsRepository.saveSettings(currentSettings)
                 onSuccess()
             } catch (e: Exception) {
-                Logger.withTag("Settings").e { "Error saving settings: ${e.message}" }
+                Logger.withTag(loggerTag).e { "Error saving settings: ${e.message}" }
                 _settingsFlow.update { it.copy(error = Res.string.settings_error_saving) }
             }
         }
