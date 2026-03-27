@@ -124,6 +124,8 @@ kotlin {
             implementation(libs.swipeable.kmp)
 
             runtimeOnly(libs.kermit.logger)
+
+//            api(libs.opentelemetry.ktor)
         }
         commonTest.dependencies {
             implementation(libs.compose.ui.test)

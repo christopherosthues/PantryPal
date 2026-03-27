@@ -5,46 +5,61 @@ android-minSdk = "24"
 android-targetSdk = "36"
 androidx-activity = "1.13.0"
 androidx-appcompat = "1.7.1"
+androidx-compose-ui-test = "1.10.6"
 androidx-core = "1.17.0"
+androidx-datastore = "1.2.1"
 androidx-espresso = "3.7.0"
 androidx-lifecycle = "2.10.0-alpha08"
+androidx-splashscreen = "1.2.0"
 androidx-testExt = "1.3.0"
+camerak = "0.4"
+changelog = "2.5.0"
+coil = "3.4.0"
+compose-multiplatform-adaptive = "1.3.0-alpha06"
+compose-multiplatform-lifecycle = "2.10.0"
 composeHotReload = "1.1.0-beta01"
-composeMultiplatform = "1.10.2"
+composeMultiplatform = "1.10.3"
+core = "1.7.0"
+coreKtx = "1.7.0"
+filekit = "0.13.0"
+flaxoos-ktor-rate-limiting = "2.2.1"
+h2-database = "2.4.240"
 junit = "4.13.2"
-koin = "4.2.0-RC2"
-koin-compose-multiplatform = "4.2.0-RC2"
-kotlin = "2.3.10"
+junitVersion = "1.3.0"
+kermit="2.1.0"
+koin = "4.2.0"
+koin-compose-multiplatform = "4.2.0"
+kotlin = "2.3.20"
+kotlinSerialization = "1.10.0"
+kotlinStdlib = "2.3.20"
 kotlinx-coroutines = "1.10.2"
 kotlinx-datetime = "0.7.1"
-kotlinSerialization = "1.10.0"
-androidx-datastore = "1.2.1"
 ksp = "2.3.6"
-sqlite = "2.6.2"
-room = "2.8.4"
-material3 = "1.11.0-alpha03"
-androidx-splashscreen = "1.2.0"
-changelog = "2.5.0"
-multiplatform-nav3-ui = "1.1.0-alpha04"
-compose-multiplatform-lifecycle = "2.10.0-beta01"
-camerak = "0.3"
-coil = "3.4.0"
-kermit="2.1.0"
-compose-multiplatform-adaptive = "1.3.0-alpha06"
-coreKtx = "1.7.0"
-turbine = "1.2.1"
-androidx-compose-ui-test = "1.10.5"
-swipeableKmp = "1.0.4"
-filekit = "0.13.0"
 ktor = "3.4.1"
+logback = "1.5.32"
+material3 = "1.11.0-alpha03"
+multiplatform-nav3-ui = "1.1.0-alpha04"
+openfolder-ktor = "3.2.1"
+opentelemetry-autoconfigure = "1.60.1"
+opentelemetry-exporter-otlp = "1.60.1"
+opentelemetry-ktor = "2.26.1-alpha"
+opentelemetry-semconv = "1.40.0"
+postgres = "42.7.10"
+room = "2.8.4"
+runner = "1.7.0"
+sqlite = "2.6.2"
+swipeableKmp = "1.0.4"
+turbine = "1.2.1"
+ucasoft-cache = "0.59.4"
 
 [libraries]
+# Client
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
 androidx-room-testing = { module = "androidx.room:room-testing", version.ref = "room" }
 androidx-test-core-ktx = { module = "androidx.test:core-ktx", version.ref = "coreKtx" }
 turbine-test = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
-#kotlin-testJunit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
+kotlin-testJunit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
 #junit = { module = "junit:junit", version.ref = "junit" }
 #androidx-testExt-junit = { module = "androidx.test.ext:junit", version.ref = "androidx-testExt" }
 #androidx-espresso-core = { module = "androidx.test.espresso:espresso-core", version.ref = "androidx-espresso" }
@@ -94,13 +109,10 @@ camerak = { module = "io.github.kashif-mehmood-km:camerak", version.ref = "camer
 camerak-image-saver = { module = "io.github.kashif-mehmood-km:image_saver_plugin", version.ref = "camerak" }
 camerak-ocr = { module = "io.github.kashif-mehmood-km:ocr_plugin", version.ref = "camerak" }
 
-ktor-client-cio = { group = "io.ktor", name = "ktor-client-cio", version.ref = "ktor" }
-ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
 ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktor" }
 ktor-client-darwin = { module = "io.ktor:ktor-client-darwin", version.ref = "ktor" }
 ktor-client-logging = { module = "io.ktor:ktor-client-logging", version.ref = "ktor" }
 ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
-ktor-serialization-kotlinx-json = { group = "io.ktor", name = "ktor-serialization-kotlinx-json", version.ref = "ktor" }
 
 coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }
 coil-network-ktor = { module = "io.coil-kt.coil3:coil-network-ktor3", version.ref = "coil" }
@@ -113,6 +125,56 @@ filekit-coil = { module = "io.github.vinceglb:filekit-coil", version.ref = "file
 swipeable-kmp = { module = "com.stevdza-san:swipeable-kmp", version.ref = "swipeableKmp" }
 
 kermit-logger = { module = "co.touchlab:kermit", version.ref = "kermit"}
+kotlin-stdlib = { group = "org.jetbrains.kotlin", name = "kotlin-stdlib", version.ref = "kotlinStdlib" }
+androidx-runner = { group = "androidx.test", name = "runner", version.ref = "runner" }
+androidx-core = { group = "androidx.test", name = "core", version.ref = "core" }
+androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
+
+# Server
+
+opentelemetry-ktor = { group = "io.opentelemetry.instrumentation", name = "opentelemetry-ktor-3.0", version.ref = "opentelemetry-ktor" }
+opentelemetry-autoconfigure = { group = "io.opentelemetry", name = "opentelemetry-sdk-extension-autoconfigure", version.ref = "opentelemetry-autoconfigure" }
+opentelemetry-exporter-otlp = { group = "io.opentelemetry", name = "opentelemetry-exporter-otlp", version.ref = "opentelemetry-exporter-otlp" }
+opentelemetry-semconv = { group = "io.opentelemetry.semconv", name = "opentelemetry-semconv", version.ref = "opentelemetry-semconv" }
+
+openfolder-asyncapi-ktor = { group = "org.openfolder", name = "kotlin-asyncapi-ktor", version.ref = "openfolder-ktor" }
+ucasoft-ktor-simple-cache = { group = "com.ucasoft.ktor", name = "ktor-simple-cache", version.ref = "ucasoft-cache" }
+ucasoft-ktor-simple-memory-cache = { group = "com.ucasoft.ktor", name = "ktor-simple-memory-cache", version.ref = "ucasoft-cache" }
+#hayden-khealth = { group = "dev.hayden", name = "khealth", version.ref = "3.0.2" }
+postgresql = { group = "org.postgresql", name = "postgresql", version.ref = "postgres" }
+h2database = { group = "com.h2database", name = "h2", version.ref = "h2-database" }
+flaxoos-ktor-server-rate-limiting = { group = "io.github.flaxoos", name = "ktor-server-rate-limiting", version.ref = "flaxoos-ktor-rate-limiting" }
+logback-classic = { group = "ch.qos.logback", name = "logback-classic", version.ref = "logback" }
+# = { group = "io.ktor", name = "ktor-client-apache" }
+ktor-server-compression = { group = "io.ktor", name = "ktor-server-compression", version.ref = "ktor" }
+ktor-server-caching-headers = { group = "io.ktor", name = "ktor-server-caching-headers", version.ref = "ktor" }
+ktor-server-cors = { group = "io.ktor", name = "ktor-server-cors", version.ref = "ktor" }
+ktor-server-default-headers = { group = "io.ktor", name = "ktor-server-default-headers", version.ref = "ktor" }
+ktor-server-forwarded-header = { group = "io.ktor", name = "ktor-server-forwarded-header", version.ref = "ktor" }
+ktor-server-core = { group = "io.ktor", name = "ktor-server-core", version.ref = "ktor" }
+ktor-server-openapi = { group = "io.ktor", name = "ktor-server-openapi", version.ref = "ktor" }
+ktor-server-routing-openapi = { group = "io.ktor", name = "ktor-server-routing-openapi", version.ref = "ktor" }
+ktor-server-auth = { group = "io.ktor", name = "ktor-server-auth", version.ref = "ktor" }
+ktor-server-auth-jwt = { group = "io.ktor", name = "ktor-server-auth-jwt", version.ref = "ktor" }
+ktor-server-csrf = { group = "io.ktor", name = "ktor-server-csrf", version.ref = "ktor" }
+ktor-server-request-validation = { group = "io.ktor", name = "ktor-server-request-validation", version.ref = "ktor" }
+ktor-server-call-logging = { group = "io.ktor", name = "ktor-server-call-logging", version.ref = "ktor" }
+ktor-server-call-id = { group = "io.ktor", name = "ktor-server-call-id", version.ref = "ktor" }
+ktor-server-metrics = { group = "io.ktor", name = "ktor-server-metrics", version.ref = "ktor" }
+ktor-server-content-negotiation = { group = "io.ktor", name = "ktor-server-content-negotiation", version.ref = "ktor" }
+ktor-server-websockets = { group = "io.ktor", name = "ktor-server-websockets", version.ref = "ktor" }
+ktor-server-cio = { group = "io.ktor", name = "ktor-server-cio", version.ref = "ktor" }
+ktor-server-config-yaml = { group = "io.ktor", name = "ktor-server-config-yaml", version.ref = "ktor" }
+koin-ktor = { group = "io.insert-koin", name = "koin-ktor", version.ref = "koin" }
+koin-logger-slf4j = { group = "io.insert-koin", name = "koin-logger-slf4j", version.ref = "koin" }
+
+ktor-server-test-host = { group = "io.ktor", name = "ktor-server-test-host", version.ref = "ktor" }
+
+# Common
+ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
+ktor-client-cio = { group = "io.ktor", name = "ktor-client-cio", version.ref = "ktor" }
+ktor-serialization-kotlinx-json = { group = "io.ktor", name = "ktor-serialization-kotlinx-json", version.ref = "ktor" }
+
 
 [plugins]
 changelog = { id = "org.jetbrains.changelog", version.ref = "changelog" }
@@ -125,3 +187,7 @@ kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref =
 jetbrains-kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 room = { id = "androidx.room", version.ref = "room" }
+
+kotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+ktor = { id = "io.ktor.plugin", version.ref = "ktor" }
+android-lint = { id = "com.android.lint", version.ref = "agp" }
