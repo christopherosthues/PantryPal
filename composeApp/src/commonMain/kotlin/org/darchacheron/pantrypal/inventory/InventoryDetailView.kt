@@ -161,7 +161,7 @@ fun InventoryDetailView(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
+                .padding(top = padding.calculateTopPadding())
                 .verticalScroll(rememberScrollState())
                 .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 72.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
