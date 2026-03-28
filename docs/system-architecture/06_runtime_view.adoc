@@ -1,0 +1,21 @@
+= Runtime View
+
+== User Login and Initial Sync
+1.  **User** enters credentials in the `LoginView`.
+2.  **LoginViewModel** calls `AuthenticationService.login()`.
+3.  **AuthenticationService** sends a POST request to the Ktor Server.
+4.  **Server** validates credentials and returns a JWT (Access & Refresh Token).
+5.  **Client** stores tokens securely in `DataStore`.
+6.  **Client** triggers `syncWithServer()` in Repositories (Food, Inventory, Profile).
+7.  **Repositories** fetch remote data and merge it into the local Room database using timestamps.
+
+== Adding a Food Item with OCR
+1.  **User** opens `FoodDetailView` and clicks "Scan".
+2.  **Navigator** opens `OcrCameraView`.
+3.  **Camera** captures a frame; the platform-specific OCR engine recognizes text.
+4.  **ViewModel** maps recognized text to Food attributes (Name, Nutrients).
+5.  **User** confirms and saves the item.
+6.  **FoodRepository.upsert()** saves the item to the local Room database.
+7.  **Repository** (if sync is enabled) pushes the new item to the Server in the background.
+8.  **Server** confirms receipt and returns a server-side ID.
+9.  **Repository** updates the local record with the server-side ID.

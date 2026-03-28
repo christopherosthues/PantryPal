@@ -1,0 +1,19 @@
+= System Scope and Context
+
+== Business Context
+PantryPal interacts with users and potentially external data sources.
+
+[cols="1,2,2"]
+|===
+| Communication Partner | Input | Output
+| **User** | Food data, images, OCR scans | Inventory status, expiration alerts
+| **PantryPal Server** | User profile, sync data | Synced food/inventory items
+| **Camera/OCR Engine** | Images of labels | Recognized text/data fields
+|===
+
+== Technical Context
+The application is divided into a Client (KMP) and a Server (Ktor).
+
+*   **Client**: Runs on Android and JVM. Uses Ktor-Client for HTTP/REST and Room for local DB.
+*   **Server**: Built with Ktor. Provides REST APIs for Authentication and Data Sync. Uses a database for persistent storage of user profiles and items.
+*   **External**: File system for image storage, Camera API for scanning.

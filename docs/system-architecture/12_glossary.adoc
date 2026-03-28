@@ -1,0 +1,71 @@
+= Glossary
+
+[glossary]
+KMP:: **Kotlin Multiplatform** - Technology for sharing code across multiple platforms.
+Ktor:: A framework for building asynchronous servers and clients in connected systems.
+Compose Multiplatform:: A declarative UI framework for Kotlin.
+Room:: A persistence library that provides an abstraction layer over SQLite.
+OCR:: **Optical Character Recognition** - Technology to convert images of text into machine-encoded text.
+JWT:: **JSON Web Token** - A compact, URL-safe means of representing claims to be transferred between two parties.
+BBD / MHD:: **Best Before Date / Mindesthaltbarkeitsdatum** - Date until which the food is at its best quality.
+Use-By / VD:: **Use-By Date / Verbrauchsdatum** - Date after which the food is no longer safe to eat.
+ADR:: **Architecture Decision Record** - A document that captures an important architectural decision.
+arc42:: A template for software architecture documentation.
+MVVM:: **Model-View-ViewModel** - A software architectural pattern.
+DI:: **Dependency Injection** - A design pattern in which an object or function receives other objects or functions that it depends on.
+Koin:: A pragmatic lightweight dependency injection framework for Kotlin.
+StateFlow:: A state-holder observable flow that emits the current and new state updates to its collectors.
+MutableStateFlow:: A `StateFlow` that can be updated.
+CIO:: **Coroutine-based I/O** - A Ktor engine that uses Kotlin coroutines for asynchronous I/O.
+PostgreSQL:: An open-source relational database management system.
+H2:: A lightweight, open-source Java SQL database that can be embedded in applications.
+Exposed:: A lightweight SQL library on top of JDBC driver for Kotlin.
+AAB:: **Android App Bundle** - A publishing format that includes all your app’s compiled code and resources.
+APK:: **Android Package** - The package file format used by the Android operating system.
+DMG:: A mountable disk image file used by macOS.
+MSI:: A Windows Installer file format.
+DEB:: A software package format used by the Debian operating system and its derivatives.
+Kermit:: A Kotlin Multiplatform logging library.
+HTTPS:: **Hypertext Transfer Protocol Secure** - An extension of HTTP for secure communication.
+Nginx / Caddy:: Popular web servers and reverse proxies.
+VPS:: **Virtual Private Server** - A virtual machine sold as a service by an Internet hosting provider.
+ML Kit:: A mobile SDK that brings Google's machine learning expertise to Android and iOS apps.
+Backend-as-a-Service / BaaS:: A model where cloud computing providers provide developers with a way to link their applications to backend cloud storage.
+REST:: **Representational State Transfer** - An architectural style for providing standards between computer systems on the web.
+JSON:: **JavaScript Object Notation** - A lightweight data-interchange format.
+JDBC:: **Java Database Connectivity** - An application programming interface (API) for the programming language Java, which defines how a client may access a database.
+ORM:: **Object-Relational Mapping** - A programming technique for converting data between incompatible type systems using object-oriented programming languages.
+UI / UX:: **User Interface / User Experience**.
+JVM:: **Java Virtual Machine**.
+SDK:: **Software Development Kit**.
+API:: **Application Programming Interface**.
+SQL:: **Structured Query Language**.
+JSON:: **JavaScript Object Notation**.
+URL:: **Uniform Resource Locator**.
+HTTP:: **Hypertext Transfer Protocol**.
+DAO:: **Data Access Object**.
+MVVM:: **Model-View-ViewModel**.
+StateFlow:: A state-holder observable flow.
+KMP:: **Kotlin Multiplatform**.
+Ktor:: A framework for building asynchronous servers and clients.
+JWT:: **JSON Web Token**.
+ADR:: **Architecture Decision Record**.
+arc42:: A template for software architecture documentation.
+DI:: **Dependency Injection**.
+Koin:: A dependency injection framework for Kotlin.
+CIO:: **Coroutine-based I/O**.
+AAB:: **Android App Bundle**.
+APK:: **Android Package**.
+DMG:: A mountable disk image file.
+MSI:: A Windows Installer file.
+DEB:: A software package format.
+HTTPS:: **Hypertext Transfer Protocol Secure**.
+VPS:: **Virtual Private Server**.
+ML Kit:: A mobile SDK.
+REST:: **Representational State Transfer**.
+ORM:: **Object-Relational Mapping**.
+UI / UX:: **User Interface / User Experience**.
+JVM:: **Java Virtual Machine**.
+SDK:: **Software Development Kit**.
+API:: **Application Programming Interface**.
+SQL:: **Structured Query Language**.

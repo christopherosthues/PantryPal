@@ -1,0 +1,32 @@
+= Building Block View
+
+== Level 1: White Box of the Overall System
+The PantryPal system consists of the Client Application (KMP) and the Backend Server (Ktor).
+
+[cols="1,2"]
+|===
+| Component | Description
+| **Client App** | The multi-platform user interface and local data management logic.
+| **Backend Server** | Provides centralized data storage, synchronization services, and user authentication.
+|===
+
+== Level 2: White Box of the Client App
+The Client App is divided into several modules within the `composeApp` project.
+
+[cols="1,2"]
+|===
+| Module | Description
+| **UI Layer** | Jetpack Compose views and ViewModels (shared).
+| **Domain Layer** | Business logic and entity models.
+| **Data Layer** | Repositories, Room DAOs, and Ktor-Client services.
+| **DI (Koin)** | Dependency injection module to wire up components.
+|===
+
+== Level 2: White Box of the Backend Server
+[cols="1,2"]
+|===
+| Component | Description
+| **Routing** | Definition of REST endpoints (Auth, Food, Inventory).
+| **Services** | Business logic for processing requests.
+| **Persistence** | Database access layer (e.g., using Exposed ORM).
+|===

@@ -1,0 +1,20 @@
+= Cross-cutting Concepts
+
+== Persistence
+*   **Local DB**: Room (SQL-based) for structured data storage. It supports migrations (1->2, 2->3, etc.) and uses DAOs to abstract SQL queries.
+*   **File Storage**: Images are stored as files in the platform's app data directory and referenced via local paths in the database.
+
+== Networking
+*   **Engine**: Ktor-Client with `CIO` engine for cross-platform compatibility.
+*   **Security**: Authentication tokens are automatically added to request headers where necessary.
+*   **Serialization**: Kotlinx-Serialization for JSON conversion across all layers.
+
+== Dependency Injection
+*   **Koin**: Used for dependency management.
+    *   `platformModule`: Platform-specific definitions (DatabaseFactory, DataStore).
+    *   `sharedModule`: Common repositories, network services, and ViewModels.
+
+== Error Handling and Logging
+*   **Logging**: `co.touchlab.kermit.Logger` for multi-platform logging.
+*   **Network Errors**: Ktor's `expectSuccess = true` combined with `runCatching` for robust exception handling.
+*   **Validation**: ViewModels validate user input (e.g., non-empty names) before triggering repository actions.

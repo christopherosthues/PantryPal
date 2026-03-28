@@ -1,0 +1,16 @@
+= Deployment View
+
+== Mobile Deployment (Android)
+*   **Artifact**: Android App Bundle (AAB) or APK.
+*   **Infrastructure**: Android devices (API 24+).
+*   **Distribution**: Google Play Store.
+
+== Desktop Deployment (JVM)
+*   **Artifact**: Platform-specific installers (MSI, DMG, DEB) or executable JARs.
+*   **Infrastructure**: Windows, macOS, or Linux with JVM 25+ installed.
+
+== Backend Deployment
+*   **Artifact**: Docker Image or Fat-JAR.
+*   **Infrastructure**: Cloud Provider (e.g., AWS, Azure, GCP, or private VPS).
+*   **Database**: Managed PostgreSQL or containerized database.
+*   **Networking**: Exposed via HTTPS behind a reverse proxy (e.g., Nginx, Caddy).

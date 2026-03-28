@@ -1,0 +1,42 @@
+= PantryPal System Architecture (arc42)
+:toc: left
+:sectnums:
+:toclevels: 2
+
+This document describes the system architecture of the PantryPal application using the arc42 template.
+
+== Introduction and Goals
+Refer to xref:01_introduction_and_goals.adoc[Introduction and Goals].
+
+== Architecture Constraints
+Refer to xref:02_architecture_constraints.adoc[Architecture Constraints].
+
+== System Scope and Context
+Refer to xref:03_system_scope_and_context.adoc[System Scope and Context].
+
+== Solution Strategy
+Refer to xref:04_solution_strategy.adoc[Solution Strategy].
+
+== Building Block View
+Refer to xref:05_building_block_view.adoc[Building Block View].
+
+== Runtime View
+Refer to xref:06_runtime_view.adoc[Runtime View].
+
+== Deployment View
+Refer to xref:07_deployment_view.adoc[Deployment View].
+
+== Cross-cutting Concepts
+Refer to xref:08_concepts.adoc[Cross-cutting Concepts].
+
+== Architecture Decisions
+Refer to xref:09_architecture_decisions.adoc[Architecture Decisions].
+
+== Quality Requirements
+Refer to xref:10_quality_requirements.adoc[Quality Requirements].
+
+== Risks and Technical Debt
+Refer to xref:11_risks_and_technical_debt.adoc[Risks and Technical Debt].
+
+== Glossary
+Refer to xref:12_glossary.adoc[Glossary].

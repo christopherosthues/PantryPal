@@ -1,0 +1,19 @@
+= Risks and Technical Debt
+
+== Technical Risks
+[cols="1,2,1"]
+|===
+| Risk | Description | Mitigation
+| **OCR Accuracy** | OCR might fail on complex labels or low-light photos. | Provide a manual override and clear visual feedback during scanning.
+| **Sync Conflicts** | Complex merge scenarios (e.g., simultaneous deletes and edits). | Use a simple "Last Win" strategy based on timestamps initially.
+| **Performance** | Large databases might slow down the UI on low-end devices. | Use Room indexing and paginated queries for lists.
+|===
+
+== Technical Debt
+[cols="1,2"]
+|===
+| Debt | Description
+| **Unit Test Coverage** | Current test coverage is low; more focus is needed on the Domain and Data layers.
+| **Image Compression** | Images are currently stored in full resolution; implementing compression would save storage and bandwidth.
+| **Advanced Conflict Resolution** | The current timestamp-based resolution may overwrite valid data in complex multi-user scenarios.
+|===

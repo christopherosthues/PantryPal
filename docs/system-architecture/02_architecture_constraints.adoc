@@ -1,0 +1,25 @@
+= Architecture Constraints
+
+== Technical Constraints
+[cols="1,2"]
+|===
+| Constraint | Rationale
+| **Kotlin Multiplatform (KMP)** | Required for sharing logic (Data, Domain, Network) across platforms.
+| **Compose Multiplatform** | Unified UI framework for Android and Desktop.
+| **Ktor (Client & Server)** | Consistent networking and serialization (Kotlinx Serialization).
+| **Room/SQLite** | Local persistence layer for mobile and desktop compatibility.
+|===
+
+== Organizational Constraints
+[cols="1,2"]
+|===
+| Constraint | Rationale
+| **Open Source / Local-First** | The app should be usable without a mandatory subscription or proprietary cloud lock-in.
+|===
+
+== Documentation Constraints
+[cols="1,2"]
+|===
+| Constraint | Rationale
+| **arc42 Template** | Standardized structure for software architecture documentation.
+|===

@@ -1,0 +1,23 @@
+= Introduction and Goals
+
+== Purpose
+PantryPal is a cross-platform application designed to help users manage their food inventory, track expiration dates, and monitor nutritional intake. It addresses the problem of food waste by providing timely warnings and easy data entry via OCR.
+
+== Quality Goals
+[cols="1,2"]
+|===
+| Goal | Description
+| **Portability** | The application must run on Android and Desktop (JVM) using a shared Kotlin Multiplatform codebase.
+| **Offline-First** | Users must be able to manage their inventory without an active internet connection.
+| **Usability** | Data entry must be simplified through OCR to encourage consistent use.
+| **Reliability** | Data synchronization must ensure no data loss and handle conflicts gracefully using timestamps.
+|===
+
+== Stakeholders
+[cols="1,2"]
+|===
+| Role | Expectation
+| **Users** | Easy to use, works offline, syncs across devices.
+| **Developers** | Maintainable, shared codebase, clear separation of concerns.
+| **Architects** | Robust synchronization logic, scalable Ktor-based backend.
+|===

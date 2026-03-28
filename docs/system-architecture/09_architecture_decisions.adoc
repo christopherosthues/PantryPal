@@ -1,0 +1,25 @@
+= Architecture Decisions
+
+== ADR-01: Use Kotlin Multiplatform (KMP)
+*   **Status**: Accepted
+*   **Context**: We need to support Android and Desktop with a single codebase for logic.
+*   **Decision**: Use KMP to share data, domain, and networking layers.
+*   **Consequences**: Reduced development effort for multiple platforms, but requires developers to be familiar with the KMP ecosystem.
+
+== ADR-02: Offline-First approach with Room
+*   **Status**: Accepted
+*   **Context**: Users must be able to use the app in environments with poor or no connectivity.
+*   **Decision**: Use Room/SQLite as the primary data source, with background synchronization to a remote server.
+*   **Consequences**: Increased complexity in data synchronization and conflict resolution.
+
+== ADR-03: Ktor for both Client and Server
+*   **Status**: Accepted
+*   **Context**: We want to minimize the number of different technologies and reuse serialization logic.
+*   **Decision**: Use Ktor for the backend server and Ktor-Client for all platforms.
+*   **Consequences**: Seamless integration of data models using `kotlinx.serialization`.
+
+== ADR-04: MVVM with Shared ViewModels
+*   **Status**: Accepted
+*   **Context**: UI logic should be shared between Android and Desktop as much as possible.
+*   **Decision**: Use `androidx.lifecycle.ViewModel` (via Compose Multiplatform) to manage UI state.
+*   **Consequences**: Views become thin and platform-specific code is minimized to layout definitions.

@@ -1,0 +1,20 @@
+= Solution Strategy
+
+== Shared Logic
+*   **Domain Layer**: Contains use cases and domain models (Food, InventoryItem, Profile).
+*   **Data Layer**: Implements Repository pattern. Uses Room for local persistence and Ktor for network communication.
+*   **Serialization**: Uses `kotlinx.serialization` for JSON handling on both client and server.
+
+== User Interface
+*   **Architecture**: MVVM (Model-View-ViewModel) with `androidx.lifecycle.ViewModel` shared across platforms.
+*   **State Management**: `StateFlow` and `MutableStateFlow` to provide UI states from ViewModels to Compose views.
+
+== Backend
+*   **Framework**: Ktor with `CIO` engine.
+*   **Features**:
+    *   **Authentication**: JWT (JSON Web Token) based auth.
+    *   **REST API**: Structured endpoints for resource management.
+    *   **Database**: Persistent storage (PostgreSQL or H2) integrated via Exposed or similar ORM.
+
+== OCR Integration
+*   **Strategy**: Platform-specific implementation for camera and OCR engine (e.g., ML Kit on Android, custom/native bindings on Desktop) abstracted behind a common interface.
