@@ -173,7 +173,7 @@ fun FoodListView(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding),
+                .padding(top = padding.calculateTopPadding()),
             contentAlignment = Alignment.Center
         ) {
             if (message != null) {
@@ -533,9 +533,9 @@ fun FoodItem(
                                 }
                             }
                         ) {
-                            if (food.imagePath != null) {
+                            if (food.image?.localPath != null) {
                                 AsyncImage(
-                                    model = food.imagePath,
+                                    model = food.image.localPath,
                                     contentDescription = null,
                                     modifier = Modifier
                                         .size(64.dp)

@@ -128,8 +128,8 @@ class InventoryListViewModel(
                     openedAt = null,
                     createdAt = Clock.System.now(),
                     lastModifiedAt = Clock.System.now(),
-                    imagePath = item.imagePath,
-                    additionalImagePaths = item.additionalImagePaths
+                    image = item.image,
+                    additionalImages = item.additionalImages
                 )
                 foodRepository.upsert(food)
                 // Optionally navigate to food detail to let user set dates

@@ -67,7 +67,6 @@ import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import pantrypal.composeapp.generated.resources.Res
-import pantrypal.composeapp.generated.resources.inventory_list_content_description_add_food
 import pantrypal.composeapp.generated.resources.inventory_list_content_description_settings
 import pantrypal.composeapp.generated.resources.inventory_list_empty
 import pantrypal.composeapp.generated.resources.inventory_list_search_placeholder
@@ -87,6 +86,7 @@ import pantrypal.composeapp.generated.resources.ic_sort
 import pantrypal.composeapp.generated.resources.ic_x
 import pantrypal.composeapp.generated.resources.inventory_list_card_content_description_add_to_pantry
 import pantrypal.composeapp.generated.resources.inventory_list_card_content_description_delete
+import pantrypal.composeapp.generated.resources.inventory_list_content_description_add_item
 import kotlin.collections.component1
 import kotlin.collections.component2
 import kotlin.uuid.ExperimentalUuidApi
@@ -146,7 +146,7 @@ fun InventoryListView(
             FloatingActionButton(onClick = { inventoryListViewModel.goToItemDetails(null) }) {
                 Icon(
                     painter = painterResource(Res.drawable.ic_add),
-                    contentDescription = stringResource(Res.string.inventory_list_content_description_add_food)
+                    contentDescription = stringResource(Res.string.inventory_list_content_description_add_item)
                 )
             }
         }
@@ -154,7 +154,7 @@ fun InventoryListView(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding),
+                .padding(top = padding.calculateTopPadding()),
             contentAlignment = Alignment.Center
         ) {
             if (message != null) {
@@ -429,9 +429,9 @@ fun InventoryItem(
             ListItem(
                 colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                 leadingContent = {
-                    if (item.imagePath != null) {
+                    if (item.image?.localPath != null) {
                         AsyncImage(
-                            model = item.imagePath,
+                            model = item.image.localPath,
                             contentDescription = null,
                             modifier = Modifier
                                 .size(64.dp)

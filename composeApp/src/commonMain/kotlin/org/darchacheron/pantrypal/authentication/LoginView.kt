@@ -124,6 +124,7 @@ internal fun LoginView(loginViewModel: LoginViewModel) {
                     keyboardType = KeyboardType.Email,
                     imeAction = ImeAction.Next
                 ),
+                singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -138,6 +139,7 @@ internal fun LoginView(loginViewModel: LoginViewModel) {
                     keyboardType = KeyboardType.Password,
                     imeAction = ImeAction.Done
                 ),
+                singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
 

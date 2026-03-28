@@ -1,5 +1,6 @@
 package org.darchacheron.pantrypal.inventory
 
+import org.darchacheron.pantrypal.camera.Image
 import kotlin.time.Instant
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -23,6 +24,6 @@ data class InventoryItem(
     val isLiquid: Boolean = false,
     val createdAt: Instant,
     val lastModifiedAt: Instant,
-    val imagePath: String? = null,
-    val additionalImagePaths: List<String> = emptyList(),
+    val image: Image? = null,
+    val additionalImages: List<Image> = emptyList(),
 )

@@ -238,9 +238,9 @@ fun FoodDetailView(
         ) {
             val food = uiState.data ?: return@Scaffold
 
-            if (food.imagePath != null) {
+            if (food.image?.localPath != null) {
                 AsyncImage(
-                    model = food.imagePath,
+                    model = food.image.localPath,
                     contentDescription = null,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -261,35 +261,37 @@ fun FoodDetailView(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 contentPadding = PaddingValues(end = 16.dp)
             ) {
-                items(food.additionalImagePaths) { path ->
-                    Box(
-                        modifier = Modifier
-                            .size(100.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                    ) {
-                        AsyncImage(
-                            model = path,
-                            contentDescription = null,
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop
-                        )
-                        IconButton(
-                            onClick = { viewModel.removeAdditionalImage(path) },
+                items(food.additionalImages) { image ->
+                    if (image.localPath != null) {
+                        Box(
                             modifier = Modifier
-                                .align(Alignment.TopEnd)
-                                .size(24.dp)
-                                .background(
-                                    MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.7f),
-                                    CircleShape
-                                )
-                                .padding(4.dp)
+                                .size(100.dp)
+                                .clip(RoundedCornerShape(8.dp))
                         ) {
-                            Icon(
-                                painter = painterResource(Res.drawable.ic_cancel),
-                                contentDescription = stringResource(Res.string.food_detail_content_description_remove_image),
-                                tint = MaterialTheme.colorScheme.onErrorContainer,
-                                modifier = Modifier.size(16.dp)
+                            AsyncImage(
+                                model = image.localPath,
+                                contentDescription = null,
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop
                             )
+                            IconButton(
+                                onClick = { viewModel.removeAdditionalImage(image) },
+                                modifier = Modifier
+                                    .align(Alignment.TopEnd)
+                                    .size(24.dp)
+                                    .background(
+                                        MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.7f),
+                                        CircleShape
+                                    )
+                                    .padding(4.dp)
+                            ) {
+                                Icon(
+                                    painter = painterResource(Res.drawable.ic_cancel),
+                                    contentDescription = stringResource(Res.string.food_detail_content_description_remove_image),
+                                    tint = MaterialTheme.colorScheme.onErrorContainer,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
                         }
                     }
                 }

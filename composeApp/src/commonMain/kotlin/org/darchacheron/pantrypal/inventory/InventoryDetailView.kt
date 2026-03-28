@@ -166,11 +166,11 @@ fun InventoryDetailView(
                 .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 72.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            val food = uiState.data ?: return@Scaffold
+            val item = uiState.data ?: return@Scaffold
 
-            if (food.imagePath != null) {
+            if (item.image?.localPath != null) {
                 AsyncImage(
-                    model = food.imagePath,
+                    model = item.image.localPath,
                     contentDescription = null,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -191,35 +191,37 @@ fun InventoryDetailView(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 contentPadding = PaddingValues(end = 16.dp)
             ) {
-                items(food.additionalImagePaths) { path ->
-                    Box(
-                        modifier = Modifier
-                            .size(100.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                    ) {
-                        AsyncImage(
-                            model = path,
-                            contentDescription = null,
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop
-                        )
-                        IconButton(
-                            onClick = { viewModel.removeAdditionalImage(path) },
+                items(item.additionalImages) { image ->
+                    if (image.localPath != null) {
+                        Box(
                             modifier = Modifier
-                                .align(Alignment.TopEnd)
-                                .size(24.dp)
-                                .background(
-                                    MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.7f),
-                                    CircleShape
-                                )
-                                .padding(4.dp)
+                                .size(100.dp)
+                                .clip(RoundedCornerShape(8.dp))
                         ) {
-                            Icon(
-                                painter = painterResource(Res.drawable.ic_cancel),
-                                contentDescription = stringResource(Res.string.inventory_detail_content_description_remove_image),
-                                tint = MaterialTheme.colorScheme.onErrorContainer,
-                                modifier = Modifier.size(16.dp)
+                            AsyncImage(
+                                model = image.localPath,
+                                contentDescription = null,
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop
                             )
+                            IconButton(
+                                onClick = { viewModel.removeAdditionalImage(image) },
+                                modifier = Modifier
+                                    .align(Alignment.TopEnd)
+                                    .size(24.dp)
+                                    .background(
+                                        MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.7f),
+                                        CircleShape
+                                    )
+                                    .padding(4.dp)
+                            ) {
+                                Icon(
+                                    painter = painterResource(Res.drawable.ic_cancel),
+                                    contentDescription = stringResource(Res.string.inventory_detail_content_description_remove_image),
+                                    tint = MaterialTheme.colorScheme.onErrorContainer,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
                         }
                     }
                 }
@@ -250,7 +252,7 @@ fun InventoryDetailView(
             }
 
             OutlinedTextField(
-                value = food.name,
+                value = item.name,
                 onValueChange = { viewModel.updateName(it) },
                 label = { Text(stringResource(Res.string.inventory_detail_name)) },
                 modifier = Modifier.fillMaxWidth(),
@@ -271,7 +273,7 @@ fun InventoryDetailView(
                 label = {
                     Text(
                         stringResource(
-                            if (food.isLiquid) Res.string.inventory_detail_volume
+                            if (item.isLiquid) Res.string.inventory_detail_volume
                             else Res.string.inventory_detail_weight
                         )
                     )
@@ -281,7 +283,7 @@ fun InventoryDetailView(
                 singleLine = true,
                 leadingIcon = {
                     Switch(
-                        checked = food.isLiquid,
+                        checked = item.isLiquid,
                         onCheckedChange = { viewModel.updateIsLiquid(it) },
                         modifier = Modifier.scale(0.8f)
                     )
@@ -303,7 +305,7 @@ fun InventoryDetailView(
             ) {
                 Text(
                     text = stringResource(
-                        if (food.isLiquid) Res.string.inventory_detail_nutritional_header_volume
+                        if (item.isLiquid) Res.string.inventory_detail_nutritional_header_volume
                         else Res.string.inventory_detail_nutritional_header_weight
                     ),
                     style = MaterialTheme.typography.labelMedium,
@@ -328,7 +330,7 @@ fun InventoryDetailView(
                 }
             }
 
-            NutrientFields(useTwoColumns, food, viewModel)
+            NutrientFields(useTwoColumns, item, viewModel)
         }
     }
 }

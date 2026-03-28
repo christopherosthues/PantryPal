@@ -1,12 +1,11 @@
 package org.darchacheron.pantrypal.profile
 
 import co.touchlab.kermit.Logger
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.darchacheron.pantrypal.settings.DataSynchronization
 import org.darchacheron.pantrypal.settings.SettingsRepository
 import kotlin.uuid.ExperimentalUuidApi
@@ -17,7 +16,6 @@ class ProfileRepository(
     private val profileDao: ProfileDao,
     private val profileNetworkService: ProfileNetworkService,
     private val settingsRepository: SettingsRepository,
-    private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO)
 ) {
     private val loggerTag = "ProfileRepository"
 
@@ -30,7 +28,7 @@ class ProfileRepository(
     fun getProfileByUsername(username: String): Flow<Profile?> =
         profileDao.getProfileByUsername(username).map { it?.toProfile() }
 
-    suspend fun upsert(profile: Profile) {
+    suspend fun upsert(profile: Profile) = withContext(Dispatchers.IO) {
         // Phase 1: Save locally
         profileDao.upsert(profile.toProfileEntity())
 
@@ -39,25 +37,24 @@ class ProfileRepository(
         if (settings.dataSynchronization == DataSynchronization.UPLOAD_AND_DOWNLOAD ||
             settings.dataSynchronization == DataSynchronization.ONLY_UPLOAD
         ) {
-            scope.launch {
-                try {
-                    // TODO: what if the remote profile does not exist yet?
-                    profileNetworkService.updateProfile(profile, settings.serverUrl)?.let { synced ->
-                        profileDao.upsert(synced.toProfileEntity())
-                    }
-                } catch (e: Exception) {
-                    Logger.withTag(loggerTag).w { "Failed immediate profile sync: ${e.message}" }
+            try {
+                // TODO: what if the remote profile does not exist yet?
+                profileNetworkService.updateProfile(profile, settings.serverUrl)?.let { synced ->
+                    profileDao.upsert(synced.toProfileEntity())
                 }
+            } catch (e: Exception) {
+                Logger.withTag(loggerTag).w { "Failed immediate profile sync: ${e.message}" }
             }
         }
     }
 
-    suspend fun delete() =
+    suspend fun delete() = withContext(Dispatchers.IO) {
         profileDao.delete() // TODO: also delete remote profile?
+    }
 
-    suspend fun syncWithServer() {
+    suspend fun syncWithServer() = withContext(Dispatchers.IO) {
         val settings = settingsRepository.getSettings()
-        if (settings.dataSynchronization == DataSynchronization.NO_SYNCHRONIZATION) return
+        if (settings.dataSynchronization == DataSynchronization.NO_SYNCHRONIZATION) return@withContext
 
         try {
             // TODO: store instant of last sync

@@ -3,6 +3,7 @@ package org.darchacheron.pantrypal.food
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
+import org.darchacheron.pantrypal.camera.Image
 import kotlin.time.Clock
 import kotlin.time.Instant
 import kotlin.uuid.ExperimentalUuidApi
@@ -30,8 +31,8 @@ data class Food(
     val openedAt: LocalDate?,
     val createdAt: Instant,
     val lastModifiedAt: Instant,
-    val imagePath: String? = null,
-    val additionalImagePaths: List<String> = emptyList(),
+    val image: Image? = null,
+    val additionalImages: List<Image> = emptyList(),
 ) {
     val isOverdue: Boolean
         get() = bestBeforeUsedByDate != null && bestBeforeUsedByDate < Clock.System.todayIn(TimeZone.currentSystemDefault())

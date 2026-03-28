@@ -1,12 +1,11 @@
 package org.darchacheron.pantrypal.inventory
 
 import co.touchlab.kermit.Logger
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import okio.FileSystem
 import okio.Path.Companion.toPath
 import org.darchacheron.pantrypal.settings.DataSynchronization
@@ -21,7 +20,6 @@ class InventoryRepository(
     private val inventoryNetworkService: InventoryNetworkService,
     private val settingsRepository: SettingsRepository,
     private val fileSystem: FileSystem,
-    private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO)
 ) {
     private val loggerTag = "InventoryRepository"
 
@@ -31,74 +29,77 @@ class InventoryRepository(
         sort: InventorySortOrder = InventorySortOrder.Name,
         direction: InventorySortDirection = InventorySortDirection.Ascending
     ): Flow<List<InventoryItem>> =
-        inventoryItemDao.getFilteredAndSorted(
+        inventoryItemDao.getFilteredAndSortedWithImages(
             profileId = profileId,
             query = query,
             sort = sort.name.uppercase(),
             direction = direction.name.uppercase(),
-        ).map { entities -> entities.map { it.toInventoryItem() } }
+        ).map { list -> list.map { it.toInventoryItem() } }
 
-    suspend fun getById(id: Uuid): InventoryItem? =
-        inventoryItemDao.getById(id)?.toInventoryItem()
+    suspend fun getById(id: Uuid): InventoryItem? = withContext(Dispatchers.IO) {
+        inventoryItemDao.getByIdWithImages(id)?.toInventoryItem()
+    }
 
-    suspend fun upsert(inventoryItem: InventoryItem) {
-        val existingItem = inventoryItemDao.getById(inventoryItem.id)?.toInventoryItem()
-        if (existingItem != null) {
-            if (existingItem.imagePath != null && existingItem.imagePath != inventoryItem.imagePath) {
-                deleteImageFile(existingItem.imagePath)
+    suspend fun upsert(inventoryItem: InventoryItem) = withContext(Dispatchers.IO) {
+        val existingWithImages = inventoryItemDao.getByIdWithImages(inventoryItem.id)
+        if (existingWithImages != null) {
+            val existingItem = existingWithImages.toInventoryItem()
+            if (existingItem.image?.localPath != null && existingItem.image.localPath != inventoryItem.image?.localPath) {
+                deleteImageFile(existingItem.image.localPath)
             }
-            val removedImages = existingItem.additionalImagePaths.filter { it !in inventoryItem.additionalImagePaths }
-            removedImages.forEach { deleteImageFile(it) }
+            val newPaths = inventoryItem.additionalImages.mapNotNull { it.localPath }
+            existingItem.additionalImages.forEach { existingImage ->
+                if (existingImage.localPath != null && existingImage.localPath !in newPaths) {
+                    deleteImageFile(existingImage.localPath)
+                }
+            }
         }
 
         // Phase 1: Save locally
-        inventoryItemDao.upsert(inventoryItem.toInventoryItemEntity())
+        inventoryItemDao.upsert(inventoryItem)
 
         // Phase 1: Try push immediately
         val settings = settingsRepository.getSettings()
         if (settings.dataSynchronization == DataSynchronization.UPLOAD_AND_DOWNLOAD ||
             settings.dataSynchronization == DataSynchronization.ONLY_UPLOAD
         ) {
-            scope.launch {
-                try {
-                    val syncedItems = inventoryNetworkService.pushInventoryItems(listOf(inventoryItem), settings.serverUrl)
-                    syncedItems.firstOrNull()?.let { synced ->
-                        inventoryItemDao.updateServerId(inventoryItem.id, synced.serverId!!)
-                    }
-                    Logger.withTag(loggerTag).i { "Successfully synced inventory item ${inventoryItem.name} to server" }
-                } catch (e: Exception) {
-                    Logger.withTag(loggerTag).w { "Failed immediate sync for ${inventoryItem.name}. Error: ${e.message}" }
+            try {
+                val syncedItems = inventoryNetworkService.pushInventoryItems(listOf(inventoryItem), settings.serverUrl)
+                syncedItems.firstOrNull()?.let { synced ->
+                    inventoryItemDao.updateServerId(inventoryItem.id, synced.serverId!!)
                 }
+                Logger.withTag(loggerTag).i { "Successfully synced inventory item ${inventoryItem.name} to server" }
+            } catch (e: Exception) {
+                Logger.withTag(loggerTag).w { "Failed immediate sync for ${inventoryItem.name}. Error: ${e.message}" }
             }
         }
     }
 
-    suspend fun delete(id: Uuid) {
-        val item = inventoryItemDao.getById(id)?.toInventoryItem()
-        if (item != null) {
-            item.imagePath?.let { deleteImageFile(it) }
-            item.additionalImagePaths.forEach { deleteImageFile(it) }
+    suspend fun delete(id: Uuid) = withContext(Dispatchers.IO) {
+        val itemWithImages = inventoryItemDao.getByIdWithImages(id)
+        if (itemWithImages != null) {
+            val item = itemWithImages.toInventoryItem()
+            item.image?.localPath?.let { deleteImageFile(it) }
+            item.additionalImages.forEach { it.localPath?.let { path -> deleteImageFile(path) } }
 
             // Phase 1: Try delete on server
             val settings = settingsRepository.getSettings()
             if (item.serverId != null && (settings.dataSynchronization == DataSynchronization.UPLOAD_AND_DOWNLOAD ||
                 settings.dataSynchronization == DataSynchronization.ONLY_UPLOAD)
             ) {
-                scope.launch {
-                    try {
-                        inventoryNetworkService.deleteInventoryItem(item.serverId, settings.serverUrl)
-                    } catch (e: Exception) {
-                        Logger.withTag(loggerTag).w { "Failed to delete item ${item.name} from server. Error: ${e.message}" }
-                    }
+                try {
+                    inventoryNetworkService.deleteInventoryItem(item.serverId, settings.serverUrl)
+                } catch (e: Exception) {
+                    Logger.withTag(loggerTag).w { "Failed to delete item ${item.name} from server. Error: ${e.message}" }
                 }
             }
         }
         inventoryItemDao.delete(id)
     }
 
-    suspend fun syncWithServer() {
+    suspend fun syncWithServer() = withContext(Dispatchers.IO) {
         val settings = settingsRepository.getSettings()
-        if (settings.dataSynchronization == DataSynchronization.NO_SYNCHRONIZATION) return
+        if (settings.dataSynchronization == DataSynchronization.NO_SYNCHRONIZATION) return@withContext
 
         try {
             // 1. Upload dirty records (Phase 2 - Batch)
@@ -107,7 +108,7 @@ class InventoryRepository(
             ) {
                 val dirtyEntities = inventoryItemDao.getDirtyRecords(Instant.fromEpochMilliseconds(0))
                 if (dirtyEntities.isNotEmpty()) {
-                    val dirtyItems = dirtyEntities.map { it.toInventoryItem() }
+                    val dirtyItems = dirtyEntities.mapNotNull { inventoryItemDao.getByIdWithImages(it.id)?.toInventoryItem() }
                     try {
                         val syncedItems = inventoryNetworkService.pushInventoryItems(dirtyItems, settings.serverUrl)
                         syncedItems.forEach { synced ->
@@ -125,7 +126,10 @@ class InventoryRepository(
             ) {
                 val remoteChanges = inventoryNetworkService.fetchChanges(Instant.fromEpochMilliseconds(0), settings.serverUrl)
                 remoteChanges.forEach { remoteItem ->
-                    inventoryItemDao.upsert(remoteItem.toInventoryItemEntity())
+                    val local = inventoryItemDao.getByIdWithImages(remoteItem.id)?.toInventoryItem()
+                    if (local == null || remoteItem.lastModifiedAt > local.lastModifiedAt) {
+                        inventoryItemDao.upsert(remoteItem)
+                    }
                 }
             }
         } catch (e: Exception) {

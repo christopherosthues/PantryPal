@@ -2,6 +2,7 @@ package org.darchacheron.pantrypal
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -29,6 +30,7 @@ fun MainView(
     var selectedTab: BottomNavRoute by remember { mutableStateOf(BottomNavRoute.FoodList) }
 
     Scaffold(
+        topBar = {},
         bottomBar = {
             NavigationBar {
                 BottomNavRoute.items.forEach { tab ->
@@ -46,10 +48,11 @@ fun MainView(
                 }
             }
         }
-    ) {
+    ) { padding ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
+                .padding(bottom = padding.calculateBottomPadding())
         ) {
             when (selectedTab) {
                 BottomNavRoute.FoodList -> FoodListView()

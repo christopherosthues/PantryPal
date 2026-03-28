@@ -4,6 +4,7 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import org.darchacheron.pantrypal.camera.Image
 import org.darchacheron.pantrypal.profile.ProfileEntity
 import kotlin.time.Instant
 import kotlin.uuid.ExperimentalUuidApi
@@ -39,11 +40,9 @@ data class InventoryItemEntity(
     val fillingQuantity: Float?,
     val isLiquid: Boolean = false,
     val createdAt: Instant,
-    val lastModifiedAt: Instant,
-    val imagePath: String? = null,
-    val additionalImagePaths: List<String> = emptyList(),
+    val lastModifiedAt: Instant
 ) {
-    fun toInventoryItem(): InventoryItem = InventoryItem(
+    fun toInventoryItem(image: Image?, additionalImages: List<Image>): InventoryItem = InventoryItem(
         id = id,
         serverId = serverId,
         profileId = profileId,
@@ -61,8 +60,8 @@ data class InventoryItemEntity(
         isLiquid = isLiquid,
         createdAt = createdAt,
         lastModifiedAt = lastModifiedAt,
-        imagePath = imagePath,
-        additionalImagePaths = additionalImagePaths
+        image = image,
+        additionalImages = additionalImages
     )
 }
 
@@ -84,7 +83,5 @@ fun InventoryItem.toInventoryItemEntity(): InventoryItemEntity = InventoryItemEn
     fillingQuantity = fillingQuantity,
     isLiquid = isLiquid,
     createdAt = createdAt,
-    lastModifiedAt = lastModifiedAt,
-    imagePath = imagePath,
-    additionalImagePaths = additionalImagePaths
+    lastModifiedAt = lastModifiedAt
 )

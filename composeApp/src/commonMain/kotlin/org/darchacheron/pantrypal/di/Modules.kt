@@ -197,6 +197,7 @@ val sharedModule =
                     PantryPalDatabase.MIGRATION_2_3,
                     PantryPalDatabase.MIGRATION_3_4,
                     PantryPalDatabase.MIGRATION_4_5,
+                    PantryPalDatabase.MIGRATION_5_6,
                 )
                 .setDriver(BundledSQLiteDriver())
                 .build()

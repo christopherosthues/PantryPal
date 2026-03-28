@@ -130,8 +130,11 @@ class FoodListViewModel(
                 foodRepository.upsert(
                     food.copy(
                         id = Uuid.generateV7(),
+                        serverId = null,
                         createdAt = Clock.System.now(),
-                        lastModifiedAt = Clock.System.now()
+                        lastModifiedAt = Clock.System.now(),
+                        image = null,
+                        additionalImages = emptyList()
                     )
                 )
                 _messages.value = Message(Res.string.food_list_card_copy_success, food.name)
@@ -185,11 +188,10 @@ class FoodListViewModel(
                     isLiquid = food.isLiquid,
                     createdAt = Clock.System.now(),
                     lastModifiedAt = Clock.System.now(),
-                    imagePath = food.imagePath,
-                    additionalImagePaths = food.additionalImagePaths
+                    image = null,
+                    additionalImages = emptyList()
                 )
                 inventoryRepository.upsert(inventoryItem)
-                // Optionally navigate to inventory detail to let user verify
                 navigator.goToInventoryDetail(inventoryItem.id.toString())
             } catch (e: Exception) {
                 Logger.withTag(loggerTag).e { "Error adding to inventory list: ${e.message}" }

@@ -1,12 +1,11 @@
 package org.darchacheron.pantrypal.food
 
 import co.touchlab.kermit.Logger
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
 import okio.FileSystem
@@ -24,7 +23,6 @@ class FoodRepository(
     private val foodNetworkService: FoodNetworkService,
     private val settingsRepository: SettingsRepository,
     private val fileSystem: FileSystem,
-    private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO)
 ) {
     private val loggerTag = "FoodRepository"
 
@@ -36,77 +34,82 @@ class FoodRepository(
         direction: FoodSortDirection = FoodSortDirection.Ascending
     ): Flow<List<Food>> {
         val currentDate = Clock.System.todayIn(TimeZone.currentSystemDefault())
-        return foodDao.getFilteredAndSorted(
+        return foodDao.getFilteredAndSortedWithImages(
             profileId = profileId,
             query = query,
             filter = filter.name.uppercase(),
             sort = sort.name.uppercase(),
             direction = direction.name.uppercase(),
             currentDate = currentDate
-        ).map { entities -> entities.map { it.toFood() } }
+        ).map { list -> list.map { it.toFood() } }
     }
 
-    suspend fun getById(id: Uuid): Food? =
-        foodDao.getById(id)?.toFood()
+    suspend fun getById(id: Uuid): Food? = withContext(Dispatchers.IO) {
+        foodDao.getByIdWithImages(id)?.toFood()
+    }
 
-    suspend fun upsert(food: Food) {
-        val existingFood = foodDao.getById(food.id)?.toFood()
-        if (existingFood != null) {
+    suspend fun upsert(food: Food) = withContext(Dispatchers.IO) {
+        val existingWithImages = foodDao.getByIdWithImages(food.id)
+        if (existingWithImages != null) {
+            val existingFood = existingWithImages.toFood()
+            
             // Delete old main image if it was changed or removed
-            if (existingFood.imagePath != null && existingFood.imagePath != food.imagePath) {
-                deleteImageFile(existingFood.imagePath)
+            if (existingFood.image?.localPath != null && existingFood.image.localPath != food.image?.localPath) {
+                deleteImageFile(existingFood.image.localPath)
             }
+            
             // Delete old additional images if they were removed
-            val removedImages = existingFood.additionalImagePaths.filter { it !in food.additionalImagePaths }
-            removedImages.forEach { deleteImageFile(it) }
+            val newPaths = food.additionalImages.mapNotNull { it.localPath }
+            existingFood.additionalImages.forEach { existingImage ->
+                if (existingImage.localPath != null && existingImage.localPath !in newPaths) {
+                    deleteImageFile(existingImage.localPath)
+                }
+            }
         }
         
         // Phase 1: Save locally
-        foodDao.upsert(food.toFoodEntity())
+        foodDao.upsert(food)
         
         // Phase 1: Try push immediately if enabled
         val settings = settingsRepository.getSettings()
         if (settings.dataSynchronization == DataSynchronization.UPLOAD_AND_DOWNLOAD || 
             settings.dataSynchronization == DataSynchronization.ONLY_UPLOAD) {
-            scope.launch {
-                try {
-                    val syncedFoods = foodNetworkService.pushFoods(listOf(food), settings.serverUrl)
-                    syncedFoods.firstOrNull()?.let { synced ->
-                        foodDao.updateServerId(food.id, synced.serverId!!)
-                    }
-                    Logger.withTag(loggerTag).i { "Successfully synced food ${food.name} to server" }
-                } catch (e: Exception) {
-                    Logger.withTag(loggerTag).w { "Failed immediate sync for ${food.name}, will retry in background. Error: ${e.message}" }
+            try {
+                val syncedFoods = foodNetworkService.pushFoods(listOf(food), settings.serverUrl)
+                syncedFoods.firstOrNull()?.let { synced ->
+                    foodDao.updateServerId(food.id, synced.serverId!!)
                 }
+                Logger.withTag(loggerTag).i { "Successfully synced food ${food.name} to server" }
+            } catch (e: Exception) {
+                Logger.withTag(loggerTag).w { "Failed immediate sync for ${food.name}, will retry in background. Error: ${e.message}" }
             }
         }
     }
 
-    suspend fun delete(id: Uuid) {
-        val food = foodDao.getById(id)?.toFood()
-        if (food != null) {
-            food.imagePath?.let { deleteImageFile(it) }
-            food.additionalImagePaths.forEach { deleteImageFile(it) }
+    suspend fun delete(id: Uuid) = withContext(Dispatchers.IO) {
+        val foodWithImages = foodDao.getByIdWithImages(id)
+        if (foodWithImages != null) {
+            val food = foodWithImages.toFood()
+            food.image?.localPath?.let { deleteImageFile(it) }
+            food.additionalImages.forEach { it.localPath?.let { path -> deleteImageFile(path) } }
             
             // Phase 1: Try delete on server
             val settings = settingsRepository.getSettings()
             if (food.serverId != null && (settings.dataSynchronization == DataSynchronization.UPLOAD_AND_DOWNLOAD || 
                 settings.dataSynchronization == DataSynchronization.ONLY_UPLOAD)) {
-                scope.launch {
-                    try {
-                        foodNetworkService.deleteFood(food.serverId, settings.serverUrl)
-                    } catch (e: Exception) {
-                        Logger.withTag(loggerTag).w { "Failed to delete food ${food.name} from server. Error: ${e.message}" }
-                    }
+                try {
+                    foodNetworkService.deleteFood(food.serverId, settings.serverUrl)
+                } catch (e: Exception) {
+                    Logger.withTag(loggerTag).w { "Failed to delete food ${food.name} from server. Error: ${e.message}" }
                 }
             }
         }
         foodDao.delete(id)
     }
 
-    suspend fun syncWithServer() {
+    suspend fun syncWithServer() = withContext(Dispatchers.IO) {
         val settings = settingsRepository.getSettings()
-        if (settings.dataSynchronization == DataSynchronization.NO_SYNCHRONIZATION) return
+        if (settings.dataSynchronization == DataSynchronization.NO_SYNCHRONIZATION) return@withContext
 
         try {
             // 1. Upload dirty records (Phase 2)
@@ -115,7 +118,7 @@ class FoodRepository(
                 
                 val dirtyEntities = foodDao.getDirtyRecords(Instant.fromEpochMilliseconds(0)) // TODO: store instant of last sync
                 if (dirtyEntities.isNotEmpty()) {
-                    val dirtyFoods = dirtyEntities.map { it.toFood() }
+                    val dirtyFoods = dirtyEntities.mapNotNull { foodDao.getByIdWithImages(it.id)?.toFood() }
                     try {
                         val syncedFoods = foodNetworkService.pushFoods(dirtyFoods, settings.serverUrl)
                         syncedFoods.forEach { synced ->
@@ -132,7 +135,10 @@ class FoodRepository(
                 settings.dataSynchronization == DataSynchronization.ONLY_DOWNLOAD) {
                 val remoteChanges = foodNetworkService.fetchChanges(Instant.fromEpochMilliseconds(0), settings.serverUrl)
                 remoteChanges.forEach { remoteFood ->
-                    foodDao.upsert(remoteFood.toFoodEntity())
+                    val local = foodDao.getByIdWithImages(remoteFood.id)?.toFood()
+                    if (local == null || remoteFood.lastModifiedAt > local.lastModifiedAt) {
+                        foodDao.upsert(remoteFood)
+                    }
                 }
             }
         } catch (e: Exception) {

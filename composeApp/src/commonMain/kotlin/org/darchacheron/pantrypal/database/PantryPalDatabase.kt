@@ -7,6 +7,7 @@ import androidx.room.TypeConverters
 import androidx.room.migration.Migration
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.execSQL
+import org.darchacheron.pantrypal.camera.ImageEntity
 import org.darchacheron.pantrypal.database.converters.InstantConverter
 import org.darchacheron.pantrypal.database.converters.LocalDateConverter
 import org.darchacheron.pantrypal.database.converters.StringListConverter
@@ -25,9 +26,10 @@ import kotlin.uuid.Uuid
     entities = [
         FoodEntity::class,
         ProfileEntity::class,
-        InventoryItemEntity::class
+        InventoryItemEntity::class,
+        ImageEntity::class
     ],
-    version = 5
+    version = 6
 )
 @TypeConverters(
     InstantConverter::class,
@@ -168,6 +170,105 @@ abstract class PantryPalDatabase : RoomDatabase() {
                     """.trimIndent()
                 )
                 connection.execSQL("CREATE INDEX IF NOT EXISTS `index_inventory_item_profileId` ON `inventory_item` (`profileId`)")
+            }
+        }
+
+        @OptIn(ExperimentalUuidApi::class)
+        val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(connection: SQLiteConnection) {
+                val now = Clock.System.now().toString()
+                
+                // 1. Create images table with profileId and audit timestamps
+                connection.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `images` (
+                        `id` TEXT NOT NULL, 
+                        `serverId` TEXT, 
+                        `profileId` TEXT NOT NULL,
+                        `localPath` TEXT, 
+                        `foodId` TEXT, 
+                        `inventoryItemId` TEXT, 
+                        `isPrimary` INTEGER NOT NULL, 
+                        `createdAt` TEXT NOT NULL,
+                        `lastModifiedAt` TEXT NOT NULL,
+                        PRIMARY KEY(`id`), 
+                        FOREIGN KEY(`profileId`) REFERENCES `profile`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE,
+                        FOREIGN KEY(`foodId`) REFERENCES `food`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE, 
+                        FOREIGN KEY(`inventoryItemId`) REFERENCES `inventory_item`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE
+                    )
+                    """.trimIndent()
+                )
+                connection.execSQL("CREATE INDEX IF NOT EXISTS `index_images_profileId` ON `images` (`profileId`)")
+                connection.execSQL("CREATE INDEX IF NOT EXISTS `index_images_foodId` ON `images` (`foodId`)")
+                connection.execSQL("CREATE INDEX IF NOT EXISTS `index_images_inventoryItemId` ON `images` (`inventoryItemId`)")
+
+                // 2. Migrate existing images
+                migrateImages(connection, "food", "foodId", now)
+                migrateImages(connection, "inventory_item", "inventoryItemId", now)
+
+                // 3. Create new food table without image columns
+                connection.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `food_new` (`id` TEXT NOT NULL, `serverId` TEXT, `profileId` TEXT NOT NULL, `name` TEXT NOT NULL, `kiloCalories` INTEGER, `kiloJoule` INTEGER, `fatInGrams` REAL, `saturatedFattyAcidsInGrams` REAL, `carbsInGrams` REAL, `sugarInGrams` REAL, `dietaryFiberInGrams` REAL, `proteinInGrams` REAL, `saltInGrams` REAL, `fillingQuantity` REAL, `isLiquid` INTEGER NOT NULL, `bestBeforeUsedByDate` TEXT, `isUseBy` INTEGER NOT NULL, `openedAt` TEXT, `createdAt` TEXT NOT NULL, `lastModifiedAt` TEXT NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`profileId`) REFERENCES `profile`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )"
+                )
+                connection.execSQL(
+                    """
+                    INSERT INTO food_new (id, serverId, profileId, name, kiloCalories, kiloJoule, fatInGrams, saturatedFattyAcidsInGrams, carbsInGrams, sugarInGrams, dietaryFiberInGrams, proteinInGrams, saltInGrams, fillingQuantity, isLiquid, bestBeforeUsedByDate, isUseBy, openedAt, createdAt, lastModifiedAt)
+                    SELECT id, serverId, profileId, name, kiloCalories, kiloJoule, fatInGrams, saturatedFattyAcidsInGrams, carbsInGrams, sugarInGrams, dietaryFiberInGrams, proteinInGrams, saltInGrams, fillingQuantity, isLiquid, bestBeforeUsedByDate, isUseBy, openedAt, createdAt, lastModifiedAt FROM food
+                    """.trimIndent()
+                )
+                connection.execSQL("DROP TABLE food")
+                connection.execSQL("ALTER TABLE food_new RENAME TO food")
+                connection.execSQL("CREATE INDEX IF NOT EXISTS `index_food_profileId` ON `food` (`profileId`)")
+
+                // 4. Create new inventory_item table without image columns
+                connection.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `inventory_item_new` (`id` TEXT NOT NULL, `serverId` TEXT, `profileId` TEXT NOT NULL, `name` TEXT NOT NULL, `kiloCalories` INTEGER, `kiloJoule` INTEGER, `fatInGrams` REAL, `saturatedFattyAcidsInGrams` REAL, `carbsInGrams` REAL, `sugarInGrams` REAL, `dietaryFiberInGrams` REAL, `proteinInGrams` REAL, `saltInGrams` REAL, `fillingQuantity` REAL, `isLiquid` INTEGER NOT NULL, `createdAt` TEXT NOT NULL, `lastModifiedAt` TEXT NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`profileId`) REFERENCES `profile`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )"
+                )
+                connection.execSQL(
+                    """
+                    INSERT INTO inventory_item_new (id, serverId, profileId, name, kiloCalories, kiloJoule, fatInGrams, saturatedFattyAcidsInGrams, carbsInGrams, sugarInGrams, dietaryFiberInGrams, proteinInGrams, saltInGrams, fillingQuantity, isLiquid, createdAt, lastModifiedAt)
+                    SELECT id, serverId, profileId, name, kiloCalories, kiloJoule, fatInGrams, saturatedFattyAcidsInGrams, carbsInGrams, sugarInGrams, dietaryFiberInGrams, proteinInGrams, saltInGrams, fillingQuantity, isLiquid, createdAt, lastModifiedAt FROM inventory_item
+                    """.trimIndent()
+                )
+                connection.execSQL("DROP TABLE inventory_item")
+                connection.execSQL("ALTER TABLE inventory_item_new RENAME TO inventory_item")
+                connection.execSQL("CREATE INDEX IF NOT EXISTS `index_inventory_item_profileId` ON `inventory_item` (`profileId`)")
+            }
+
+            private fun migrateImages(connection: SQLiteConnection, sourceTable: String, foreignKeyColumn: String, now: String) {
+                val selectSql = "SELECT id, profileId, imagePath, additionalImagePaths FROM $sourceTable"
+                connection.prepare(selectSql).use { statement ->
+                    while (statement.step()) {
+                        val parentId = statement.getText(0)
+                        val profileId = statement.getText(1)
+                        val primaryPath = if (statement.isNull(2)) null else statement.getText(2)
+                        val additionalPathsStr = statement.getText(3)
+
+                        primaryPath?.let { path ->
+                            val imageId = Uuid.generateV7().toString()
+                            connection.execSQL(
+                                "INSERT INTO images (id, profileId, localPath, $foreignKeyColumn, isPrimary, createdAt, lastModifiedAt) VALUES ('$imageId', '$profileId', '$path', '$parentId', 1, '$now', '$now')"
+                            )
+                        }
+
+                        try {
+                            val cleaned = additionalPathsStr.trim('[', ']', ' ')
+                            if (cleaned.isNotEmpty()) {
+                                cleaned.split(',').forEach {
+                                    val path = it.trim('"', ' ')
+                                    if (path.isNotEmpty()) {
+                                        val imageId = Uuid.generateV7().toString()
+                                        connection.execSQL(
+                                            "INSERT INTO images (id, profileId, localPath, $foreignKeyColumn, isPrimary, createdAt, lastModifiedAt) VALUES ('$imageId', '$profileId', '$path', '$parentId', 0, '$now', '$now')"
+                                        )
+                                    }
+                                }
+                            }
+                        } catch (e: Exception) {
+                            // Skip if malformed
+                        }
+                    }
+                }
             }
         }
     }

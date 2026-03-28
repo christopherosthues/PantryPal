@@ -5,6 +5,8 @@ import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import kotlinx.datetime.LocalDate
+import org.darchacheron.pantrypal.camera.Image
+import org.darchacheron.pantrypal.camera.toImageEntity
 import org.darchacheron.pantrypal.profile.ProfileEntity
 import kotlin.time.Instant
 import kotlin.uuid.ExperimentalUuidApi
@@ -43,11 +45,9 @@ data class FoodEntity(
     val isUseBy: Boolean,
     val openedAt: LocalDate?,
     val createdAt: Instant,
-    val lastModifiedAt: Instant,
-    val imagePath: String? = null,
-    val additionalImagePaths: List<String> = emptyList(),
+    val lastModifiedAt: Instant
 ) {
-    fun toFood(): Food = Food(
+    fun toFood(image: Image?, additionalImages: List<Image>): Food = Food(
         id = id,
         serverId = serverId,
         profileId = profileId,
@@ -68,8 +68,8 @@ data class FoodEntity(
         openedAt = openedAt,
         createdAt = createdAt,
         lastModifiedAt = lastModifiedAt,
-        imagePath = imagePath,
-        additionalImagePaths = additionalImagePaths
+        image = image,
+        additionalImages = additionalImages
     )
 }
 
@@ -94,7 +94,5 @@ fun Food.toFoodEntity(): FoodEntity = FoodEntity(
     isUseBy = isUseBy,
     openedAt = openedAt,
     createdAt = createdAt,
-    lastModifiedAt = lastModifiedAt,
-    imagePath = imagePath,
-    additionalImagePaths = additionalImagePaths
+    lastModifiedAt = lastModifiedAt
 )

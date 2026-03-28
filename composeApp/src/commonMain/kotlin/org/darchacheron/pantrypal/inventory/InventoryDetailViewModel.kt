@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.darchacheron.pantrypal.authentication.AuthenticationPreferencesRepository
+import org.darchacheron.pantrypal.camera.Image
 import org.darchacheron.pantrypal.navigation.Navigator
 import org.darchacheron.pantrypal.navigation.OcrType
 import org.darchacheron.pantrypal.ui.UiState
@@ -66,8 +67,8 @@ class InventoryDetailViewModel(
             isLiquid = false,
             createdAt = Clock.System.now(),
             lastModifiedAt = Clock.System.now(),
-            imagePath = null,
-            additionalImagePaths = emptyList()
+            image = null,
+            additionalImages = emptyList()
         )
     )
 
@@ -97,6 +98,8 @@ class InventoryDetailViewModel(
                         item = loaded
                         updateStringsFromItem(loaded)
                         _uiState.value = UiState.success(item)
+                        
+                        // TODO: Trigger image download if localPath is null but serverId exists
                     } else {
                         _uiState.value = UiState.error(Res.string.food_detail_error_loading)
                     }
@@ -181,20 +184,35 @@ class InventoryDetailViewModel(
 
     fun openCamera() {
         navigator.goToSimpleCamera { path ->
-            item = item.copy(imagePath = path)
+            val now = Clock.System.now()
+            item = item.copy(
+                image = Image(
+                    profileId = item.profileId,
+                    localPath = path,
+                    createdAt = now,
+                    lastModifiedAt = now
+                )
+            )
             _uiState.value = UiState.success(item)
         }
     }
 
     fun addAdditionalImage() {
         navigator.goToSimpleCamera { path ->
-            item = item.copy(additionalImagePaths = item.additionalImagePaths + path)
+            val now = Clock.System.now()
+            val newImage = Image(
+                profileId = item.profileId,
+                localPath = path,
+                createdAt = now,
+                lastModifiedAt = now
+            )
+            item = item.copy(additionalImages = item.additionalImages + newImage)
             _uiState.value = UiState.success(item)
         }
     }
 
-    fun removeAdditionalImage(path: String) {
-        item = item.copy(additionalImagePaths = item.additionalImagePaths - path)
+    fun removeAdditionalImage(image: Image) {
+        item = item.copy(additionalImages = item.additionalImages - image)
         _uiState.value = UiState.success(item)
     }
 
@@ -264,6 +282,18 @@ class InventoryDetailViewModel(
         _uiState.value = UiState.success(item)
     }
 
+    fun goBack() {
+        navigator.goBack()
+    }
+
+    fun clearSnackbar() {
+        _snackbarMessage.value = null
+    }
+
+    fun cancelEditing() {
+        goBack()
+    }
+
     private val kcal = "kcal"
     private val kj = "kj"
     private val saturatedFatCandidates = listOf("sat.fat", "sat fat", "saturated", "gesättigt")
@@ -304,23 +334,18 @@ class InventoryDetailViewModel(
                             fatCandidates.any { lowerLine.contains(it) } -> fatInGramsStr = values.first()
                             sugarCandidates.any { lowerLine.contains(it) } -> sugarInGramsStr = values.last()
                             carbsCandidates.any { lowerLine.contains(it) } -> carbsInGramsStr = values.first()
-                            proteinCandidates.any { lowerLine.contains(it) } -> proteinInGramsStr = values.first()
+                            proteinCandidates.any { lowerLine.contains(it) } -> proteinInGramsStr = values.last()
                             saltCandidates.any { lowerLine.contains(it) } -> saltInGramsStr = values.last()
-                            fiberCandidates.any { lowerLine.contains(it) } -> dietaryFiberInGramsStr = values.first()
+                            fiberCandidates.any { lowerLine.contains(it) } -> dietaryFiberInGramsStr = values.last()
                         }
                     }
                 }
                 syncItemFromStrings()
                 _uiState.value = UiState.success(item)
             }
-            else -> {}
+            OcrType.DATE -> {
+                // Not used in InventoryItem
+            }
         }
     }
-
-    fun cancelEditing() {
-        goBack()
-    }
-
-    fun goBack() = navigator.goBack()
-    fun clearSnackbar() { _snackbarMessage.value = null }
 }

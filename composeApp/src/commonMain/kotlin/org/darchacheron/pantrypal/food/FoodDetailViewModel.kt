@@ -15,8 +15,8 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.format.byUnicodePattern
 import org.darchacheron.pantrypal.authentication.AuthenticationPreferencesRepository
+import org.darchacheron.pantrypal.camera.Image
 import org.darchacheron.pantrypal.navigation.FoodNavRoute
-import org.darchacheron.pantrypal.navigation.NavRoute
 import org.darchacheron.pantrypal.navigation.Navigator
 import org.darchacheron.pantrypal.navigation.OcrType
 import org.darchacheron.pantrypal.ui.UiState
@@ -53,7 +53,7 @@ class FoodDetailViewModel(
     private var food by mutableStateOf(
         Food(
             id = foodId,
-            profileId = Uuid.NIL, // Placeholder, will be updated in init
+            profileId = Uuid.NIL,
             name = "",
             kiloCalories = null,
             kiloJoule = null,
@@ -71,8 +71,8 @@ class FoodDetailViewModel(
             openedAt = null,
             createdAt = Clock.System.now(),
             lastModifiedAt = Clock.System.now(),
-            imagePath = null,
-            additionalImagePaths = emptyList()
+            image = null,
+            additionalImages = emptyList()
         )
     )
 
@@ -297,10 +297,37 @@ class FoodDetailViewModel(
     fun openCamera() {
         navigator.goToSimpleCamera(
             onSuccess = { imagePath ->
-                food = food.copy(imagePath = imagePath)
+                val now = Clock.System.now()
+                food = food.copy(
+                    image = Image(
+                        profileId = food.profileId,
+                        localPath = imagePath,
+                        createdAt = now,
+                        lastModifiedAt = now
+                    )
+                )
                 _uiState.value = UiState.success(food)
             }
         )
+    }
+
+    fun addAdditionalImage() {
+        navigator.goToSimpleCamera { imagePath ->
+            val now = Clock.System.now()
+            val newImage = Image(
+                profileId = food.profileId,
+                localPath = imagePath,
+                createdAt = now,
+                lastModifiedAt = now
+            )
+            food = food.copy(additionalImages = food.additionalImages + newImage)
+            _uiState.value = UiState.success(food)
+        }
+    }
+
+    fun removeAdditionalImage(image: Image) {
+        food = food.copy(additionalImages = food.additionalImages - image)
+        _uiState.value = UiState.success(food)
     }
 
     fun openOcrCamera(type: OcrType) {
@@ -326,43 +353,35 @@ class FoodDetailViewModel(
         when (type) {
             OcrType.NAME -> updateName(text.trim())
             OcrType.AMOUNT -> {
-                // Extract number from text like "500g" or "1.5L"
                 val amountRegex = """(\d+[,.]?\d*)""".toRegex()
                 val match = amountRegex.find(text)
-                match?.value?.replace(',', '.')?.let { updateFillingQuantity(it) }
+                match?.value?.replace(',', '.')?.let { fillingQuantityStr = it }
                 
                 if (text.contains("l", ignoreCase = true) || text.contains("ml", ignoreCase = true)) {
                     updateIsLiquid(true)
                 } else if (text.contains("g", ignoreCase = true) || text.contains("kg", ignoreCase = true)) {
                     updateIsLiquid(false)
                 }
+                syncFoodFromStrings()
+                _uiState.value = UiState.success(food)
             }
             OcrType.NUTRIENTS -> {
                 val lines = text.lines()
                 lines.forEach { line ->
                     val lowerLine = line.lowercase()
-                    // Extract all numbers on the line
                     val values = """(\d+[,.]?\d*)""".toRegex().findAll(line).map { it.value.replace(',', '.') }.toList()
                     
                     if (values.isNotEmpty()) {
                         when {
-                            // Specific tags from the OCR UI or common names
-                            lowerLine.contains(kcal) -> updateKiloCalories(values.last())
-                            lowerLine.contains(kj) -> updateKiloJoule(values.first())
-                            saturatedFatCandidates.any { lowerLine.contains(it) } ->
-                                updateSaturatedFattyAcidsInGrams(values.last())
-                            fatCandidates.any { lowerLine.contains(it) } ->
-                                updateFatInGrams(values.first())
-                            sugarCandidates.any { lowerLine.contains(it) } ->
-                                updateSugarInGrams(values.last())
-                            carbsCandidates.any { lowerLine.contains(it) } ->
-                                updateCarbsInGrams(values.first())
-                            proteinCandidates.any { lowerLine.contains(it) } ->
-                                updateProteinInGrams(values.first())
-                            saltCandidates.any { lowerLine.contains(it) } ->
-                                updateSaltInGrams(values.last())
-                            fiberCandidates.any { lowerLine.contains(it) } ->
-                                updateDietaryFiberInGrams(values.first())
+                            lowerLine.contains(kcal) -> kiloCaloriesStr = values.last()
+                            lowerLine.contains(kj) -> kiloJouleStr = values.first()
+                            saturatedFatCandidates.any { lowerLine.contains(it) } -> saturatedFattyAcidsInGramsStr = values.last()
+                            fatCandidates.any { lowerLine.contains(it) } -> fatInGramsStr = values.first()
+                            sugarCandidates.any { lowerLine.contains(it) } -> sugarInGramsStr = values.last()
+                            carbsCandidates.any { lowerLine.contains(it) } -> carbsInGramsStr = values.first()
+                            proteinCandidates.any { lowerLine.contains(it) } -> proteinInGramsStr = values.last()
+                            saltCandidates.any { lowerLine.contains(it) } -> saltInGramsStr = values.last()
+                            fiberCandidates.any { lowerLine.contains(it) } -> dietaryFiberInGramsStr = values.last()
                         }
                     }
                 }
@@ -386,19 +405,5 @@ class FoodDetailViewModel(
                 }
             }
         }
-    }
-
-    fun addAdditionalImage() {
-        navigator.goToSimpleCamera(
-            onSuccess = { imagePath ->
-                food = food.copy(additionalImagePaths = food.additionalImagePaths + imagePath)
-                _uiState.value = UiState.success(food)
-            }
-        )
-    }
-
-    fun removeAdditionalImage(imagePath: String) {
-        food = food.copy(additionalImagePaths = food.additionalImagePaths - imagePath)
-        _uiState.value = UiState.success(food)
     }
 }
