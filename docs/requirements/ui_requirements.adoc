@@ -1,0 +1,38 @@
+= User Interface Requirements: PantryPal
+:toc: left
+
+== Design Principles
+The PantryPal UI shall follow modern design principles to ensure a consistent and intuitive user experience across all supported platforms.
+
+*   **Consistency:** Use standard Material Design 3 components.
+*   **Responsiveness:** Adapt layouts for different screen sizes (Mobile, Tablet, Desktop).
+*   **Feedback:** Provide immediate visual feedback for user actions (e.g., loading spinners, snackbars).
+
+== Themes and Styling
+*   **UIR-1.1: Light/Dark Mode:** The application shall support both light and dark themes.
+*   **UIR-1.2: System Adaptation:** The application shall optionally follow the system's theme settings.
+*   **UIR-1.3: Color Palette:** Use a cohesive color palette that emphasizes readability and highlights warnings (MHD/VD).
+
+== Key Screens
+=== Food List (Home)
+*   Displays a searchable and filterable list of food items.
+*   Each item shows: Name, Image (optional), Expiration Date, and Quantity.
+*   Warning icons for expiring or expired items.
+
+=== Food Details
+*   Detailed view of a single item.
+*   Sections for basic info, nutritional values, and images.
+*   Action buttons for editing, deleting, and scanning (OCR).
+
+=== Inventory
+*   A separate list view for frequently used items.
+*   Simplified view focusing on basic info and nutritional values.
+
+=== OCR Camera View
+*   A camera overlay with real-time text recognition indicators.
+*   Buttons to capture and confirm recognized data fields.
+
+== Navigation
+*   **Mobile:** Bottom navigation bar for quick access to Food, Inventory, and Profile.
+*   **Desktop:** Side navigation drawer or permanent sidebar.
+*   **Back Navigation:** Standard "Back" button or gesture support across all screens.

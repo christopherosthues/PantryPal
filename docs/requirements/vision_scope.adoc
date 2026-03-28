@@ -1,0 +1,21 @@
+= Vision and Scope: PantryPal
+:toc: left
+
+== Business Opportunity
+Food waste is a significant global issue, often caused by poor tracking of expiration dates and pantry stock. Consumers need an efficient, cross-platform solution to manage their food inventory both locally and via cloud synchronization.
+
+== Product Vision
+PantryPal is a multi-platform application (Android, Desktop, and others) that empowers users to manage food items, nutritional values, and expiration dates. It leverages OCR technology to simplify data entry and provides flexible synchronization options to ensure data availability across all user devices.
+
+== Scope and Limitations
+=== In-Scope
+*   Multi-platform support via Kotlin Multiplatform (KMP).
+*   Local-first data storage with optional cloud sync.
+*   OCR-based scanning for names, quantities, nutrients, and dates.
+*   Advanced filtering and sorting for expiration management.
+*   Inventory management for frequently used items.
+
+=== Out-of-Scope
+*   Recipe suggestions based on current stock (Phase 2).
+*   Direct online grocery ordering.
+*   Social sharing of pantry lists.

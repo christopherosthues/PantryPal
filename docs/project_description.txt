@@ -1,0 +1,36 @@
+PantryPal is a cross-platform app for the efficient management of food items, their nutritional values, and expiration dates.
+
+1. Core Functions of Food Management
+The user has a central overview of all managed food items.
+- Search & Filtering: The list can be searched by name. Filters allow for narrowing down to opened/unopened products as well as the expiration status (e.g., "Overdue").
+- Sorting: Sorting by name and expiration date (ascending and descending) is integrated.
+- Status Visualization:
+    * Opened food items are marked.
+    * Products that have exceeded their best-before date (BBD) are highlighted with a warning icon.
+    * Products that have exceeded their use-by date are also highlighted with a color/icon, but with an even more distinct warning, as health risks exist here.
+- Detailed View: In the detailed view, name, quantity (weight/volume), opening date, and specific nutritional values (calories, fat, saturated fatty acids, carbohydrates, sugar, dietary fiber, protein, salt) can be maintained.
+
+2. Inventory Management
+In addition to short-lived food management, the app offers an inventory list for long-lived goods or supplies without a specific expiration date.
+- Collection of master data and nutritional values for frequently used items.
+- Management of primary images and additional product photos for better identification.
+
+3. Smart Data Capture (OCR & Camera)
+To simplify data entry, PantryPal supports camera-assisted capture:
+- OCR Recognition: Automatic extraction of product names, quantities, expiration dates, and complete nutritional tables from the packaging.
+- Image Support: Multiple images (primary image and gallery) can be assigned to each entry, which are stored locally and optionally synchronized.
+
+4. Cloud Synchronization & User Accounts
+PantryPal supports both local offline operation and server-based storage.
+- User Profiles: Users can create profiles to use their data across multiple devices.
+- Synchronization Modes: In the settings, you can choose between:
+    * Local storage only (No synchronization)
+    * Upload only (Backup of local data)
+    * Download only (Sync from server)
+    * Bidirectional synchronization (Upload and download)
+- Conflict Management: Timestamps (Last Modified) ensure that the most current version of an entry is always kept during synchronization.
+
+5. Technical Platform & Design
+- Multi-platform Support: The app is developed for Android, Desktop (JVM), and other platforms (Kotlin Multiplatform).
+- Personalization: Support for light and dark mode (theme management) as well as dynamic adaptation to system settings.
+- Data Security: Local storage in an encrypted/structured database (SQL) and secure authentication on the server.

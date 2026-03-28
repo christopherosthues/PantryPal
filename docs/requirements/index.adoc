@@ -1,0 +1,20 @@
+= PantryPal Software Requirements Specification
+:toc: left
+:sectnums:
+
+== Introduction
+This document provides a comprehensive specification for the PantryPal application. It covers functional and non-functional requirements, the product vision, and user interface guidelines.
+
+== Document Structure
+* xref:vision_scope.adoc[Vision and Scope]: High-level goals and product overview.
+* xref:functional_requirements.adoc[Functional Requirements]: Detailed features including Food and Inventory management, OCR, and Synchronization.
+* xref:non_functional_requirements.adoc[Non-Functional Requirements]: Quality attributes like performance, security, and platform support.
+* xref:ui_requirements.adoc[User Interface Requirements]: Design principles, themes, and navigation.
+
+== Glossary
+[glossary]
+KMP:: Kotlin Multiplatform.
+OCR:: Optical Character Recognition (used for scanning labels).
+MHD:: Mindesthaltbarkeitsdatum (Best-before date).
+VD:: Verbrauchsdatum (Use-by date).
+Sync:: Data synchronization between local storage and a remote server.

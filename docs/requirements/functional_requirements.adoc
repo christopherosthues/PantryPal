@@ -1,0 +1,27 @@
+= Functional Requirements: PantryPal
+:toc: left
+
+== Food Management
+*   **FR-1.1: List Food Items:** The system shall display a list of all food items associated with the current profile.
+*   **FR-1.2: Search:** Users shall be able to search the food list by name.
+*   **FR-1.3: Sort:** The system shall support sorting by name and expiration date (ascending/descending).
+*   **FR-1.4: Filter:** Users shall be able to filter items by "Opened" status, "Unopened" status and "Overdue" status.
+*   **FR-1.5: Detailed View:** The system shall show detailed nutritional info: Calories, Joule, Fat, Saturated Fat, Carbs, Sugar, Fiber, Protein, and Salt.
+*   **FR-1.6: Expiration Warning:** The system shall provide visual warnings for items past their Best-before date (MHD) and stronger warnings for items past their Use-by date (VD).
+
+== Inventory Management
+*   **FR-2.1: Frequently used Items:** The system shall provide a separate inventory list for frequently used items so that new food items can be created quickly.
+*   **FR-2.2: Multi-Image Support:** Users shall be able to attach a main image and multiple additional images to an inventory item.
+
+== Smart Data Entry (OCR)
+*   **FR-3.1: OCR Scan:** The system shall use the device camera to scan and recognize text from product labels.
+*   **FR-3.2: Automated Mapping:** The system shall automatically map recognized text to fields: Name, Quantity, Expiration Date, and Nutritional Table.
+
+== User Accounts & Sync
+*   **FR-4.1: Authentication:** Users shall be able to register and log in to a remote server.
+*   **FR-4.2: Sync Modes:** Users shall be able to choose between:
+    *   No Sync (Local only)
+    *   Only Upload (Backup)
+    *   Only Download (Restore)
+    *   Bidirectional Sync
+*   **FR-4.3: Conflict Resolution:** The system shall use "Last Modified" timestamps to resolve data conflicts during sync.

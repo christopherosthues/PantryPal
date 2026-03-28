@@ -1,0 +1,23 @@
+= Non-Functional Requirements: PantryPal
+:toc: left
+
+== Performance
+*   **NFR-1.1: Local Response Time:** The application shall respond to user input (e.g., list scrolling, search) in less than 100ms.
+*   **NFR-1.2: Sync Performance:** Background synchronization shall not block the user interface.
+*   **NFR-1.3: Database Size:** The system shall efficiently handle at least 5000 food items without significant performance degradation.
+
+== Availability & Reliability
+*   **NFR-2.1: Offline First:** All core features (viewing, adding, deleting items) must be fully functional without an internet connection.
+*   **NFR-2.2: Data Integrity:** The system shall ensure that no data is lost during synchronization conflicts by using robust timestamp-based resolution.
+
+== Security
+*   **NFR-3.1: Encryption:** Sensitive user data (tokens) shall be stored securely using platform-specific encrypted storage (e.g., Android EncryptedSharedPreferences/DataStore).
+*   **NFR-3.2: API Security:** All communication with the remote server must occur over HTTPS.
+
+== Portability & Compatibility
+*   **NFR-4.1: Multi-platform:** The core business logic shall be shared across Android, JVM (Desktop), and potential future platforms (iOS) using Kotlin Multiplatform.
+*   **NFR-4.2: Android Support:** The app shall support Android API level 24 and above.
+
+== Usability
+*   **NFR-5.1: Accessibility:** The UI shall follow Material Design accessibility guidelines (e.g., minimum touch target sizes, color contrast).
+*   **NFR-5.2: Multilingual Support:** The application shall be architected to support multiple languages, starting with German and English.
