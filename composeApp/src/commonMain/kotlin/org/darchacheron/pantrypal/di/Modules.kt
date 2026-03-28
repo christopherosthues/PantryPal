@@ -52,6 +52,7 @@ import org.koin.dsl.module
 import org.koin.dsl.navigation3.navigation
 import pantrypal.composeapp.generated.resources.Res
 import pantrypal.composeapp.generated.resources.food_list_empty_selection
+import pantrypal.composeapp.generated.resources.inventory_list_empty_selection
 
 expect val platformModule: Module
 
@@ -81,13 +82,28 @@ val navigationModule = module {
         )
     }
 
-    navigation<BottomNavRoute.InventoryList> {
+    navigation<BottomNavRoute.InventoryList>(
+        metadata = ListDetailSceneStrategy.listPane(
+            detailPlaceholder = {
+                Surface {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text(
+                            text = stringResource(Res.string.inventory_list_empty_selection),
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+            }
+        )
+    ) {
         InventoryListView()
     }
 
-    navigation<InventoryNavRoute.InventoryDetail> { route ->
+    navigation<InventoryNavRoute.InventoryDetail>(
+        metadata = ListDetailSceneStrategy.detailPane()
+    ) { route ->
         InventoryDetailView(
-            viewModel = koinViewModel { parametersOf(route.itemId) }
+            viewModel = koinViewModel { parametersOf(route) }
         )
     }
 

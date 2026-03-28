@@ -14,6 +14,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.darchacheron.pantrypal.authentication.AuthenticationPreferencesRepository
 import org.darchacheron.pantrypal.camera.Image
+import org.darchacheron.pantrypal.food.Food
+import org.darchacheron.pantrypal.navigation.InventoryNavRoute
 import org.darchacheron.pantrypal.navigation.Navigator
 import org.darchacheron.pantrypal.navigation.OcrType
 import org.darchacheron.pantrypal.ui.UiState
@@ -25,15 +27,15 @@ import kotlin.uuid.Uuid
 
 @OptIn(ExperimentalUuidApi::class)
 class InventoryDetailViewModel(
-    private val itemId: String?,
+    val navigationRoute: InventoryNavRoute.InventoryDetail,
     private val inventoryRepository: InventoryRepository,
     private val authenticationPreferencesRepository: AuthenticationPreferencesRepository,
     private val navigator: Navigator,
 ) : ViewModel() {
-    private val id = if (itemId != null) Uuid.parse(itemId) else Uuid.generateV7()
+    private val id = if (navigationRoute.itemId != null) Uuid.parse(navigationRoute.itemId) else Uuid.generateV7()
 
     val canSave by derivedStateOf { item.name.isNotBlank() }
-    val isAdding by derivedStateOf { itemId == null }
+    val isAdding by derivedStateOf { originalItem == null }
 
     private val _isSaved = MutableStateFlow(false)
     val isSaved: StateFlow<Boolean> = _isSaved.asStateFlow()
@@ -72,6 +74,8 @@ class InventoryDetailViewModel(
         )
     )
 
+    private var originalItem by mutableStateOf<InventoryItem?>(null)
+
     private val _uiState = MutableStateFlow(UiState<InventoryItem?>())
     val uiState: StateFlow<UiState<InventoryItem?>> = _uiState.asStateFlow()
 
@@ -92,10 +96,11 @@ class InventoryDetailViewModel(
                     return@launch
                 }
 
-                if (itemId != null) {
+                if (navigationRoute.itemId != null) {
                     val loaded = inventoryRepository.getById(id)
                     if (loaded != null) {
                         item = loaded
+                        originalItem = loaded.copy()
                         updateStringsFromItem(loaded)
                         _uiState.value = UiState.success(item)
                         
@@ -143,12 +148,18 @@ class InventoryDetailViewModel(
     }
 
     fun save() {
-        if (!canSave) return
+        if (!canSave){
+            return
+        }
+
         syncItemFromStrings()
+
         viewModelScope.launch {
             _uiState.value = UiState.loading()
             try {
-                inventoryRepository.upsert(item.copy(lastModifiedAt = Clock.System.now()))
+                val createdAt = originalItem?.createdAt ?: Clock.System.now()
+                val lastModifiedAt = Clock.System.now()
+                inventoryRepository.upsert(item.copy(createdAt = createdAt, lastModifiedAt = lastModifiedAt))
                 _isSaved.value = true
                 navigator.goBack()
             } catch (e: Exception) {

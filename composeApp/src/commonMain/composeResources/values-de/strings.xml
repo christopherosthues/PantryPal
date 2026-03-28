@@ -172,6 +172,7 @@
     <string name="inventory_list_card_content_description_add_to_pantry">Zum Vorrat hinzufügen</string>
     <string name="inventory_list_sort_name_asc">Name (A-Z)</string>
     <string name="inventory_list_sort_name_desc">Name (Z-A)</string>
+    <string name="inventory_list_empty_selection">Wähle ein Inventaritem aus, um die Details anzuzeigen</string>
 
     <string name="inventory_detail_title_add">Vorlage hinzufügen</string>
     <string name="inventory_detail_title_edit">Vorlage bearbeiten</string>
