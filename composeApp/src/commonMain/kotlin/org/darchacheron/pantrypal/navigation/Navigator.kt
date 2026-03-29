@@ -7,11 +7,14 @@ import androidx.navigation3.runtime.rememberNavBackStack
 
 class Navigator {
     private var _mainBackStack: NavBackStack<NavKey>? = null
-    private var _bottomBackStack: NavBackStack<NavKey>? = null
     private var _foodBackStack: NavBackStack<NavKey>? = null
+    private var _inventoryBackStack: NavBackStack<NavKey>? = null
+    private var _profileBackStack: NavBackStack<NavKey>? = null
 
-
-    val backStack get() = _mainBackStack // TODO: return correct backstack
+    val backStack get() = _mainBackStack
+    val foodBackStack get() = _foodBackStack
+    val inventoryBackStack get() = _inventoryBackStack
+    val profileBackStack get() = _profileBackStack
 
     private var simpleCameraCallback: ((String) -> Unit)? = null
     private var ocrCameraCallback: ((String) -> Unit)? = null
@@ -19,30 +22,24 @@ class Navigator {
     @Composable
     fun Initialize() {
         _mainBackStack = rememberNavBackStack(navConfig, NavRoute.Login)
-        _bottomBackStack = rememberNavBackStack(bottomNavConfig, BottomNavRoute.FoodList)
-        _foodBackStack = rememberNavBackStack(foodNavConfig, FoodNavRoute.FoodDetail())
+        _foodBackStack = rememberNavBackStack(navConfig, BottomNavRoute.FoodList)
+        _inventoryBackStack = rememberNavBackStack(navConfig, BottomNavRoute.InventoryList)
+        _profileBackStack = rememberNavBackStack(navConfig, BottomNavRoute.Profile)
     }
-
-    // TODO: Handle multiple backstacks
 
     fun goToMain() {
         _mainBackStack?.clear()
         _mainBackStack?.add(NavRoute.Main)
     }
 
-    fun goToFoodList() {
-        _mainBackStack?.removeAll { it is BottomNavRoute.FoodList }
-        _mainBackStack?.add(BottomNavRoute.FoodList)
-    }
-
     fun goToFoodDetail(foodId: String? = null) {
-        _mainBackStack?.removeAll { it is FoodNavRoute.FoodDetail }
-        _mainBackStack?.add(FoodNavRoute.FoodDetail(foodId))
+        _foodBackStack?.removeAll { it is FoodNavRoute.FoodDetail }
+        _foodBackStack?.add(FoodNavRoute.FoodDetail(foodId))
     }
 
     fun goToInventoryDetail(itemId: String? = null) {
-        _mainBackStack?.removeAll { it is InventoryNavRoute.InventoryDetail }
-        _mainBackStack?.add(InventoryNavRoute.InventoryDetail(itemId))
+        _inventoryBackStack?.removeAll { it is InventoryNavRoute.InventoryDetail }
+        _inventoryBackStack?.add(InventoryNavRoute.InventoryDetail(itemId))
     }
 
     fun goToSimpleCamera(onSuccess: (String) -> Unit) {
@@ -79,12 +76,19 @@ class Navigator {
         _mainBackStack?.add(NavRoute.Register)
     }
 
-    fun goToProfile() {
-        _mainBackStack?.removeAll { it is BottomNavRoute.Profile }
-        _mainBackStack?.add(BottomNavRoute.Profile)
-    }
-
     fun goBack() {
         _mainBackStack?.removeLastOrNull()
+    }
+
+    fun goBackFood() {
+        if ((_foodBackStack?.size ?: 0) > 1) {
+            _foodBackStack?.removeLastOrNull()
+        }
+    }
+
+    fun goBackInventory() {
+        if ((_inventoryBackStack?.size ?: 0) > 1) {
+            _inventoryBackStack?.removeLastOrNull()
+        }
     }
 }

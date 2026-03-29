@@ -291,7 +291,7 @@ class FoodDetailViewModel(
     }
 
     fun goBack() {
-        navigator.goBack()
+        navigator.goBackFood()
     }
 
     fun openCamera() {

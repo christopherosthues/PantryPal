@@ -161,7 +161,7 @@ class InventoryDetailViewModel(
                 val lastModifiedAt = Clock.System.now()
                 inventoryRepository.upsert(item.copy(createdAt = createdAt, lastModifiedAt = lastModifiedAt))
                 _isSaved.value = true
-                navigator.goBack()
+                goBack()
             } catch (e: Exception) {
                 Logger.withTag(loggerTag).e { "Error saving inventory item: ${e.message}" }
                 _uiState.value = UiState.error(_uiState.value, Res.string.food_detail_error_saving)
@@ -175,7 +175,7 @@ class InventoryDetailViewModel(
             try {
                 inventoryRepository.delete(id)
                 _isSaved.value = true
-                navigator.goBack()
+                goBack()
             } catch (e: Exception) {
                 Logger.withTag(loggerTag).e { "Error deleting inventory item: ${e.message}" }
                 _uiState.value = UiState.error(_uiState.value, Res.string.food_detail_delete_error)
@@ -294,7 +294,7 @@ class InventoryDetailViewModel(
     }
 
     fun goBack() {
-        navigator.goBack()
+        navigator.goBackInventory()
     }
 
     fun clearSnackbar() {
