@@ -1,10 +1,5 @@
 package org.darchacheron.pantrypal
 
-import androidx.compose.animation.EnterTransition
-import androidx.compose.animation.ExitTransition
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -16,10 +11,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.navigation3.rememberListDetailSceneStrategy
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.NavKey
@@ -37,7 +28,6 @@ import org.koin.compose.navigation3.koinEntryProvider
 fun MainView(
     navigator: Navigator = koinInject()
 ) {
-    var selectedTab: BottomNavRoute by remember { mutableStateOf(BottomNavRoute.FoodList) }
     val listDetailStrategy = rememberListDetailSceneStrategy<NavKey>()
 
     Scaffold(
@@ -45,8 +35,8 @@ fun MainView(
             NavigationBar {
                 BottomNavRoute.items.forEach { tab ->
                     NavigationBarItem(
-                        selected = selectedTab == tab,
-                        onClick = { selectedTab = tab },
+                        selected = navigator.selectedBottomTab == tab,
+                        onClick = { navigator.selectedBottomTab = tab },
                         icon = {
                             Icon(
                                 painter = painterResource(tab.icon),
@@ -64,7 +54,7 @@ fun MainView(
                 .fillMaxSize()
                 .padding(bottom = padding.calculateBottomPadding())
         ) {
-            val backstack = when (selectedTab) {
+            val backstack = when (navigator.selectedBottomTab) {
                 BottomNavRoute.FoodList -> navigator.foodBackStack
                 BottomNavRoute.InventoryList -> navigator.inventoryBackStack
                 BottomNavRoute.Profile -> navigator.profileBackStack
@@ -74,10 +64,10 @@ fun MainView(
                 NavDisplay(
                     backStack = it,
                     onBack = {
-                        when (selectedTab) {
+                        when (navigator.selectedBottomTab) {
                             BottomNavRoute.FoodList -> navigator.goBackFood()
                             BottomNavRoute.InventoryList -> navigator.goBackInventory()
-                            BottomNavRoute.Profile -> {} // Profile usually doesn't have deep backstack here
+                            BottomNavRoute.Profile -> {}
                         }
                     },
                     sceneStrategies = listOf(listDetailStrategy),

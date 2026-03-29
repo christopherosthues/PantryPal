@@ -1,6 +1,9 @@
 package org.darchacheron.pantrypal.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.rememberNavBackStack
@@ -10,6 +13,8 @@ class Navigator {
     private var _foodBackStack: NavBackStack<NavKey>? = null
     private var _inventoryBackStack: NavBackStack<NavKey>? = null
     private var _profileBackStack: NavBackStack<NavKey>? = null
+
+    var selectedBottomTab by mutableStateOf<BottomNavRoute>(BottomNavRoute.FoodList)
 
     val backStack get() = _mainBackStack
     val foodBackStack get() = _foodBackStack
@@ -42,7 +47,6 @@ class Navigator {
         _inventoryBackStack?.add(InventoryNavRoute.InventoryDetail(itemId))
     }
 
-    // TODO: go back for settings
     fun goToSimpleCamera(onSuccess: (String) -> Unit) {
         simpleCameraCallback = onSuccess
         _mainBackStack?.add(FoodNavRoute.SimpleCamera)
@@ -85,6 +89,7 @@ class Navigator {
         _inventoryBackStack?.add(BottomNavRoute.InventoryList)
         _profileBackStack?.clear()
         _profileBackStack?.add(BottomNavRoute.Profile)
+        selectedBottomTab = BottomNavRoute.FoodList
     }
 
     fun goBack() {
