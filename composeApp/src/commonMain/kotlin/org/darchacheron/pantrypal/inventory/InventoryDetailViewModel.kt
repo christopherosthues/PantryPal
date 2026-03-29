@@ -14,7 +14,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.darchacheron.pantrypal.authentication.AuthenticationPreferencesRepository
 import org.darchacheron.pantrypal.camera.Image
-import org.darchacheron.pantrypal.food.Food
 import org.darchacheron.pantrypal.navigation.InventoryNavRoute
 import org.darchacheron.pantrypal.navigation.Navigator
 import org.darchacheron.pantrypal.navigation.OcrType
@@ -103,8 +102,6 @@ class InventoryDetailViewModel(
                         originalItem = loaded.copy()
                         updateStringsFromItem(loaded)
                         _uiState.value = UiState.success(item)
-                        
-                        // TODO: Trigger image download if localPath is null but serverId exists
                     } else {
                         _uiState.value = UiState.error(Res.string.food_detail_error_loading)
                     }
@@ -206,6 +203,11 @@ class InventoryDetailViewModel(
             )
             _uiState.value = UiState.success(item)
         }
+    }
+
+    fun removePrimaryImage() {
+        item = item.copy(image = null)
+        _uiState.value = UiState.success(item)
     }
 
     fun addAdditionalImage() {

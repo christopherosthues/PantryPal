@@ -43,7 +43,7 @@ fun MainView(
                                 contentDescription = stringResource(tab.label)
                             )
                         },
-                        label = { Text(stringResource(tab.label)) }
+                        label = { Text(text = stringResource(tab.label)) }
                     )
                 }
             }

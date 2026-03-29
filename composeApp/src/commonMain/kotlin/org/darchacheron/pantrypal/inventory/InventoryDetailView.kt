@@ -1,13 +1,7 @@
 package org.darchacheron.pantrypal.inventory
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
@@ -16,14 +10,11 @@ import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import coil3.compose.AsyncImage
 import org.darchacheron.pantrypal.navigation.OcrType
 import org.darchacheron.pantrypal.ui.AdaptiveRow
+import org.darchacheron.pantrypal.ui.ImageSection
 import org.darchacheron.pantrypal.ui.calculateWindowSizeClass
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.painterResource
@@ -78,12 +69,6 @@ fun InventoryDetailView(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { viewModel.openCamera() }) {
-                        Icon(
-                            painter = painterResource(Res.drawable.ic_camera),
-                            contentDescription = stringResource(Res.string.inventory_detail_content_description_open_camera)
-                        )
-                    }
                     if (!viewModel.isAdding) {
                         IconButton(onClick = {
                             if (!uiState.isLoading) {
@@ -168,88 +153,14 @@ fun InventoryDetailView(
         ) {
             val item = uiState.data ?: return@Scaffold
 
-            if (item.image?.localPath != null) {
-                AsyncImage(
-                    model = item.image.localPath,
-                    contentDescription = null,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp)
-                        .clip(RoundedCornerShape(8.dp)),
-                    contentScale = ContentScale.Crop
-                )
-            }
-
-            Text(
-                text = stringResource(Res.string.inventory_detail_additional_images),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.secondary
+            ImageSection(
+                primaryImage = item.image,
+                additionalImages = item.additionalImages,
+                onAddPrimaryImage = { viewModel.openCamera() },
+                onRemovePrimaryImage = { viewModel.removePrimaryImage() },
+                onAddAdditionalImage = { viewModel.addAdditionalImage() },
+                onRemoveAdditionalImage = { viewModel.removeAdditionalImage(it) }
             )
-
-            LazyRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = PaddingValues(end = 16.dp)
-            ) {
-                items(item.additionalImages) { image ->
-                    if (image.localPath != null) {
-                        Box(
-                            modifier = Modifier
-                                .size(100.dp)
-                                .clip(RoundedCornerShape(8.dp))
-                        ) {
-                            AsyncImage(
-                                model = image.localPath,
-                                contentDescription = null,
-                                modifier = Modifier.fillMaxSize(),
-                                contentScale = ContentScale.Crop
-                            )
-                            IconButton(
-                                onClick = { viewModel.removeAdditionalImage(image) },
-                                modifier = Modifier
-                                    .align(Alignment.TopEnd)
-                                    .size(24.dp)
-                                    .background(
-                                        MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.7f),
-                                        CircleShape
-                                    )
-                                    .padding(4.dp)
-                            ) {
-                                Icon(
-                                    painter = painterResource(Res.drawable.ic_cancel),
-                                    contentDescription = stringResource(Res.string.inventory_detail_content_description_remove_image),
-                                    tint = MaterialTheme.colorScheme.onErrorContainer,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                            }
-                        }
-                    }
-                }
-
-                item {
-                    Box(
-                        modifier = Modifier
-                            .size(100.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(MaterialTheme.colorScheme.surfaceVariant)
-                            .clickable { viewModel.addAdditionalImage() },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(
-                                painter = painterResource(Res.drawable.ic_camera),
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Text(
-                                text = stringResource(Res.string.inventory_detail_add_image),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                }
-            }
 
             OutlinedTextField(
                 value = item.name,
@@ -267,178 +178,148 @@ fun InventoryDetailView(
                 }
             )
 
-            OutlinedTextField(
-                value = viewModel.fillingQuantityStr,
-                onValueChange = { viewModel.updateFillingQuantity(it) },
-                label = {
-                    Text(
-                        stringResource(
-                            if (item.isLiquid) Res.string.inventory_detail_volume
-                            else Res.string.inventory_detail_weight
-                        )
+            AdaptiveRow(
+                useTwoColumns = useTwoColumns,
+                leftContent = {
+                    OutlinedTextField(
+                        value = viewModel.fillingQuantityStr,
+                        onValueChange = { viewModel.updateFillingQuantity(it) },
+                        label = {
+                            Text(
+                                stringResource(
+                                    if (item.isLiquid) Res.string.food_detail_volume
+                                    else Res.string.food_detail_weight
+                                )
+                            )
+                        },
+                        modifier = Modifier.weight(1f),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        trailingIcon = {
+                            IconButton(onClick = { viewModel.openOcrCamera(OcrType.AMOUNT) }) {
+                                Icon(
+                                    painter = painterResource(Res.drawable.ic_camera),
+                                    contentDescription = stringResource(Res.string.food_detail_ocr_amount)
+                                )
+                            }
+                        }
                     )
                 },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                leadingIcon = {
-                    Switch(
-                        checked = item.isLiquid,
-                        onCheckedChange = { viewModel.updateIsLiquid(it) },
-                        modifier = Modifier.scale(0.8f)
+                rightContent = {
+                    OutlinedTextField(
+                        value = viewModel.kiloCaloriesStr,
+                        onValueChange = { viewModel.updateKiloCalories(it) },
+                        label = { Text(stringResource(Res.string.nutrient_calories)) },
+                        modifier = Modifier.weight(1f),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        trailingIcon = {
+                            IconButton(onClick = { viewModel.openOcrCamera(OcrType.NUTRIENTS) }) {
+                                Icon(
+                                    painter = painterResource(Res.drawable.ic_camera),
+                                    contentDescription = stringResource(Res.string.nutrient_calories)
+                                )
+                            }
+                        }
                     )
-                },
-                trailingIcon = {
-                    IconButton(onClick = { viewModel.openOcrCamera(OcrType.AMOUNT) }) {
-                        Icon(
-                            painter = painterResource(Res.drawable.ic_camera),
-                            contentDescription = stringResource(Res.string.inventory_detail_ocr_amount)
-                        )
-                    }
                 }
             )
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = stringResource(
-                        if (item.isLiquid) Res.string.inventory_detail_nutritional_header_volume
-                        else Res.string.inventory_detail_nutritional_header_weight
-                    ),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.secondary,
-                    modifier = Modifier.padding(top = 8.dp)
-                )
-
-                TextButton(
-                    onClick = { viewModel.openOcrCamera(OcrType.NUTRIENTS) },
-                    contentPadding = PaddingValues(horizontal = 8.dp)
-                ) {
-                    Icon(
-                        painter = painterResource(Res.drawable.ic_camera),
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
+            AdaptiveRow(
+                useTwoColumns = useTwoColumns,
+                leftContent = {
+                    OutlinedTextField(
+                        value = viewModel.kiloJouleStr,
+                        onValueChange = { viewModel.updateKiloJoule(it) },
+                        label = { Text(stringResource(Res.string.nutrient_kj)) },
+                        modifier = Modifier.weight(1f),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true
                     )
-                    Spacer(Modifier.width(4.dp))
-                    Text(
-                        text = stringResource(Res.string.inventory_detail_scan_table),
-                        style = MaterialTheme.typography.labelMedium
+                },
+                rightContent = {
+                    OutlinedTextField(
+                        value = viewModel.fatInGramsStr,
+                        onValueChange = { viewModel.updateFatInGrams(it) },
+                        label = { Text(stringResource(Res.string.nutrient_fat)) },
+                        modifier = Modifier.weight(1f),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        singleLine = true
                     )
                 }
-            }
+            )
 
-            NutrientFields(useTwoColumns, item, viewModel)
+            AdaptiveRow(
+                useTwoColumns = useTwoColumns,
+                leftContent = {
+                    OutlinedTextField(
+                        value = viewModel.saturatedFattyAcidsInGramsStr,
+                        onValueChange = { viewModel.updateSaturatedFattyAcidsInGrams(it) },
+                        label = { Text(stringResource(Res.string.nutrient_saturated_fat)) },
+                        modifier = Modifier.weight(1f),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        singleLine = true
+                    )
+                },
+                rightContent = {
+                    OutlinedTextField(
+                        value = viewModel.carbsInGramsStr,
+                        onValueChange = { viewModel.updateCarbsInGrams(it) },
+                        label = { Text(stringResource(Res.string.nutrient_carbs)) },
+                        modifier = Modifier.weight(1f),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        singleLine = true
+                    )
+                }
+            )
+
+            AdaptiveRow(
+                useTwoColumns = useTwoColumns,
+                leftContent = {
+                    OutlinedTextField(
+                        value = viewModel.sugarInGramsStr,
+                        onValueChange = { viewModel.updateSugarInGrams(it) },
+                        label = { Text(stringResource(Res.string.nutrient_sugar)) },
+                        modifier = Modifier.weight(1f),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        singleLine = true
+                    )
+                },
+                rightContent = {
+                    OutlinedTextField(
+                        value = viewModel.dietaryFiberInGramsStr,
+                        onValueChange = { viewModel.updateDietaryFiberInGrams(it) },
+                        label = { Text(stringResource(Res.string.nutrient_fiber)) },
+                        modifier = Modifier.weight(1f),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        singleLine = true
+                    )
+                }
+            )
+
+            AdaptiveRow(
+                useTwoColumns = useTwoColumns,
+                leftContent = {
+                    OutlinedTextField(
+                        value = viewModel.proteinInGramsStr,
+                        onValueChange = { viewModel.updateProteinInGrams(it) },
+                        label = { Text(stringResource(Res.string.nutrient_protein)) },
+                        modifier = Modifier.weight(1f),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        singleLine = true
+                    )
+                },
+                rightContent = {
+                    OutlinedTextField(
+                        value = viewModel.saltInGramsStr,
+                        onValueChange = { viewModel.updateSaltInGrams(it) },
+                        label = { Text(stringResource(Res.string.nutrient_salt)) },
+                        modifier = Modifier.weight(1f),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        singleLine = true
+                    )
+                }
+            )
         }
     }
-}
-
-@Composable
-private fun NutrientFields(
-    useTwoColumns: Boolean,
-    item: InventoryItem,
-    viewModel: InventoryDetailViewModel
-) {
-    AdaptiveRow(
-        useTwoColumns = useTwoColumns,
-        leftContent = {
-            OutlinedTextField(
-                value = item.kiloCalories?.toString() ?: "",
-                onValueChange = { viewModel.updateKiloCalories(it) },
-                label = { Text(stringResource(Res.string.nutrient_calories)) },
-                modifier = Modifier.weight(1f),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                singleLine = true
-            )
-        },
-        rightContent = {
-            OutlinedTextField(
-                value = item.kiloJoule?.toString() ?: "",
-                onValueChange = { viewModel.updateKiloJoule(it) },
-                label = { Text(stringResource(Res.string.nutrient_kj)) },
-                modifier = Modifier.weight(1f),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                singleLine = true
-            )
-        }
-    )
-
-    AdaptiveRow(
-        useTwoColumns = useTwoColumns,
-        isDependent = true,
-        leftContent = {
-            OutlinedTextField(
-                value = viewModel.fatInGramsStr,
-                onValueChange = { viewModel.updateFatInGrams(it) },
-                label = { Text(stringResource(Res.string.nutrient_fat)) },
-                modifier = Modifier.weight(1f),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                singleLine = true
-            )
-        },
-        rightContent = {
-            OutlinedTextField(
-                value = viewModel.saturatedFattyAcidsInGramsStr,
-                onValueChange = { viewModel.updateSaturatedFattyAcidsInGrams(it) },
-                label = { Text(stringResource(Res.string.nutrient_saturated_fat)) },
-                modifier = Modifier.weight(1f),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                singleLine = true
-            )
-        }
-    )
-
-    AdaptiveRow(
-        useTwoColumns = useTwoColumns,
-        isDependent = true,
-        leftContent = {
-            OutlinedTextField(
-                value = viewModel.carbsInGramsStr,
-                onValueChange = { viewModel.updateCarbsInGrams(it) },
-                label = { Text(stringResource(Res.string.nutrient_carbs)) },
-                modifier = Modifier.weight(1f),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                singleLine = true
-            )
-        },
-        rightContent = {
-            OutlinedTextField(
-                value = viewModel.sugarInGramsStr,
-                onValueChange = { viewModel.updateSugarInGrams(it) },
-                label = { Text(stringResource(Res.string.nutrient_sugar)) },
-                modifier = Modifier.weight(1f),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                singleLine = true
-            )
-        }
-    )
-
-    OutlinedTextField(
-        value = viewModel.dietaryFiberInGramsStr,
-        onValueChange = { viewModel.updateDietaryFiberInGrams(it) },
-        label = { Text(stringResource(Res.string.nutrient_fiber)) },
-        modifier = Modifier.fillMaxWidth(),
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-        singleLine = true
-    )
-
-    OutlinedTextField(
-        value = viewModel.proteinInGramsStr,
-        onValueChange = { viewModel.updateProteinInGrams(it) },
-        label = { Text(stringResource(Res.string.nutrient_protein)) },
-        modifier = Modifier.fillMaxWidth(),
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-        singleLine = true
-    )
-
-    OutlinedTextField(
-        value = viewModel.saltInGramsStr,
-        onValueChange = { viewModel.updateSaltInGrams(it) },
-        label = { Text(stringResource(Res.string.nutrient_salt)) },
-        modifier = Modifier.fillMaxWidth(),
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-        singleLine = true
-    )
 }

@@ -311,6 +311,11 @@ class FoodDetailViewModel(
         )
     }
 
+    fun removePrimaryImage() {
+        food = food.copy(image = null)
+        _uiState.value = UiState.success(food)
+    }
+
     fun addAdditionalImage() {
         navigator.goToSimpleCamera { imagePath ->
             val now = Clock.System.now()
