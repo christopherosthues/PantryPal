@@ -41,7 +41,7 @@ class Navigator {
         _inventoryBackStack?.removeAll { it is InventoryNavRoute.InventoryDetail }
         _inventoryBackStack?.add(InventoryNavRoute.InventoryDetail(itemId))
     }
-
+// TODO: go back for settings
     fun goToSimpleCamera(onSuccess: (String) -> Unit) {
         simpleCameraCallback = onSuccess
         _mainBackStack?.add(FoodNavRoute.SimpleCamera)
@@ -67,13 +67,20 @@ class Navigator {
     }
 
     fun goToLogin() {
-        _mainBackStack?.clear()
+        clearBackStacks()
         _mainBackStack?.add(NavRoute.Login)
     }
 
     fun goToRegister() {
-        _mainBackStack?.clear()
+        clearBackStacks()
         _mainBackStack?.add(NavRoute.Register)
+    }
+
+    private fun clearBackStacks() {
+        _mainBackStack?.clear()
+        _foodBackStack?.clear()
+        _inventoryBackStack?.clear()
+        _profileBackStack?.clear()
     }
 
     fun goBack() {
