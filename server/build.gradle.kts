@@ -25,7 +25,6 @@ kotlin {
 }
 
 dependencies {
-//    implementation(project(":core"))
     api(libs.opentelemetry.autoconfigure)
     api(libs.opentelemetry.semconv)
     api(libs.opentelemetry.exporter.otlp)
@@ -34,6 +33,10 @@ dependencies {
     implementation(libs.openfolder.asyncapi.ktor)
     implementation(libs.ucasoft.ktor.simple.cache)
     implementation(libs.ucasoft.ktor.simple.memory.cache)
+    implementation(libs.exposed.core)
+    implementation(libs.exposed.jdbc)
+    implementation(libs.exposed.dao)
+    implementation(libs.exposed.datetime)
     implementation(libs.postgresql)
     implementation(libs.h2database)
     implementation(libs.flaxoos.ktor.server.rate.limiting)
@@ -62,6 +65,7 @@ dependencies {
     implementation(libs.koin.ktor)
     implementation(libs.koin.logger.slf4j)
     implementation(libs.logback.classic)
+    implementation(project(":shared"))
     testImplementation(libs.ktor.server.test.host)
     testImplementation(libs.kotlin.testJunit)
 }

@@ -14,7 +14,7 @@ data class ProfileEntity(
     val username: String,
     val email: String,
     val passwordHash: String? = null,
-    val createdAt: Instant
+    val createdAt: Instant // TODO: lastModifiedAt
 ) {
     fun toProfile(): Profile = Profile(
         id = id,

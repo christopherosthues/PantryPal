@@ -35,7 +35,7 @@ kotlinStdlib = "2.3.20"
 kotlinx-coroutines = "1.10.2"
 kotlinx-datetime = "0.7.1"
 ksp = "2.3.6"
-ktor = "3.4.1"
+ktor = "3.4.2"
 logback = "1.5.32"
 material3 = "1.11.0-alpha03"
 multiplatform-nav3-ui = "1.1.0-alpha04"
@@ -48,9 +48,10 @@ postgres = "42.7.10"
 room = "2.8.4"
 runner = "1.7.0"
 sqlite = "2.6.2"
-swipeableKmp = "1.0.4"
+swipeableKmp = "1.0.5"
 turbine = "1.2.1"
 ucasoft-cache = "0.59.4"
+exposed = "1.2.0"
 
 [libraries]
 # Client
@@ -141,6 +142,10 @@ openfolder-asyncapi-ktor = { group = "org.openfolder", name = "kotlin-asyncapi-k
 ucasoft-ktor-simple-cache = { group = "com.ucasoft.ktor", name = "ktor-simple-cache", version.ref = "ucasoft-cache" }
 ucasoft-ktor-simple-memory-cache = { group = "com.ucasoft.ktor", name = "ktor-simple-memory-cache", version.ref = "ucasoft-cache" }
 #hayden-khealth = { group = "dev.hayden", name = "khealth", version.ref = "3.0.2" }
+exposed-core = { group = "org.jetbrains.exposed", name = "exposed-core", version.ref = "exposed" }
+exposed-dao = { group = "org.jetbrains.exposed", name = "exposed-dao", version.ref = "exposed" }
+exposed-jdbc = { group = "org.jetbrains.exposed", name = "exposed-jdbc", version.ref = "exposed" }
+exposed-datetime = { group = "org.jetbrains.exposed", name = "exposed-kotlin-datetime", version.ref = "exposed" }
 postgresql = { group = "org.postgresql", name = "postgresql", version.ref = "postgres" }
 h2database = { group = "com.h2database", name = "h2", version.ref = "h2-database" }
 flaxoos-ktor-server-rate-limiting = { group = "io.github.flaxoos", name = "ktor-server-rate-limiting", version.ref = "flaxoos-ktor-rate-limiting" }

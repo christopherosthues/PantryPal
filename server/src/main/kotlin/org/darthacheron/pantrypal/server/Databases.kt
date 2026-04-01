@@ -5,6 +5,7 @@ import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import org.jetbrains.exposed.v1.jdbc.Database
 import java.sql.Connection
 import java.sql.DriverManager
 
@@ -71,6 +72,17 @@ fun Application.configureDatabases() {
  * your application shuts down by calling [Connection.close]
  * */
 fun Application.connectToPostgres(embedded: Boolean): Connection {
+
+    val postgresqldb = Database.connect(
+        "jdbc:postgresql://localhost:12346/test",
+        driver = "org.postgresql.Driver",
+        user = "user",
+        password = "password"
+    )
+
+
+
+
     Class.forName("org.postgresql.Driver")
     if (embedded) {
         log.info("Using embedded H2 database for testing; replace this flag to use postgres")
