@@ -42,23 +42,23 @@ fun Application.configureSecurity() {
             }
         }
     }
-    authentication {
-        oauth("auth-oauth-google") {
-            urlProvider = { "http://localhost:8080/callback" }
-            providerLookup = {
-                OAuthServerSettings.OAuth2ServerSettings(
-                    name = "google",
-                    authorizeUrl = "https://accounts.google.com/o/oauth2/auth",
-                    accessTokenUrl = "https://accounts.google.com/o/oauth2/token",
-                    requestMethod = HttpMethod.Post,
-                    clientId = System.getenv("GOOGLE_CLIENT_ID"),
-                    clientSecret = System.getenv("GOOGLE_CLIENT_SECRET"),
-                    defaultScopes = listOf("https://www.googleapis.com/auth/userinfo.profile")
-                )
-            }
-            client = HttpClient(CIO)
-        }
-    }
+//    authentication {
+//        oauth("auth-oauth-google") {
+//            urlProvider = { "http://localhost:8080/callback" }
+//            providerLookup = {
+//                OAuthServerSettings.OAuth2ServerSettings(
+//                    name = "google",
+//                    authorizeUrl = "https://accounts.google.com/o/oauth2/auth",
+//                    accessTokenUrl = "https://accounts.google.com/o/oauth2/token",
+//                    requestMethod = HttpMethod.Post,
+//                    clientId = System.getenv("GOOGLE_CLIENT_ID"),
+//                    clientSecret = System.getenv("GOOGLE_CLIENT_SECRET"),
+//                    defaultScopes = listOf("https://www.googleapis.com/auth/userinfo.profile")
+//                )
+//            }
+//            client = HttpClient(CIO)
+//        }
+//    }
     install(CSRF) {
         // tests Origin is an expected value
         allowOrigin("http://localhost:8080")

@@ -25,7 +25,6 @@ class ProfileService {
     fun updateProfile(profileDto: ProfileDto): ProfileDto {
         if (profileDto.serverId == null) {
             throw IllegalArgumentException("Profile ID cannot be null")
-
         }
 
         return transaction {

@@ -5,7 +5,6 @@ import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import org.jetbrains.exposed.v1.core.dao.id.UuidTable
 import org.jetbrains.exposed.v1.dao.UuidEntity
 import org.jetbrains.exposed.v1.dao.UuidEntityClass
-import org.jetbrains.exposed.v1.datetime.datetime
 import org.jetbrains.exposed.v1.datetime.timestamp
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid

@@ -68,6 +68,7 @@ kotlin {
                 implementation(libs.kotlin.stdlib)
                 // Add KMP dependencies here
                 implementation(libs.ktor.serialization.kotlinx.json)
+                implementation(libs.kotlinx.datetime)
             }
         }
 
