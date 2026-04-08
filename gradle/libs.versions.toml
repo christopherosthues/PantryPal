@@ -52,6 +52,7 @@ swipeableKmp = "1.0.5"
 turbine = "1.2.1"
 ucasoft-cache = "0.59.4"
 exposed = "1.2.0"
+jwks-rsa = "0.23.0"
 
 [libraries]
 # Client
@@ -179,6 +180,7 @@ ktor-server-test-host = { group = "io.ktor", name = "ktor-server-test-host", ver
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
 ktor-client-cio = { group = "io.ktor", name = "ktor-client-cio", version.ref = "ktor" }
 ktor-serialization-kotlinx-json = { group = "io.ktor", name = "ktor-serialization-kotlinx-json", version.ref = "ktor" }
+jwks-rsa = { group = "com.auth0", name = "jwks-rsa", version.ref = "jwks-rsa" }
 
 
 [plugins]
