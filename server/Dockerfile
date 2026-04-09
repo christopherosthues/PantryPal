@@ -2,6 +2,7 @@
 FROM gradle:9.4.1-jdk25 AS build
 COPY --chown=gradle:gradle . /home/gradle/src
 WORKDIR /home/gradle/src
+RUN chmod +x gradlew
 RUN ./gradlew :server:buildFatJar --no-daemon
 
 # Stage 2: Run

@@ -19,7 +19,7 @@ services:
       - "5432:5432"
     volumes:
       - ./database:/docker-entrypoint-initdb.d
-      - pantrypal-pgdata:/var/lib/postgresql/data/pantrypal
+      - pantrypal-pgdata:/var/lib/postgresql/data
     hostname: pantrypaldb
     container_name: pantry_pal_db
     restart: unless-stopped
@@ -41,7 +41,7 @@ services:
     ports:
       - "5050:80"
     volumes:
-      - pantrypal-pgdata:/var/lib/pgadmin/data/
+      - pantrypal-pgadmin-data:/var/lib/pgadmin
     container_name: pantry_pal_pgadmin
     hostname: pantrypalpgadmin
     restart: unless-stopped
@@ -65,60 +65,49 @@ services:
       - KC_DB_SCHEMA=${KEYCLOAK_DB_SCHEMA}
       - KC_HEALTH_ENABLED=true
       - KC_METRICS_ENABLED=true
-    #    healthcheck:
-    #      test: [ "CMD", "curl", "-f", "http://localhost:8080/health/ready" ]
-    #      interval: 15s
-    #      timeout: 2s
-    #      retries: 15
-    command: [ "start-dev", "--http-port", "8080", "--https-port", "7443" ]
+    command: [ "start-dev", "--import-realm", "--http-port", "8080" ]
     ports:
       - "18080:8080"
-      #      - "7080:7080"
       - "7443:7443"
     volumes:
-      - pantrypal-keycloak-data:/opt/keycloak/standalone/data/pantrypal
+      - pantrypal-keycloak-data:/opt/keycloak/data
+      - ./pantrypal-realm.json:/opt/keycloak/data/import/realm.json
     restart: always
     networks:
       - pantrypal_keycloak_network
 
-#  pantrypal:
-#    build:
-#      context: .
-#      dockerfile: Dockerfile
-#      args:
-#        - SERVER_CONNECTION_STRING=${SERVER_CONNECTION_STRING}
-#        - KEYCLOAK_AUDIENCE=${KEYCLOAK_AUDIENCE}
-#        - KEYCLOAK_METADATA_ADDRESS=${KEYCLOAK_METADATA_ADDRESS}
-#        - KEYCLOAK_VALID_ISSUER=${KEYCLOAK_VALID_ISSUER}
-#        - KEYCLOAK_AUTHORITY=${KEYCLOAK_AUTHORITY}
-#        - KEYCLOAK_CLIENT_ID=${KEYCLOAK_CLIENT_ID}
-#        - KEYCLOAK_CLIENT_SECRET=${KEYCLOAK_CLIENT_SECRET}
-#        - KEYCLOAK_REGISTRATION_URL=${KEYCLOAK_REGISTRATION_URL}
-#        - KEYCLOAK_TOKEN_URL=${KEYCLOAK_TOKEN_URL}
-#    hostname: pantrypal
-#    container_name: pantry_pal
-#    ports:
-#      - "8080:8080"
-#    environment:
-#      - ConnectionStrings__PantryPalContext=${SERVER_CONNECTION_STRING}
-#      - Keycloak__Audience=${KEYCLOAK_AUDIENCE}
-#      - Keycloak__MetadataAddress=${KEYCLOAK_METADATA_ADDRESS}
-#      - Keycloak__ValidIssuer=${KEYCLOAK_VALID_ISSUER}
-#      - Keycloak__ClientID=${KEYCLOAK_CLIENT_ID}
-#      - Keycloak__ClientSecret=${KEYCLOAK_CLIENT_SECRET}
-#      - Keycloak__Authority=${KEYCLOAK_AUTHORITY}
-#      - Keycloak__RegistrationUrl=${KEYCLOAK_REGISTRATION_URL}
-#      - Keycloak__TokenUrl=${KEYCLOAK_TOKEN_URL}
-#    restart: unless-stopped
-#    depends_on:
-#      - postgres
-#    networks:
-#      - pantrypal_network
-#      - pantrypal_keycloak_network
-#    entrypoint: ["sh", "-c", "until pg_isready -h postgres -U ${POSTGRES_USER} -d ${POSTGRES_DB}; do echo waiting for db; sleep 2; done; dotnet StarWarsProgressBarIssueTracker.App.dll"]
+  pantrypal:
+    build:
+      context: ..
+      dockerfile: server/Dockerfile
+    container_name: pantry_pal
+    hostname: pantrypal
+    ports:
+      - "8081:8080"
+    environment:
+      - POSTGRES_CONNECTION_STRING=${POSTGRES_CONNECTION_STRING}
+      - POSTGRES_USER=${PANTRY_PAL_USER}
+      - POSTGRES_PASSWORD=${PANTRY_PAL_USER_PASSWORD}
+      - KEYCLOAK_AUTHORITY=${KEYCLOAK_AUTHORITY}
+      - KEYCLOAK_CLIENT_ID=${KEYCLOAK_CLIENT_ID}
+      - KEYCLOAK_REALM=${KEYCLOAK_REALM}
+      - KEYCLOAK_VALID_ISSUER=${KEYCLOAK_VALID_ISSUER}
+      - KEYCLOAK_AUDIENCE=${KEYCLOAK_AUDIENCE}
+      - KEYCLOAK_ADMIN=${KEYCLOAK_ADMIN}
+      - KEYCLOAK_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD}
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
+    networks:
+      - pantrypal_network
+      - pantrypal_keycloak_network
 
 volumes:
   pantrypal-pgdata:
+  pantrypal-pgadmin-data:
   pantrypal-keycloak-data:
     driver: local
 

@@ -62,11 +62,12 @@ dependencies {
     implementation(libs.ktor.serialization.kotlinx.json)
     implementation(libs.ktor.client.cio)
     implementation(libs.ktor.client.core)
+    implementation(libs.ktor.client.content.negotiation)
     implementation(libs.koin.ktor)
     implementation(libs.koin.logger.slf4j)
     implementation(libs.logback.classic)
     implementation(libs.jwks.rsa)
-    implementation(project(":shared"))
+    implementation(projects.shared)
     testImplementation(libs.ktor.server.test.host)
     testImplementation(libs.kotlin.testJunit)
 }

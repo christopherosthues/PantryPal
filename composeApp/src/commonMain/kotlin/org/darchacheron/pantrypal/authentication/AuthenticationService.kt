@@ -21,31 +21,10 @@ import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import org.darchacheron.pantrypal.authentication.dtos.LoginDto
-import org.darchacheron.pantrypal.authentication.dtos.RefreshTokenDto
-import org.darchacheron.pantrypal.authentication.dtos.RegistrationDto
 import org.darchacheron.pantrypal.settings.DataSynchronization
 import org.darchacheron.pantrypal.settings.SettingsRepository
+import org.darthacheron.pantrypal.shared.auth.*
 import kotlin.uuid.ExperimentalUuidApi
-
-@Serializable
-data class UserResponse(
-    val id: String,
-    val username: String,
-    val email: String
-)
-
-@Serializable
-data class LoginResponse(
-    val tokenResponse: TokenResponse,
-    val user: UserResponse
-)
-
-@Serializable
-data class RegistrationResponse(
-    val tokenResponse: TokenResponse,
-    val user: UserResponse
-)
 
 @Serializable
 data class UpdateUserDto(

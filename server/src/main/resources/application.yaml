@@ -10,6 +10,8 @@ keycloak:
   baseUrl: ${KEYCLOAK_AUTHORITY:-http://localhost:18080/realms/pantry_pal}
   clientId: ${KEYCLOAK_CLIENT_ID:-PantryPal}
   realm: ${KEYCLOAK_REALM:-pantry_pal}
+  adminUser: ${KEYCLOAK_ADMIN:-admin}
+  adminPassword: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
 
 jwt:
   # The issuer expected in the JWT (must match the 'iss' claim from Keycloak)

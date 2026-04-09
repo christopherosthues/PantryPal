@@ -103,6 +103,8 @@ kotlin {
             api(libs.androidx.datastore)
             api(libs.androidx.datastore.preferences)
 
+            implementation(projects.shared)
+
             implementation(libs.camerak)
             implementation(libs.camerak.image.saver)
             implementation(libs.camerak.ocr)
