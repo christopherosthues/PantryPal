@@ -6,14 +6,13 @@ import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 @OptIn(ExperimentalUuidApi::class)
-class ProfileService {
+class ProfileRepository {
     fun createProfile(profileDto: ProfileDto): ProfileDto {
         return transaction {
-            val profile = ProfileEntity.new {
+            val profile = ProfileDAO.new {
                 clientId = profileDto.clientId
                 username = profileDto.username
                 email = profileDto.email
-                passwordHash = profileDto.passwordHash
                 createdAt = profileDto.createdAt
                 lastModifiedAt = profileDto.lastModifiedAt
             }
@@ -29,24 +28,23 @@ class ProfileService {
 
         return transaction {
             val profile =
-                ProfileEntity.findById(profileDto.serverId!!) ?: throw IllegalArgumentException("Profile not found")
+                ProfileDAO.findById(profileDto.serverId!!) ?: throw IllegalArgumentException("Profile not found")
             profile.createdAt = profileDto.createdAt
             profile.lastModifiedAt = profileDto.lastModifiedAt
             profile.clientId = profileDto.clientId
             profile.username = profileDto.username
             profile.email = profileDto.email
-            profile.passwordHash = profileDto.passwordHash
             profile.toDto()
         }
     }
 
     fun getProfile(id: Uuid): ProfileDto? {
-        return ProfileEntity.findById(id)?.toDto()
+        return ProfileDAO.findById(id)?.toDto()
     }
 
     fun deleteProfile(id: Uuid) {
         transaction {
-            ProfileEntity.findById(id)?.delete()
+            ProfileDAO.findById(id)?.delete()
         }
     }
 }

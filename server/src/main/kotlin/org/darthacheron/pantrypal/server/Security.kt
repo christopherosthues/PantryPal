@@ -17,10 +17,18 @@ import io.ktor.server.plugins.csrf.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import org.darthacheron.pantrypal.server.profile.ProfileRepository
 import org.darthacheron.pantrypal.shared.auth.*
+import org.darthacheron.pantrypal.shared.profile.ProfileDto
+import org.koin.ktor.ext.inject
 import java.net.URI
+import kotlin.time.Clock
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
+@OptIn(ExperimentalUuidApi::class)
 fun Application.configureSecurity() {
+    val profileService by inject<ProfileRepository>()
     val keycloakBaseUrl = environment.config.property("keycloak.baseUrl").getString()
     val keycloakClientId = environment.config.property("keycloak.clientId").getString()
     val keycloakRealm = environment.config.property("keycloak.realm").getString()
@@ -157,10 +165,23 @@ fun Application.configureSecurity() {
 
                     if (loginResponse.status == HttpStatusCode.OK) {
                         val tokenResponse = loginResponse.body<TokenResponse>()
+
+                        // 4. Create local profile
+                        val profile = profileService.createProfile(
+                            ProfileDto(
+                                serverId = null,
+                                clientId = Uuid.random(), // This should ideally come from the client or be mapped
+                                username = registrationDto.username,
+                                email = registrationDto.email,
+                                createdAt = Clock.System.now(),
+                                lastModifiedAt = null
+                            )
+                        )
+
                         val userResponse = UserResponse(
-                            id = registrationDto.username,
-                            username = registrationDto.username,
-                            email = registrationDto.email
+                            id = profile.serverId.toString(),
+                            username = profile.username,
+                            email = profile.email
                         )
                         call.respond(RegistrationResponse(tokenResponse, userResponse))
                     } else {

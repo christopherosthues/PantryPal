@@ -10,7 +10,7 @@ import java.sql.Connection
 import java.sql.DriverManager
 
 fun Application.configureDatabases() {
-    val dbConnection: Connection = connectToPostgres(embedded = true)
+    val dbConnection: Connection = connectToPostgres()
     val cityService = CityService(dbConnection)
 
     routing {
@@ -65,34 +65,22 @@ fun Application.configureDatabases() {
  * user and password values.
  *
  *
- * @param embedded -- if [true] defaults to an embedded database for tests that runs locally in the same process.
- * In this case you don't have to provide any parameters in configuration file, and you don't have to run a process.
- *
  * @return [Connection] that represent connection to the database. Please, don't forget to close this connection when
  * your application shuts down by calling [Connection.close]
  * */
-fun Application.connectToPostgres(embedded: Boolean): Connection {
+fun Application.connectToPostgres(): Connection {
+    Class.forName("org.postgresql.Driver")
+    val url = environment.config.property("postgres.connection.string").getString()
+    log.info("Connecting to postgres database at $url")
+    val user = environment.config.property("postgres.user").getString()
+    val password = environment.config.property("postgres.password").getString()
 
-    val postgresqldb = Database.connect(
-        "jdbc:postgresql://localhost:12346/test",
+    Database.connect(
+        url,
         driver = "org.postgresql.Driver",
-        user = "user",
-        password = "password"
+        user = user,
+        password = password
     )
 
-
-
-
-    Class.forName("org.postgresql.Driver")
-    if (embedded) {
-        log.info("Using embedded H2 database for testing; replace this flag to use postgres")
-        return DriverManager.getConnection("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1", "root", "")
-    } else {
-        val url = environment.config.property("postgres.connection.string").getString()
-        log.info("Connecting to postgres database at $url")
-        val user = environment.config.property("postgres.user").getString()
-        val password = environment.config.property("postgres.password").getString()
-
-        return DriverManager.getConnection(url, user, password)
-    }
+    return DriverManager.getConnection(url, user, password)
 }

@@ -38,7 +38,6 @@ dependencies {
     implementation(libs.exposed.dao)
     implementation(libs.exposed.datetime)
     implementation(libs.postgresql)
-    implementation(libs.h2database)
     implementation(libs.flaxoos.ktor.server.rate.limiting)
     implementation(libs.ktor.server.compression)
     implementation(libs.ktor.server.caching.headers)

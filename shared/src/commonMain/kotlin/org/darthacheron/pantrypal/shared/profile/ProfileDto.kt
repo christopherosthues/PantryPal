@@ -12,7 +12,6 @@ data class ProfileDto(
     val clientId: Uuid,
     val username: String,
     val email: String,
-    val passwordHash: String? = null,
     val createdAt: Instant,
     val lastModifiedAt: Instant?
 )
