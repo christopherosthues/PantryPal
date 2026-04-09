@@ -1,6 +1,8 @@
 package org.darthacheron.pantrypal.server.profile
 
 import org.darthacheron.pantrypal.shared.profile.ProfileDto
+import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.core.or
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -10,14 +12,14 @@ class ProfileRepository {
     fun createProfile(profileDto: ProfileDto): ProfileDto {
         return transaction {
             val profile = ProfileDAO.new {
-                clientId = profileDto.clientId
                 username = profileDto.username
                 email = profileDto.email
                 createdAt = profileDto.createdAt
                 lastModifiedAt = profileDto.lastModifiedAt
             }
 
-            profile.toDto()
+            // Return DTO with the original clientId for mapping
+            profile.toDto().copy(clientId = profileDto.clientId)
         }
     }
 
@@ -31,15 +33,24 @@ class ProfileRepository {
                 ProfileDAO.findById(profileDto.serverId!!) ?: throw IllegalArgumentException("Profile not found")
             profile.createdAt = profileDto.createdAt
             profile.lastModifiedAt = profileDto.lastModifiedAt
-            profile.clientId = profileDto.clientId
             profile.username = profileDto.username
             profile.email = profileDto.email
-            profile.toDto()
+            profile.toDto().copy(clientId = profileDto.clientId)
         }
     }
 
     fun getProfile(id: Uuid): ProfileDto? {
-        return ProfileDAO.findById(id)?.toDto()
+        return transaction {
+            ProfileDAO.findById(id)?.toDto()
+        }
+    }
+
+    fun getProfileByUsernameOrEmail(identifier: String): ProfileDto? {
+        return transaction {
+            ProfileDAO.find { (ProfilesTable.username eq identifier) or (ProfilesTable.email eq identifier) }
+                .firstOrNull()
+                ?.toDto()
+        }
     }
 
     fun deleteProfile(id: Uuid) {

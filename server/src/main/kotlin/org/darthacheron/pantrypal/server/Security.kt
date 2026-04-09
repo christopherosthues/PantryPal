@@ -98,11 +98,13 @@ fun Application.configureSecurity() {
 
                 if (response.status == HttpStatusCode.OK) {
                     val tokenResponse = response.body<TokenResponse>()
-                    // In a real app, you'd decode the JWT to get user info
+                    
+                    val profile = profileService.getProfileByUsernameOrEmail(loginDto.username)
+                    
                     val userResponse = UserResponse(
-                        id = loginDto.username, // Simplified
-                        username = loginDto.username,
-                        email = ""
+                        id = profile?.serverId?.toString() ?: loginDto.username,
+                        username = profile?.username ?: loginDto.username,
+                        email = profile?.email ?: ""
                     )
                     call.respond(LoginResponse(tokenResponse, userResponse))
                 } else {
@@ -126,6 +128,8 @@ fun Application.configureSecurity() {
                         append("password", keycloakAdminPassword)
                     }
                 )
+                // TODO: register also if user created a local profile and decides to sync with server where the profile does not yet exist -> possibly has to change username and email
+                // TODO: possibility to change server username + email + password
 
                 if (adminTokenResponse.status != HttpStatusCode.OK) {
                     call.respond(HttpStatusCode.InternalServerError, "Failed to get admin token")

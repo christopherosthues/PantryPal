@@ -28,6 +28,9 @@ class ProfileRepository(
     fun getProfileByUsername(username: String): Flow<Profile?> =
         profileDao.getProfileByUsername(username).map { it?.toProfile() }
 
+    fun getProfileByEmail(email: String): Flow<Profile?> =
+        profileDao.getProfileByEmail(email).map { it?.toProfile() }
+
     suspend fun upsert(profile: Profile) = withContext(Dispatchers.IO) {
         // Phase 1: Save locally
         profileDao.upsert(profile.toProfileEntity())

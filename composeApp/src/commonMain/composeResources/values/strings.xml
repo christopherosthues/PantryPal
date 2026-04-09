@@ -147,6 +147,8 @@
     <string name="registration_register">Register</string>
     <string name="registration_email">Email</string>
     <string name="registration_error">An unexpected error occurred</string>
+    <string name="registration_error_username_exists">Username already exists</string>
+    <string name="registration_error_email_exists">Email already exists</string>
 
     <!-- Main -->
     <string name="main_tab_food">Food</string>

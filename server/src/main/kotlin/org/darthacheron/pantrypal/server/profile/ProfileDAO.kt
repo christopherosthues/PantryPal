@@ -10,7 +10,6 @@ import kotlin.uuid.Uuid
 class ProfileDAO(id: EntityID<Uuid>) : UuidEntity(id) {
     companion object : UuidEntityClass<ProfileDAO>(ProfilesTable)
 
-    var clientId by ProfilesTable.clientId
     var username by ProfilesTable.username
     var email by ProfilesTable.email
     var createdAt by ProfilesTable.createdAt

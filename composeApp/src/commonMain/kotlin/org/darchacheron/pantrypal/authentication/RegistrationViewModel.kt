@@ -12,6 +12,8 @@ import org.darchacheron.pantrypal.ui.UiState
 import pantrypal.composeapp.generated.resources.Res
 import pantrypal.composeapp.generated.resources.login_error
 import pantrypal.composeapp.generated.resources.registration_error
+import pantrypal.composeapp.generated.resources.registration_error_email_exists
+import pantrypal.composeapp.generated.resources.registration_error_username_exists
 import kotlin.time.Clock
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -51,11 +53,18 @@ class RegistrationViewModel(
         viewModelScope.launch {
             try {
                 registrationState.emit(UiState.loading())
-                
-                // Check for local conflict first in both modes
-                val existingLocal = profileRepository.getProfileByUsername(userName).firstOrNull()
-                if (existingLocal != null) {
-                    registrationState.emit(uiState.copy(error = Res.string.registration_error))
+
+                // 1. Check for local conflict: Username
+                val existingUsername = profileRepository.getProfileByUsername(userName).firstOrNull()
+                if (existingUsername != null) {
+                    registrationState.emit(uiState.copy(error = Res.string.registration_error_username_exists))
+                    return@launch
+                }
+
+                // 2. Check for local conflict: Email
+                val existingEmail = profileRepository.getProfileByEmail(email).firstOrNull()
+                if (existingEmail != null) {
+                    registrationState.emit(uiState.copy(error = Res.string.registration_error_email_exists))
                     return@launch
                 }
 
@@ -68,7 +77,7 @@ class RegistrationViewModel(
                             val serverIdFromToken = JwtUtils.getUserIdFromToken(it.tokenResponse.accessToken)
                             serverIdFromToken?.let { id -> Uuid.parse(id) } ?: Uuid.parse(it.user.id)
                         }
-                        
+
                         // Create local profile too for remote registration
                         createLocalProfile(userName, email, password, serverUuid)
                         registrationState.emit(UiState.success(Registration(userName, email, password)))
