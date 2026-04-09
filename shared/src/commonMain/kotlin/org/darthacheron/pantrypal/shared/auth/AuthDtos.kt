@@ -43,3 +43,14 @@ data class RegistrationResponse(
     val tokenResponse: TokenResponse,
     val user: UserResponse
 )
+
+@Serializable
+data class ProblemDetails(
+    // TODO: use never rec 9467 standard
+    val type: String? = null,
+    val title: String? = null,
+    val status: Int? = null,
+    val detail: String? = null,
+    val instance: String? = null,
+    val errors: Map<String, List<String>>? = null
+)

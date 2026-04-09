@@ -171,29 +171,60 @@ fun Application.configureSecurity() {
                         val tokenResponse = loginResponse.body<TokenResponse>()
 
                         // 4. Create local profile
-                        val profile = profileService.createProfile(
-                            ProfileDto(
-                                serverId = null,
-                                clientId = Uuid.random(), // This should ideally come from the client or be mapped
-                                username = registrationDto.username,
-                                email = registrationDto.email,
-                                createdAt = Clock.System.now(),
-                                lastModifiedAt = null
+                        try {
+                            val profile = profileService.createProfile(
+                                ProfileDto(
+                                    serverId = null,
+                                    clientId = Uuid.random(), // This should ideally come from the client or be mapped
+                                    username = registrationDto.username,
+                                    email = registrationDto.email,
+                                    createdAt = Clock.System.now(),
+                                    lastModifiedAt = null
+                                )
                             )
-                        )
 
-                        val userResponse = UserResponse(
-                            id = profile.serverId.toString(),
-                            username = profile.username,
-                            email = profile.email
-                        )
-                        call.respond(RegistrationResponse(tokenResponse, userResponse))
+                            val userResponse = UserResponse(
+                                id = profile.serverId.toString(),
+                                username = profile.username,
+                                email = profile.email
+                            )
+                            call.respond(RegistrationResponse(tokenResponse, userResponse))
+                        } catch (e: Exception) {
+                            call.respond(HttpStatusCode.Conflict, ProblemDetails(
+                                type = "https://pantrypal.org/probs/duplicate-profile",
+                                title = "Profile already exists",
+                                status = HttpStatusCode.Conflict.value,
+                                detail = "A profile with this username or email already exists in the server database.",
+                                errors = mapOf("profile" to listOf(e.message ?: "Conflict"))
+                            ))
+                        }
                     } else {
-                        call.respond(HttpStatusCode.OK, "User created but login failed")
+                        call.respond(HttpStatusCode.InternalServerError, ProblemDetails(
+                            title = "User created but login failed",
+                            status = HttpStatusCode.InternalServerError.value,
+                            detail = "Keycloak user created successfully, but initial login attempt failed."
+                        ))
                     }
+                } else if (createUserResponse.status == HttpStatusCode.Conflict) {
+                    val errorBody = createUserResponse.bodyAsText()
+                    val detail = if (errorBody.contains("exists", ignoreCase = true)) {
+                        "A user with this username or email already exists in Keycloak."
+                    } else {
+                        "Conflict during user creation in Keycloak."
+                    }
+                    call.respond(HttpStatusCode.Conflict, ProblemDetails(
+                        type = "https://pantrypal.org/probs/keycloak-conflict",
+                        title = "Conflict in Identity Provider",
+                        status = HttpStatusCode.Conflict.value,
+                        detail = detail
+                    ))
                 } else {
                     val errorBody = createUserResponse.bodyAsText()
-                    call.respond(createUserResponse.status, "Failed to create user: $errorBody")
+                    call.respond(createUserResponse.status, ProblemDetails(
+                        title = "Failed to create user",
+                        status = createUserResponse.status.value,
+                        detail = errorBody
+                    ))
                 }
             } catch (e: Exception) {
                 call.respond(HttpStatusCode.InternalServerError, e.message ?: "Registration failed")
