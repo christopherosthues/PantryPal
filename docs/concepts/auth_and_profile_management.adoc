@@ -62,9 +62,10 @@ The system distinguishes between three primary profile states to handle offline-
     a. Keycloak validates credentials (grant_type=password).
     b. Server retrieves `Profile` from DB using the identifier to get the `serverId`.
     c. Returns tokens and user info.
-4. **Local Sync:** Client checks if a local profile with that `serverId` exists.
-    * If not, it creates one to enable offline access.
-    * If it exists, it updates the local credentials/data if necessary.
+4. **Local Profile Linking:**
+    * Client checks if a local profile with that `serverId` exists.
+    * **Linking Existing Local Profile:** If no `serverId` match is found, the client checks for a local-only profile with the same `username` or `email`. If found, it "upgrades" this local profile by setting its `serverId`, effectively linking the local data to the remote account.
+    * **New Local Profile:** If no match by ID or identifier is found, it creates a new local profile.
 5. `isLoggedInRemotely` is set to `true`.
 6. The profile enters the **Remote Profile (Logged In Remotely)** state.
 
@@ -131,11 +132,17 @@ When the client is online and has pending changes, it calls the server's `PUT /u
 *   **Syncing Password:** When back online, the `PUT /users/me` call includes the new password (or a specialized `/users/me/password` call). The server updates Keycloak.
 *   **Security Note:** Local passwords are always stored as salted hashes (e.g., BCrypt). They are never stored in plain text.
 
-=== Metadata for Sync
+=== Synchronization Metadata
 To track synchronization state, the `Profile` model uses:
-*   `lastModifiedAt`: Updated every time a local change is made.
-*   `lastSyncedAt`: The timestamp of the last successful synchronization with the server.
-*   **Sync Required:** If `serverId != null` AND `lastModifiedAt > lastSyncedAt`.
+* `lastModifiedAt`: Updated every time a local change is made.
+* `lastSyncedAt`: The timestamp of the last successful synchronization with the server.
+* **Sync Required:** If `serverId != null` AND `lastModifiedAt > lastSyncedAt`.
+
+=== Password Security
+Local passwords are never stored in plain text.
+* **Hashing:** The client uses SHA-256 (platform-specific implementations) to hash passwords before storing them in the local `passwordHash` field.
+* **Verification:** During local login, the entered password is hashed and compared against the stored hash.
+* **Remote Upgrade:** When a local-only profile is registered on a server, the plain password (entered during the upgrade flow) is sent to the server over TLS to be stored in the Identity Provider (Keycloak).
 
 == Profile Deletion
 
@@ -163,7 +170,13 @@ If an account is deleted (soft-deleted on server or removed from Keycloak), othe
     * **Delete Local Data:** Cascades deletion of all local records and returns to the login screen.
     * **Keep Local Data:** Logs out the user but preserves local data, effectively converting the profile to a local-only state.
 
-== Uniqueness & Identification
+=== Error Handling & Status Mapping
+The client maps remote server responses to specific exceptions to provide granular feedback:
+
+* **401 Unauthorized:** Throws `InvalidCredentialsException`. UI displays "Wrong username or password".
+* **404 Not Found:** Throws `ProfileNotFoundException`. UI displays "Credentials valid, but no profile found on this server".
+* **409 Conflict:** Throws `UserAlreadyExistsException`. UI displays "Username or email already exists".
+* **Network Error:** Throws `ServerUnreachableException`. UI displays "Could not connect to the server".
 Because the server does not store the `clientId`, it uses the following logic for mapping:
 * **Registration:** Server returns the `serverId`. Client stores it.
 * **Syncing:** Client sends its records. Server matches based on the `serverId` provided in the DTO or the identity in the JWT.

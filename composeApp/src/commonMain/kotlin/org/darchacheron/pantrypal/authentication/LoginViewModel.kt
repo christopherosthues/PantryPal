@@ -66,8 +66,11 @@ class LoginViewModel(
                             val serverUuid = serverIdFromToken?.let { Uuid.parse(it) } ?: Uuid.parse(loginResponse.user.id)
                             
                             val existingProfile = profileRepository.getProfileByServerId(serverUuid).firstOrNull()
+                                ?: profileRepository.getProfileByIdentifier(loginResponse.user.username).firstOrNull()
+                                ?: profileRepository.getProfileByIdentifier(loginResponse.user.email).firstOrNull()
                             
                             val profile = existingProfile?.copy(
+                                serverId = serverUuid,
                                 username = loginResponse.user.username,
                                 email = loginResponse.user.email,
                                 isLocalOnly = false

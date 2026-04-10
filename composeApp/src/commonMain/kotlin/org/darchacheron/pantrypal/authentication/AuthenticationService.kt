@@ -29,6 +29,8 @@ import kotlin.uuid.ExperimentalUuidApi
 class InvalidCredentialsException(message: String) : Exception(message)
 class ProfileNotFoundException(message: String) : Exception(message)
 class ServerUnreachableException(message: String, cause: Throwable? = null) : Exception(message, cause)
+class UserAlreadyExistsException(message: String) : Exception(message)
+class ServerErrorException(message: String) : Exception(message)
 
 @OptIn(ExperimentalUuidApi::class)
 class AuthenticationService(
@@ -183,11 +185,16 @@ class AuthenticationService(
                 return Result.success(registrationResponse)
             } else {
                 val problem = try { response.body<ProblemDetails>() } catch (e: Exception) { null }
-                return Result.failure(Exception(problem?.detail ?: "Registration failed with status ${response.status}"))
+                val detail = problem?.detail ?: "Registration failed with status ${response.status}"
+                return when (response.status) {
+                    HttpStatusCode.Conflict -> Result.failure(UserAlreadyExistsException(detail))
+                    HttpStatusCode.BadRequest -> Result.failure(Exception(detail))
+                    else -> Result.failure(ServerErrorException(detail))
+                }
             }
         } catch (e: Exception) {
             Logger.withTag(authenticationTag).e(e) { "Error registering user $username" }
-            return Result.failure(e)
+            return Result.failure(ServerUnreachableException("Server unreachable", e))
         }
     }
 
