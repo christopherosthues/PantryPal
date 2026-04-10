@@ -46,7 +46,7 @@ data class RegistrationResponse(
 
 @Serializable
 data class ProblemDetails(
-    // TODO: use never rec 9467 standard
+    // TODO: use newer rfc 9467 standard
     val type: String? = null,
     val title: String? = null,
     val status: Int? = null,
