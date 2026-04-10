@@ -65,20 +65,6 @@ class RegistrationViewModel(
             try {
                 registrationState.emit(UiState.loading())
 
-                // 1. Check for local conflict: Username
-                val existingUsername = profileRepository.getProfileByUsername(userName).firstOrNull()
-                if (existingUsername != null) {
-                    registrationState.emit(uiState.copy(error = Res.string.registration_error_username_exists))
-                    return@launch
-                }
-
-                // 2. Check for local conflict: Email
-                val existingEmail = profileRepository.getProfileByEmail(email).firstOrNull()
-                if (existingEmail != null) {
-                    registrationState.emit(uiState.copy(error = Res.string.registration_error_email_exists))
-                    return@launch
-                }
-
                 if (registerRemotely && authenticationService.isRemoteEnabled()) {
                     val result = authenticationService.registerUser(userName, email, password)
 
@@ -89,7 +75,7 @@ class RegistrationViewModel(
                             serverIdFromToken?.let { id -> Uuid.parse(id) } ?: Uuid.parse(registrationResponse.user.id)
                         }
 
-                        // Create local profile too for remote registration
+                        // Create/Update local profile for remote registration
                         val localProfile = createLocalProfile(userName, email, password, serverUuid)
                         
                         // Set remote login state
@@ -122,7 +108,20 @@ class RegistrationViewModel(
 
     private suspend fun createLocalProfile(userName: String, email: String, password: String, serverId: Uuid? = null): Profile {
         val now = Clock.System.now()
-        val profile = Profile(
+        
+        val existingProfile = (if (serverId != null) profileRepository.getProfileByServerId(serverId).firstOrNull() else null)
+            ?: profileRepository.getProfileByIdentifier(userName).firstOrNull()
+            ?: profileRepository.getProfileByIdentifier(email).firstOrNull()
+
+        val profile = existingProfile?.copy(
+            serverId = serverId,
+            username = userName,
+            email = email,
+            passwordHash = hashPassword(password),
+            lastModifiedAt = now,
+            lastSyncedAt = if (serverId != null) now else null,
+            isLocalOnly = serverId == null
+        ) ?: Profile(
             id = Uuid.generateV7(),
             serverId = serverId,
             username = userName,
@@ -133,6 +132,7 @@ class RegistrationViewModel(
             lastSyncedAt = if (serverId != null) now else null,
             isLocalOnly = serverId == null
         )
+
         profileRepository.upsert(profile)
         return profile
     }

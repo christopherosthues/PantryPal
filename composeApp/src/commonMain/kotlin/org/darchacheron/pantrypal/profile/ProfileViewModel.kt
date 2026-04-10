@@ -89,6 +89,19 @@ class ProfileViewModel(
                             }
                             updatedProfile = updatedProfile.copy(serverId = serverUuid, lastSyncedAt = Clock.System.now())
                             profileRepository.upsert(updatedProfile)
+
+                            // Also update preferences to mark as logged in remotely
+                            registrationResponse?.let {
+                                authenticationPreferencesRepository.updateAccessPreferences(
+                                    accessToken = it.tokenResponse.accessToken,
+                                    refreshToken = it.tokenResponse.refreshToken,
+                                    expiresIn = it.tokenResponse.expiresIn,
+                                    refreshExpiresIn = it.tokenResponse.refreshExpiresIn,
+                                    localProfileId = updatedProfile.id.toString(),
+                                    isLoggedInRemotely = true,
+                                    serverUrl = authenticationService.getServerUrl()
+                                )
+                            }
                         }
                     } else {
                         authenticationService.updateUser(

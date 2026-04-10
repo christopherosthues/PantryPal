@@ -110,29 +110,40 @@ fun LoginDialog(
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End,
+                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    TextButton(onClick = onDismiss) {
-                        Text(stringResource(Res.string.profile_delete_cancel))
+                    TextButton(onClick = {
+                        viewModel.openRegister()
+                        onDismiss()
+                    }) {
+                        Text(stringResource(Res.string.login_register))
                     }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Button(
-                        onClick = {
-                            coroutineScope.launch {
-                                viewModel.login(onSuccess = onLoginSuccess)
-                            }
-                        },
-                        enabled = !uiState.isLoading
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        if (uiState.isLoading) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(18.dp),
-                                strokeWidth = 2.dp,
-                                color = MaterialTheme.colorScheme.onPrimary
-                            )
-                        } else {
-                            Text(text = stringResource(Res.string.login_login))
+                        TextButton(onClick = onDismiss) {
+                            Text(stringResource(Res.string.profile_delete_cancel))
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Button(
+                            onClick = {
+                                coroutineScope.launch {
+                                    viewModel.login(onSuccess = onLoginSuccess)
+                                }
+                            },
+                            enabled = !uiState.isLoading
+                        ) {
+                            if (uiState.isLoading) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(18.dp),
+                                    strokeWidth = 2.dp,
+                                    color = MaterialTheme.colorScheme.onPrimary
+                                )
+                            } else {
+                                Text(text = stringResource(Res.string.login_login))
+                            }
                         }
                     }
                 }
