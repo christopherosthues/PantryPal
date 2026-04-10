@@ -22,12 +22,14 @@ data class Registration(
     val userName: String,
     val email: String,
     val password: String,
+    val registerRemotely: Boolean = true,
 )
 
 @OptIn(ExperimentalUuidApi::class)
 class RegistrationViewModel(
     private val authenticationService: AuthenticationService,
     private val profileRepository: ProfileRepository,
+    private val preferencesRepository: AuthenticationPreferencesRepository,
     private val navigator: Navigator
 ): ViewModel() {
     val registrationState = MutableStateFlow(UiState.success(Registration("", "", "")))
@@ -44,11 +46,20 @@ class RegistrationViewModel(
         registrationState.value = registrationState.value.copy(data = registrationState.value.data?.copy(password = password))
     }
 
+    fun onRegisterRemotelyChanged(registerRemotely: Boolean) {
+        registrationState.value = registrationState.value.copy(data = registrationState.value.data?.copy(registerRemotely = registerRemotely))
+    }
+
+    fun goToLogin() {
+        navigator.goToLogin()
+    }
+
     fun register() {
         val uiState = registrationState.value
         val userName = uiState.data?.userName ?: ""
         val email = uiState.data?.email ?: ""
         val password = uiState.data?.password ?: ""
+        val registerRemotely = uiState.data?.registerRemotely ?: true
 
         viewModelScope.launch {
             try {
@@ -68,27 +79,39 @@ class RegistrationViewModel(
                     return@launch
                 }
 
-                if (authenticationService.isRemoteEnabled()) {
+                if (registerRemotely && authenticationService.isRemoteEnabled()) {
                     val result = authenticationService.registerUser(userName, email, password)
 
-                    if (result.isSuccess) {
-                        val registrationResponse = result.getOrNull()
-                        val serverUuid = registrationResponse?.let {
-                            val serverIdFromToken = JwtUtils.getUserIdFromToken(it.tokenResponse.accessToken)
-                            serverIdFromToken?.let { id -> Uuid.parse(id) } ?: Uuid.parse(it.user.id)
+                    if (result.isSuccess && result.getOrNull() != null) {
+                        val registrationResponse = result.getOrNull()!!
+                        val serverUuid = run {
+                            val serverIdFromToken = JwtUtils.getUserIdFromToken(registrationResponse.tokenResponse.accessToken)
+                            serverIdFromToken?.let { id -> Uuid.parse(id) } ?: Uuid.parse(registrationResponse.user.id)
                         }
 
                         // Create local profile too for remote registration
-                        createLocalProfile(userName, email, password, serverUuid)
-                        registrationState.emit(UiState.success(Registration(userName, email, password)))
-                        navigator.goToLogin()
+                        val localProfile = createLocalProfile(userName, email, password, serverUuid)
+                        
+                        // Set remote login state
+                        preferencesRepository.updateAccessPreferences(
+                            accessToken = registrationResponse.tokenResponse.accessToken,
+                            refreshToken = registrationResponse.tokenResponse.refreshToken,
+                            expiresIn = registrationResponse.tokenResponse.expiresIn,
+                            refreshExpiresIn = registrationResponse.tokenResponse.refreshExpiresIn,
+                            localProfileId = localProfile.id.toString(),
+                            isLoggedInRemotely = true,
+                            serverUrl = authenticationService.getServerUrl()
+                        )
+                        
+                        registrationState.emit(UiState.success(uiState.data!!.copy(userName = userName, email = email, password = password)))
+                        navigator.goToMain()
                     } else {
                         registrationState.emit(uiState.copy(error = Res.string.registration_error))
                     }
                 } else {
                     // Local only mode
                     createLocalProfile(userName, email, password)
-                    registrationState.emit(UiState.success(Registration(userName, email, password)))
+                    registrationState.emit(UiState.success(uiState.data!!.copy(userName = userName, email = email, password = password)))
                     navigator.goToLogin()
                 }
             } catch (exception: Exception) {
@@ -97,7 +120,7 @@ class RegistrationViewModel(
         }
     }
 
-    private suspend fun createLocalProfile(userName: String, email: String, password: String, serverId: Uuid? = null) {
+    private suspend fun createLocalProfile(userName: String, email: String, password: String, serverId: Uuid? = null): Profile {
         val now = Clock.System.now()
         val profile = Profile(
             id = Uuid.generateV7(),
@@ -107,8 +130,10 @@ class RegistrationViewModel(
             passwordHash = hashPassword(password),
             createdAt = now,
             lastModifiedAt = now,
-            lastSyncedAt = if (serverId != null) now else null
+            lastSyncedAt = if (serverId != null) now else null,
+            isLocalOnly = serverId == null
         )
         profileRepository.upsert(profile)
+        return profile
     }
 }

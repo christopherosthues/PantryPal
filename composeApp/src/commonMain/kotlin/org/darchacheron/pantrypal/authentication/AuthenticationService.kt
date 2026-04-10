@@ -38,6 +38,10 @@ class AuthenticationService(
         return settings.serverUrl.isNotBlank() && settings.dataSynchronization != DataSynchronization.NO_SYNCHRONIZATION
     }
 
+    suspend fun getServerUrl(): String {
+        return settingsRepository.getSettings().serverUrl
+    }
+
     suspend fun login(username: String, password: String): Result<LoginResponse?> {
         if (!isRemoteEnabled()) return Result.success(null)
 

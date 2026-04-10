@@ -83,12 +83,13 @@ class LoginViewModel(
                             
                             // Mark this profile as current
                             preferencesRepository.updateAccessPreferences(
-                                loginResponse.tokenResponse.accessToken,
-                                loginResponse.tokenResponse.refreshToken,
-                                loginResponse.tokenResponse.expiresIn,
-                                loginResponse.tokenResponse.refreshExpiresIn,
-                                profile.id.toString(),
-                                isLoggedInRemotely = true
+                                accessToken = loginResponse.tokenResponse.accessToken,
+                                refreshToken = loginResponse.tokenResponse.refreshToken,
+                                expiresIn = loginResponse.tokenResponse.expiresIn,
+                                refreshExpiresIn = loginResponse.tokenResponse.refreshExpiresIn,
+                                localProfileId = profile.id.toString(),
+                                isLoggedInRemotely = true,
+                                serverUrl = authenticationService.getServerUrl()
                             )
                         }
                         loginState.emit(UiState.success(Login(username, password)))
@@ -104,8 +105,13 @@ class LoginViewModel(
                         if (verifyPassword(password, existingProfile.passwordHash)) {
                             // Mark this profile as current
                             preferencesRepository.updateAccessPreferences(
-                                "", "", 0, 0, existingProfile.id.toString(),
-                                isLoggedInRemotely = false
+                                accessToken = "",
+                                refreshToken = "",
+                                expiresIn = 0,
+                                refreshExpiresIn = 0,
+                                localProfileId = existingProfile.id.toString(),
+                                isLoggedInRemotely = false,
+                                serverUrl = ""
                             )
                             loginState.emit(UiState.success(Login(username, password)))
                             navigator.goToMain()

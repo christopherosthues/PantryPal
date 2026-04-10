@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
+import org.darchacheron.pantrypal.authentication.AuthenticationPreferencesRepository
 import org.darchacheron.pantrypal.settings.DataSynchronization
 import org.darchacheron.pantrypal.settings.SettingsRepository
 import kotlin.uuid.ExperimentalUuidApi
@@ -17,6 +18,7 @@ class ProfileRepository(
     private val profileDao: ProfileDao,
     private val profileNetworkService: ProfileNetworkService,
     private val settingsRepository: SettingsRepository,
+    private val authenticationPreferencesRepository: AuthenticationPreferencesRepository,
 ) {
     private val loggerTag = "ProfileRepository"
 
@@ -41,9 +43,12 @@ class ProfileRepository(
 
         // Phase 1: Try push immediately
         val settings = settingsRepository.getSettings()
-        if (settings.dataSynchronization == DataSynchronization.UPLOAD_AND_DOWNLOAD ||
+        val prefs = authenticationPreferencesRepository.authenticationPreferencesFlow.firstOrNull()
+        val canSync = prefs?.isLoggedInRemotely == true && prefs.serverUrl == settings.serverUrl
+
+        if (canSync && (settings.dataSynchronization == DataSynchronization.UPLOAD_AND_DOWNLOAD ||
             settings.dataSynchronization == DataSynchronization.ONLY_UPLOAD
-        ) {
+        )) {
             try {
                 // TODO: what if the remote profile does not exist yet?
                 profileNetworkService.updateProfile(profile, settings.serverUrl)?.let { synced ->
@@ -60,11 +65,15 @@ class ProfileRepository(
     suspend fun delete(remote: Boolean) = withContext(Dispatchers.IO) {
         if (remote) {
             val settings = settingsRepository.getSettings()
-            try {
-                profileNetworkService.deleteProfile(settings.serverUrl, remote = true)
-            } catch (e: Exception) {
-                Logger.withTag(loggerTag).e { "Remote profile deletion failed: ${e.message}" }
-                // Optionally rethrow or handle if local deletion should be blocked
+            val prefs = authenticationPreferencesRepository.authenticationPreferencesFlow.firstOrNull()
+            val canSync = prefs?.isLoggedInRemotely == true && prefs.serverUrl == settings.serverUrl
+
+            if (canSync) {
+                try {
+                    profileNetworkService.deleteProfile(settings.serverUrl, remote = true)
+                } catch (e: Exception) {
+                    Logger.withTag(loggerTag).e { "Remote profile deletion failed: ${e.message}" }
+                }
             }
         }
         profileDao.delete()
@@ -76,6 +85,12 @@ class ProfileRepository(
     suspend fun syncWithServer() = withContext(Dispatchers.IO) {
         val settings = settingsRepository.getSettings()
         if (settings.dataSynchronization == DataSynchronization.NO_SYNCHRONIZATION) return@withContext
+
+        val prefs = authenticationPreferencesRepository.authenticationPreferencesFlow.firstOrNull()
+        if (prefs?.isLoggedInRemotely != true || prefs.serverUrl != settings.serverUrl) {
+            Logger.withTag(loggerTag).d { "Skipping profile sync: Not logged in to remote or server mismatch" }
+            return@withContext
+        }
 
         try {
             val localProfile = profileDao.getProfile().firstOrNull()?.toProfile() ?: return@withContext

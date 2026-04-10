@@ -11,4 +11,5 @@ internal object AuthenticationPreferencesKeys {
     val REFRESH_EXPIRES_IN = intPreferencesKey("refresh_expires_in")
     val LOCAL_PROFILE_ID = stringPreferencesKey("local_profile_id")
     val IS_LOGGED_IN_REMOTELY = booleanPreferencesKey("is_logged_in_remotely")
+    val SERVER_URL = stringPreferencesKey("server_url")
 }

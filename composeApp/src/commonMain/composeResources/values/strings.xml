@@ -147,6 +147,7 @@
     <string name="registration_title">Registration</string>
     <string name="registration_register">Register</string>
     <string name="registration_email">Email</string>
+    <string name="registration_remote_checkbox">Register also on server</string>
     <string name="registration_error">An unexpected error occurred</string>
     <string name="registration_error_username_exists">Username already exists</string>
     <string name="registration_error_email_exists">Email already exists</string>

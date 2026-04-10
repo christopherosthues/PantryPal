@@ -114,8 +114,9 @@ class SettingsViewModel(
                     val profileId = prefs.localProfileId
                     if (profileId.isNotEmpty()) {
                         val profile = profileRepository.getProfileById(Uuid.parse(profileId)).first()
-                        if (profile?.serverId == null || profile.isLocalOnly || !prefs.isLoggedInRemotely) {
-                            // No remote profile, disconnected, or only logged in locally.
+                        val isSameServer = prefs.serverUrl == currentSettings.serverUrl
+                        if (profile?.serverId == null || profile.isLocalOnly || !prefs.isLoggedInRemotely || !isSameServer) {
+                            // No remote profile, disconnected, only logged in locally, or different server.
                             // Must login/register on the new server.
                             navigator.goToLogin()
                         }

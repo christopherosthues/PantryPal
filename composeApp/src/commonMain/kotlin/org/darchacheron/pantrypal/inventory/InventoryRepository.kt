@@ -4,10 +4,12 @@ import co.touchlab.kermit.Logger
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import okio.FileSystem
 import okio.Path.Companion.toPath
+import org.darchacheron.pantrypal.authentication.AuthenticationPreferencesRepository
 import org.darchacheron.pantrypal.settings.DataSynchronization
 import org.darchacheron.pantrypal.settings.SettingsRepository
 import kotlin.time.Instant
@@ -19,6 +21,7 @@ class InventoryRepository(
     private val inventoryItemDao: InventoryItemDao,
     private val inventoryNetworkService: InventoryNetworkService,
     private val settingsRepository: SettingsRepository,
+    private val authenticationPreferencesRepository: AuthenticationPreferencesRepository,
     private val fileSystem: FileSystem,
 ) {
     private val loggerTag = "InventoryRepository"
@@ -60,9 +63,12 @@ class InventoryRepository(
 
         // Phase 1: Try push immediately
         val settings = settingsRepository.getSettings()
-        if (settings.dataSynchronization == DataSynchronization.UPLOAD_AND_DOWNLOAD ||
+        val prefs = authenticationPreferencesRepository.authenticationPreferencesFlow.firstOrNull()
+        val canSync = prefs?.isLoggedInRemotely == true && prefs.serverUrl == settings.serverUrl
+
+        if (canSync && (settings.dataSynchronization == DataSynchronization.UPLOAD_AND_DOWNLOAD ||
             settings.dataSynchronization == DataSynchronization.ONLY_UPLOAD
-        ) {
+        )) {
             try {
                 val syncedItems = inventoryNetworkService.pushInventoryItems(listOf(inventoryItem), settings.serverUrl)
                 syncedItems.firstOrNull()?.let { synced ->
@@ -84,7 +90,10 @@ class InventoryRepository(
 
             // Phase 1: Try delete on server
             val settings = settingsRepository.getSettings()
-            if (item.serverId != null && (settings.dataSynchronization == DataSynchronization.UPLOAD_AND_DOWNLOAD ||
+            val prefs = authenticationPreferencesRepository.authenticationPreferencesFlow.firstOrNull()
+            val canSync = prefs?.isLoggedInRemotely == true && prefs.serverUrl == settings.serverUrl
+
+            if (canSync && item.serverId != null && (settings.dataSynchronization == DataSynchronization.UPLOAD_AND_DOWNLOAD ||
                 settings.dataSynchronization == DataSynchronization.ONLY_UPLOAD)
             ) {
                 try {
@@ -100,6 +109,12 @@ class InventoryRepository(
     suspend fun syncWithServer() = withContext(Dispatchers.IO) {
         val settings = settingsRepository.getSettings()
         if (settings.dataSynchronization == DataSynchronization.NO_SYNCHRONIZATION) return@withContext
+
+        val prefs = authenticationPreferencesRepository.authenticationPreferencesFlow.firstOrNull()
+        if (prefs?.isLoggedInRemotely != true || prefs.serverUrl != settings.serverUrl) {
+            Logger.withTag(loggerTag).d { "Skipping inventory sync: Not logged in to remote or server mismatch" }
+            return@withContext
+        }
 
         try {
             // 1. Upload dirty records (Phase 2 - Batch)
