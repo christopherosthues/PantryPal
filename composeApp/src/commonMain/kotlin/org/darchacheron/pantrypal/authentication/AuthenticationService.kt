@@ -26,6 +26,10 @@ import org.darchacheron.pantrypal.settings.SettingsRepository
 import org.darthacheron.pantrypal.shared.auth.*
 import kotlin.uuid.ExperimentalUuidApi
 
+class InvalidCredentialsException(message: String) : Exception(message)
+class ProfileNotFoundException(message: String) : Exception(message)
+class ServerUnreachableException(message: String, cause: Throwable? = null) : Exception(message, cause)
+
 @OptIn(ExperimentalUuidApi::class)
 class AuthenticationService(
     private val preferencesRepository: AuthenticationPreferencesRepository,
@@ -71,11 +75,16 @@ class AuthenticationService(
                 return Result.success(loginResponse)
             } else {
                 val problem = try { response.body<ProblemDetails>() } catch (e: Exception) { null }
-                return Result.failure(Exception(problem?.detail ?: "Login failed with status ${response.status}"))
+                val detail = problem?.detail ?: "Login failed with status ${response.status}"
+                return when (response.status) {
+                    HttpStatusCode.Unauthorized -> Result.failure(InvalidCredentialsException(detail))
+                    HttpStatusCode.NotFound -> Result.failure(ProfileNotFoundException(detail))
+                    else -> Result.failure(Exception(detail))
+                }
             }
         } catch (e: Exception) {
             Logger.withTag(authenticationTag).e(e) { "Error logging in user $username" }
-            return Result.failure(e)
+            return Result.failure(ServerUnreachableException("Server unreachable", e))
         }
     }
 

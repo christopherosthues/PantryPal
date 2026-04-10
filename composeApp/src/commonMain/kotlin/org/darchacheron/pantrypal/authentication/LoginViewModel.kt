@@ -13,6 +13,8 @@ import org.darchacheron.pantrypal.profile.ProfileRepository
 import org.darchacheron.pantrypal.ui.UiState
 import pantrypal.composeapp.generated.resources.Res
 import pantrypal.composeapp.generated.resources.login_error
+import pantrypal.composeapp.generated.resources.login_error_profile_not_found
+import pantrypal.composeapp.generated.resources.login_error_server_unreachable
 import pantrypal.composeapp.generated.resources.login_wrong_username_or_password
 import kotlin.time.Clock
 import kotlin.uuid.ExperimentalUuidApi
@@ -44,7 +46,7 @@ class LoginViewModel(
         loginState.value = loginState.value.copy(data = loginState.value.data?.copy(isLocalOnly = isLocalOnly))
     }
 
-    fun login() {
+    fun login(onSuccess: (() -> Unit)? = null) {
         viewModelScope.launch {
             val uiState = loginState.value
             val username = uiState.data?.username ?: ""
@@ -93,9 +95,19 @@ class LoginViewModel(
                             )
                         }
                         loginState.emit(UiState.success(Login(username, password)))
-                        navigator.goToMain()
+                        if (onSuccess != null) {
+                            onSuccess()
+                        } else {
+                            navigator.goToMain()
+                        }
                     } else {
-                        loginState.emit(uiState.copy(error = Res.string.login_wrong_username_or_password))
+                        val errorRes = when (result.exceptionOrNull()) {
+                            is InvalidCredentialsException -> Res.string.login_wrong_username_or_password
+                            is ProfileNotFoundException -> Res.string.login_error_profile_not_found
+                            is ServerUnreachableException -> Res.string.login_error_server_unreachable
+                            else -> Res.string.login_error
+                        }
+                        loginState.emit(uiState.copy(error = errorRes))
                     }
                 } else {
                     // Local only mode: Try to find local profile by username or email
@@ -114,7 +126,11 @@ class LoginViewModel(
                                 serverUrl = ""
                             )
                             loginState.emit(UiState.success(Login(username, password)))
-                            navigator.goToMain()
+                            if (onSuccess != null) {
+                                onSuccess()
+                            } else {
+                                navigator.goToMain()
+                            }
                         } else {
                             loginState.emit(uiState.copy(error = Res.string.login_wrong_username_or_password))
                         }

@@ -12,19 +12,37 @@ import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
+import org.darchacheron.pantrypal.authentication.LoginDialog
+import org.darchacheron.pantrypal.authentication.LoginViewModel
 import pantrypal.composeapp.generated.resources.*
-import pantrypal.composeapp.generated.resources.Res
-import pantrypal.composeapp.generated.resources.arrow_drop_down
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsView(
     viewModel: SettingsViewModel = koinInject(),
+    loginViewModel: LoginViewModel = koinInject(),
     onBack: () -> Unit = {}
 ) {
     val uiState by viewModel.settingsFlow.collectAsState()
     val isSyncing by viewModel.isSyncing.collectAsState()
+    val isLoggedInRemotely by viewModel.isLoggedInRemotely.collectAsState()
+    val showLoginDialog by viewModel.showLoginDialog.collectAsState()
+    val shouldClose by viewModel.shouldClose.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(shouldClose) {
+        if (shouldClose) {
+            onBack()
+        }
+    }
+
+    if (showLoginDialog) {
+        LoginDialog(
+            viewModel = loginViewModel,
+            onDismiss = { viewModel.onDismissLoginDialog() },
+            onLoginSuccess = { viewModel.onLoginSuccess() }
+        )
+    }
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -51,8 +69,12 @@ fun SettingsView(
                             if (isSyncing) {
                                 CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
                             } else {
+                                val syncIcon = when {
+                                    isLoggedInRemotely -> Res.drawable.ic_sync
+                                    else -> Res.drawable.ic_sync_disabled
+                                }
                                 Icon(
-                                    painter = painterResource(Res.drawable.ic_sync),
+                                    painter = painterResource(syncIcon),
                                     contentDescription = stringResource(Res.string.settings_content_description_sync)
                                 )
                             }

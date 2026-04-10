@@ -13,6 +13,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.first
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import org.darchacheron.pantrypal.authentication.AuthenticationPreferencesRepository
 import org.darchacheron.pantrypal.food.FoodRepository
 import org.darchacheron.pantrypal.inventory.InventoryRepository
@@ -39,6 +42,18 @@ class SettingsViewModel(
     private val _isSyncing = MutableStateFlow(false)
     val isSyncing: StateFlow<Boolean> = _isSyncing.asStateFlow()
 
+    private val _showLoginDialog = MutableStateFlow(false)
+    val showLoginDialog: StateFlow<Boolean> = _showLoginDialog.asStateFlow()
+
+    private val _shouldClose = MutableStateFlow(false)
+    val shouldClose: StateFlow<Boolean> = _shouldClose.asStateFlow()
+
+    private var _closeAfterLogin = false
+
+    val isLoggedInRemotely: StateFlow<Boolean> = authenticationPreferencesRepository.authenticationPreferencesFlow
+        .map { it.isLoggedInRemotely }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
     private var _originalSettings: Settings = Settings()
 
     private val loggerTag = "Settings"
@@ -59,6 +74,15 @@ class SettingsViewModel(
     }
 
     fun triggerSync() {
+        if (!isLoggedInRemotely.value) {
+            val currentSettings = _settingsFlow.value.data
+            if (currentSettings?.serverUrl?.isNotBlank() == true) {
+                _closeAfterLogin = false
+                _showLoginDialog.value = true
+                return
+            }
+        }
+
         viewModelScope.launch {
             _isSyncing.value = true
             try {
@@ -71,6 +95,20 @@ class SettingsViewModel(
                 _isSyncing.value = false
             }
         }
+    }
+
+    fun onDismissLoginDialog() {
+        _showLoginDialog.value = false
+        _closeAfterLogin = false
+    }
+
+    fun onLoginSuccess() {
+        _showLoginDialog.value = false
+        triggerSync()
+        if (_closeAfterLogin) {
+            _shouldClose.value = true
+        }
+        _closeAfterLogin = false
     }
 
     fun onThemeModeSelected(mode: ThemeMode) {
@@ -109,35 +147,31 @@ class SettingsViewModel(
 
                 settingsRepository.saveSettings(currentSettings)
 
-                if (serverUrlChanged && syncEnabled) {
+                var authRequired = false
+                if (syncEnabled) {
                     val prefs = authenticationPreferencesRepository.authenticationPreferencesFlow.first()
                     val profileId = prefs.localProfileId
-                    if (profileId.isNotEmpty()) {
-                        val profile = profileRepository.getProfileById(Uuid.parse(profileId)).first()
-                        val isSameServer = prefs.serverUrl == currentSettings.serverUrl
-                        if (profile?.serverId == null || profile.isLocalOnly || !prefs.isLoggedInRemotely || !isSameServer) {
-                            // No remote profile, disconnected, only logged in locally, or different server.
-                            // Must login/register on the new server.
+                    val syncJustEnabled = _originalSettings.dataSynchronization == DataSynchronization.NO_SYNCHRONIZATION
+
+                    if (serverUrlChanged || syncJustEnabled) {
+                        if (profileId.isNotEmpty()) {
+                            val profile = profileRepository.getProfileById(Uuid.parse(profileId)).first()
+                            val isSameServer = prefs.serverUrl == currentSettings.serverUrl
+                            if (profile?.serverId == null || profile.isLocalOnly || !prefs.isLoggedInRemotely || !isSameServer) {
+                                authRequired = true
+                                _closeAfterLogin = true
+                                _showLoginDialog.value = true
+                            }
+                        } else {
+                            authRequired = true
                             navigator.goToLogin()
                         }
-                    } else {
-                        navigator.goToLogin()
-                    }
-                } else if (!serverUrlChanged && syncEnabled && _originalSettings.dataSynchronization == DataSynchronization.NO_SYNCHRONIZATION) {
-                    // Sync was just enabled for the same server. Check if we have a remote profile and are logged in.
-                    val prefs = authenticationPreferencesRepository.authenticationPreferencesFlow.first()
-                    val profileId = prefs.localProfileId
-                    if (profileId.isNotEmpty()) {
-                        val profile = profileRepository.getProfileById(Uuid.parse(profileId)).first()
-                        if (profile?.serverId == null || profile.isLocalOnly || !prefs.isLoggedInRemotely) {
-                            navigator.goToLogin()
-                        }
-                    } else {
-                        navigator.goToLogin()
                     }
                 }
 
-                onSuccess()
+                if (!authRequired) {
+                    onSuccess()
+                }
             } catch (e: Exception) {
                 Logger.withTag(loggerTag).e { "Error saving settings: ${e.message}" }
                 _settingsFlow.update { it.copy(error = Res.string.settings_error_saving) }

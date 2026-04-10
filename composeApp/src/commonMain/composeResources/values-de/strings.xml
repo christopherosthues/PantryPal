@@ -140,6 +140,8 @@
     <string name="login_login_only_locally">Nur lokal anmelden</string>
     <string name="login_error">Ein unerwarteter Fehler ist aufgetreten</string>
     <string name="login_wrong_username_or_password">Falscher Benutzername oder Passwort</string>
+    <string name="login_error_profile_not_found">Anmeldedaten gültig, aber kein Profil auf diesem Server gefunden</string>
+    <string name="login_error_server_unreachable">Verbindung zum Server konnte nicht hergestellt werden</string>
 
     <!-- Registration -->
     <string name="registration_title">Registrierung</string>
