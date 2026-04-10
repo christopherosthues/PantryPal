@@ -2,15 +2,17 @@ package org.darthacheron.pantrypal.server.profile
 
 import org.darthacheron.pantrypal.shared.profile.ProfileDto
 import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
 @OptIn(ExperimentalUuidApi::class)
-fun ProfileDAO.toDto() : ProfileDto {
+fun ProfileDAO.toDto(clientId: Uuid = Uuid.random()) : ProfileDto {
     return ProfileDto(
-        this.id.value,
-        this.clientId,
-        this.username,
-        this.email,
-        this.createdAt,
-        this.lastModifiedAt
+        serverId = this.id.value,
+        clientId = clientId,
+        username = this.username,
+        email = this.email,
+        createdAt = this.createdAt,
+        lastModifiedAt = this.lastModifiedAt,
+        lastSyncedAt = this.lastSyncedAt
     )
 }

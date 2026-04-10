@@ -9,5 +9,7 @@ object ProfilesTable : UuidTable("profiles") {
     val username = varchar("username", 255).uniqueIndex()
     val email = varchar("email", 255).uniqueIndex()
     val createdAt = timestamp("created_at")
-    val lastModifiedAt = timestamp("last_modified_at").nullable()
+    val lastModifiedAt = timestamp("last_modified_at")
+    val lastSyncedAt = timestamp("last_synced_at").nullable()
+    val deletedAt = timestamp("deleted_at").nullable()
 }

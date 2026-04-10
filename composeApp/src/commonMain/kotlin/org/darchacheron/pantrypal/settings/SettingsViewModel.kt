@@ -10,8 +10,13 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.first
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
+import org.darchacheron.pantrypal.authentication.AuthenticationPreferencesRepository
 import org.darchacheron.pantrypal.food.FoodRepository
 import org.darchacheron.pantrypal.inventory.InventoryRepository
+import org.darchacheron.pantrypal.navigation.Navigator
 import org.darchacheron.pantrypal.profile.ProfileRepository
 import org.darchacheron.pantrypal.ui.UiState
 import pantrypal.composeapp.generated.resources.Res
@@ -22,7 +27,9 @@ class SettingsViewModel(
     private val settingsRepository: SettingsRepository,
     private val foodRepository: FoodRepository,
     private val inventoryRepository: InventoryRepository,
-    private val profileRepository: ProfileRepository
+    private val profileRepository: ProfileRepository,
+    private val authenticationPreferencesRepository: AuthenticationPreferencesRepository,
+    private val navigator: Navigator
 ) : ViewModel() {
     // TODO: ensure that there is a remote profile for data synchronization
 
@@ -73,6 +80,10 @@ class SettingsViewModel(
     }
 
     fun onDataSynchronizationSelected(dataSynchronization: DataSynchronization) {
+        val currentSettings = _settingsFlow.value.data ?: return
+        if (currentSettings.serverUrl.isBlank() && dataSynchronization != DataSynchronization.NO_SYNCHRONIZATION) {
+            return
+        }
         _settingsFlow.update { state ->
             state.data?.let { UiState.success(it.copy(dataSynchronization = dataSynchronization)) } ?: state
         }
@@ -80,15 +91,51 @@ class SettingsViewModel(
 
     fun onServerUrlChanged(serverUrl: String) {
         _settingsFlow.update { state ->
-            state.data?.let { UiState.success(it.copy(serverUrl = serverUrl)) } ?: state
+            state.data?.let {
+                val urlToSet = serverUrl.trim()
+                val newSync = if (urlToSet.isBlank()) DataSynchronization.NO_SYNCHRONIZATION else it.dataSynchronization
+                UiState.success(it.copy(serverUrl = urlToSet, dataSynchronization = newSync))
+            } ?: state
         }
     }
 
+    @OptIn(ExperimentalUuidApi::class)
     fun saveSettings(onSuccess: () -> Unit) {
         val currentSettings = settingsFlow.value.data ?: return
         viewModelScope.launch {
             try {
+                val serverUrlChanged = currentSettings.serverUrl != _originalSettings.serverUrl
+                val syncEnabled = currentSettings.dataSynchronization != DataSynchronization.NO_SYNCHRONIZATION
+
                 settingsRepository.saveSettings(currentSettings)
+
+                if (serverUrlChanged && syncEnabled) {
+                    val prefs = authenticationPreferencesRepository.authenticationPreferencesFlow.first()
+                    val profileId = prefs.localProfileId
+                    if (profileId.isNotEmpty()) {
+                        val profile = profileRepository.getProfileById(Uuid.parse(profileId)).first()
+                        if (profile?.serverId == null || profile.isLocalOnly || !prefs.isLoggedInRemotely) {
+                            // No remote profile, disconnected, or only logged in locally.
+                            // Must login/register on the new server.
+                            navigator.goToLogin()
+                        }
+                    } else {
+                        navigator.goToLogin()
+                    }
+                } else if (!serverUrlChanged && syncEnabled && _originalSettings.dataSynchronization == DataSynchronization.NO_SYNCHRONIZATION) {
+                    // Sync was just enabled for the same server. Check if we have a remote profile and are logged in.
+                    val prefs = authenticationPreferencesRepository.authenticationPreferencesFlow.first()
+                    val profileId = prefs.localProfileId
+                    if (profileId.isNotEmpty()) {
+                        val profile = profileRepository.getProfileById(Uuid.parse(profileId)).first()
+                        if (profile?.serverId == null || profile.isLocalOnly || !prefs.isLoggedInRemotely) {
+                            navigator.goToLogin()
+                        }
+                    } else {
+                        navigator.goToLogin()
+                    }
+                }
+
                 onSuccess()
             } catch (e: Exception) {
                 Logger.withTag(loggerTag).e { "Error saving settings: ${e.message}" }

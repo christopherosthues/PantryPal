@@ -21,22 +21,37 @@ import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import okio.FileSystem
 import okio.SYSTEM
 import org.darchacheron.pantrypal.MainView
+import org.darchacheron.pantrypal.MainViewModel
 import org.darchacheron.pantrypal.authentication.AuthenticationPreferencesRepository
 import org.darchacheron.pantrypal.authentication.AuthenticationService
 import org.darchacheron.pantrypal.authentication.LoginView
 import org.darchacheron.pantrypal.authentication.LoginViewModel
 import org.darchacheron.pantrypal.authentication.RegistrationView
 import org.darchacheron.pantrypal.authentication.RegistrationViewModel
-import org.darchacheron.pantrypal.database.PantryPalDatabase
-import org.darchacheron.pantrypal.database.PantryPalDatabaseFactory
-import org.darchacheron.pantrypal.food.*
 import org.darchacheron.pantrypal.camera.OcrCameraView
 import org.darchacheron.pantrypal.camera.OcrCameraViewModel
 import org.darchacheron.pantrypal.camera.SimpleCameraView
 import org.darchacheron.pantrypal.camera.SimpleCameraViewModel
-import org.darchacheron.pantrypal.inventory.*
-import org.darchacheron.pantrypal.navigation.*
-import org.darchacheron.pantrypal.profile.*
+import org.darchacheron.pantrypal.database.PantryPalDatabase
+import org.darchacheron.pantrypal.database.PantryPalDatabaseFactory
+import org.darchacheron.pantrypal.food.FoodDetailView
+import org.darchacheron.pantrypal.food.FoodDetailViewModel
+import org.darchacheron.pantrypal.food.FoodListView
+import org.darchacheron.pantrypal.food.FoodListViewModel
+import org.darchacheron.pantrypal.food.FoodNetworkService
+import org.darchacheron.pantrypal.food.FoodRepository
+import org.darchacheron.pantrypal.inventory.InventoryDetailView
+import org.darchacheron.pantrypal.inventory.InventoryDetailViewModel
+import org.darchacheron.pantrypal.inventory.InventoryListView
+import org.darchacheron.pantrypal.inventory.InventoryListViewModel
+import org.darchacheron.pantrypal.inventory.InventoryNetworkService
+import org.darchacheron.pantrypal.inventory.InventoryRepository
+import org.darchacheron.pantrypal.navigation.BottomNavRoute
+import org.darchacheron.pantrypal.navigation.FoodNavRoute
+import org.darchacheron.pantrypal.navigation.InventoryNavRoute
+import org.darchacheron.pantrypal.navigation.NavRoute
+import org.darchacheron.pantrypal.navigation.Navigator
+import org.darchacheron.pantrypal.profile.ProfileNetworkService
 import org.darchacheron.pantrypal.profile.ProfileRepository
 import org.darchacheron.pantrypal.profile.ProfileView
 import org.darchacheron.pantrypal.profile.ProfileViewModel
@@ -46,6 +61,7 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.factoryOf
+import org.koin.core.module.dsl.viewModel
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.core.parameter.parametersOf
 import org.koin.dsl.module
@@ -233,6 +249,7 @@ val sharedModule =
         viewModelOf(::ProfileViewModel)
         viewModelOf(::InventoryListViewModel)
         viewModelOf(::InventoryDetailViewModel)
+        viewModelOf(::MainViewModel)
 
         factoryOf(::AuthenticationService)
     }

@@ -9,6 +9,7 @@ import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.request.delete
 import io.ktor.client.request.header
+import io.ktor.client.request.parameter
 import io.ktor.client.request.patch
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
@@ -19,19 +20,11 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import org.darchacheron.pantrypal.settings.DataSynchronization
 import org.darchacheron.pantrypal.settings.SettingsRepository
 import org.darthacheron.pantrypal.shared.auth.*
 import kotlin.uuid.ExperimentalUuidApi
-
-@Serializable
-data class UpdateUserDto(
-    val username: String? = null,
-    val email: String? = null,
-    val password: String? = null
-)
 
 @OptIn(ExperimentalUuidApi::class)
 class AuthenticationService(
@@ -72,13 +65,14 @@ class AuthenticationService(
                 Logger.withTag(authenticationTag).d("Login successful")
 
                 return Result.success(loginResponse)
+            } else {
+                val problem = try { response.body<ProblemDetails>() } catch (e: Exception) { null }
+                return Result.failure(Exception(problem?.detail ?: "Login failed with status ${response.status}"))
             }
         } catch (e: Exception) {
             Logger.withTag(authenticationTag).e(e) { "Error logging in user $username" }
             return Result.failure(e)
         }
-
-        return Result.failure(Exception("Login failed with status ${HttpStatusCode.Unauthorized}"))
     }
 
     private fun createHttpClient(): HttpClient = HttpClient(CIO) {
@@ -93,12 +87,14 @@ class AuthenticationService(
             level = LogLevel.INFO
             sanitizeHeader { header -> header == HttpHeaders.Authorization }
         }
-        expectSuccess = true
+        expectSuccess = false
     }
 
     suspend fun logout(): Result<Boolean> {
         try {
-            preferencesRepository.updateAccessPreferences("", "", 0, 0)
+            // Passing null for localProfileId to preserve it in updateAccessPreferences
+            // Setting isLoggedInRemotely to false on logout
+            preferencesRepository.updateAccessPreferences("", "", 0, 0, null, isLoggedInRemotely = false)
             return Result.success(true)
         } catch (exception: Exception) {
             return Result.failure(exception)
@@ -172,13 +168,14 @@ class AuthenticationService(
                     registrationResponse.tokenResponse.refreshExpiresIn
                 )
                 return Result.success(registrationResponse)
+            } else {
+                val problem = try { response.body<ProblemDetails>() } catch (e: Exception) { null }
+                return Result.failure(Exception(problem?.detail ?: "Registration failed with status ${response.status}"))
             }
         } catch (e: Exception) {
             Logger.withTag(authenticationTag).e(e) { "Error registering user $username" }
             return Result.failure(e)
         }
-
-        return Result.failure(Exception("Registration failed"))
     }
 
     suspend fun updateUser(
@@ -206,7 +203,7 @@ class AuthenticationService(
         }
     }
 
-    suspend fun deleteUser(): Result<Boolean> {
+    suspend fun deleteUser(remote: Boolean): Result<Boolean> {
         if (!isRemoteEnabled()) return Result.success(true)
 
         val settings = settingsRepository.getSettings()
@@ -217,6 +214,7 @@ class AuthenticationService(
             val response: HttpResponse = createHttpClient().use {
                 it.delete(deleteUrl) {
                     header(HttpHeaders.Authorization, "Bearer ${prefs.accessToken}")
+                    parameter("remote", remote)
                 }
             }
             return if (response.status == HttpStatusCode.NoContent || response.status == HttpStatusCode.OK) Result.success(true) else Result.failure(Exception("Delete failed"))

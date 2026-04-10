@@ -6,11 +6,14 @@ import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logging
+import io.ktor.client.request.delete
 import io.ktor.client.request.get
+import io.ktor.client.request.parameter
 import io.ktor.client.request.put
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.http.headersOf
 import io.ktor.serialization.kotlinx.json.json
@@ -27,8 +30,12 @@ class ProfileNetworkService(private val preferencesRepository: AuthenticationPre
         val token = auth?.accessToken
         if (token.isNullOrBlank()) return null
 
-        return createHttpClient(token).use { client ->
-            client.get("$serverUrl/api/profile").body()
+        createHttpClient(token).use { client ->
+            val response = client.get("$serverUrl/users/me")
+            if (response.status == HttpStatusCode.NotFound || response.status == HttpStatusCode.Gone) {
+                throw RemoteAccountDeletedException()
+            }
+            return response.body()
         }
     }
 
@@ -37,11 +44,39 @@ class ProfileNetworkService(private val preferencesRepository: AuthenticationPre
         val token = auth?.accessToken
         if (token.isNullOrBlank()) return null
 
-        return createHttpClient(token).use { client ->
-            client.put("$serverUrl/api/profile") {
+        createHttpClient(token).use { client ->
+            val response = client.put("$serverUrl/users/me") {
                 contentType(ContentType.Application.Json)
                 setBody(profile)
-            }.body()
+            }
+            if (response.status == HttpStatusCode.NotFound || response.status == HttpStatusCode.Gone) {
+                throw RemoteAccountDeletedException()
+            }
+            return response.body()
+        }
+    }
+
+    class RemoteAccountDeletedException : Exception("Remote account has been deleted.")
+
+    suspend fun deleteProfile(serverUrl: String, remote: Boolean): Boolean {
+        val auth = preferencesRepository.authenticationPreferencesFlow.firstOrNull()
+        val token = auth?.accessToken
+        if (token.isNullOrBlank()) return false
+
+        return try {
+            createHttpClient(token).use { client ->
+                val response = client.delete("$serverUrl/users/me") {
+                    parameter("remote", remote)
+                }
+                if (response.status == HttpStatusCode.NotFound || response.status == HttpStatusCode.Gone) {
+                    throw RemoteAccountDeletedException()
+                }
+                response.status == HttpStatusCode.NoContent
+            }
+        } catch (e: RemoteAccountDeletedException) {
+            throw e
+        } catch (e: Exception) {
+            false
         }
     }
 

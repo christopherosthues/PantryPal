@@ -1,7 +1,10 @@
 package org.darthacheron.pantrypal.server.profile
 
 import org.darthacheron.pantrypal.shared.profile.ProfileDto
+import java.time.Clock
+import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.core.isNull
 import org.jetbrains.exposed.v1.core.or
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import kotlin.uuid.ExperimentalUuidApi
@@ -16,38 +19,43 @@ class ProfileRepository {
                 email = profileDto.email
                 createdAt = profileDto.createdAt
                 lastModifiedAt = profileDto.lastModifiedAt
+                lastSyncedAt = profileDto.lastSyncedAt
             }
 
             // Return DTO with the original clientId for mapping
-            profile.toDto().copy(clientId = profileDto.clientId)
+            profile.toDto(clientId = profileDto.clientId)
         }
     }
 
     fun updateProfile(profileDto: ProfileDto): ProfileDto {
-        if (profileDto.serverId == null) {
-            throw IllegalArgumentException("Profile ID cannot be null")
-        }
+        val serverId = profileDto.serverId ?: throw IllegalArgumentException("Profile ID cannot be null")
 
         return transaction {
             val profile =
-                ProfileDAO.findById(profileDto.serverId!!) ?: throw IllegalArgumentException("Profile not found")
+                ProfileDAO.findById(serverId) ?: throw IllegalArgumentException("Profile not found")
             profile.createdAt = profileDto.createdAt
             profile.lastModifiedAt = profileDto.lastModifiedAt
+            profile.lastSyncedAt = profileDto.lastSyncedAt
             profile.username = profileDto.username
             profile.email = profileDto.email
-            profile.toDto().copy(clientId = profileDto.clientId)
+            profile.toDto(clientId = profileDto.clientId)
         }
     }
 
     fun getProfile(id: Uuid): ProfileDto? {
         return transaction {
-            ProfileDAO.findById(id)?.toDto()
+            ProfileDAO.find { (ProfilesTable.id eq id) and (ProfilesTable.deletedAt.isNull()) }
+                .firstOrNull()
+                ?.toDto()
         }
     }
 
     fun getProfileByUsernameOrEmail(identifier: String): ProfileDto? {
         return transaction {
-            ProfileDAO.find { (ProfilesTable.username eq identifier) or (ProfilesTable.email eq identifier) }
+            ProfileDAO.find {
+                ((ProfilesTable.username eq identifier) or (ProfilesTable.email eq identifier)) and
+                (ProfilesTable.deletedAt.isNull())
+            }
                 .firstOrNull()
                 ?.toDto()
         }
@@ -55,7 +63,9 @@ class ProfileRepository {
 
     fun deleteProfile(id: Uuid) {
         transaction {
-            ProfileDAO.findById(id)?.delete()
+            ProfileDAO.findById(id)?.apply {
+                deletedAt = kotlin.time.Instant.fromEpochMilliseconds(Clock.systemUTC().millis())
+            }
         }
     }
 }

@@ -5,5 +5,6 @@ data class AuthenticationPreferences(
     val refreshToken: String,
     val expiresIn: Int,
     val refreshExpiresIn: Int,
-    val localProfileId: String = ""
+    val localProfileId: String = "",
+    val isLoggedInRemotely: Boolean = false
 )

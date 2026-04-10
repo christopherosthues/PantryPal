@@ -137,6 +137,7 @@
     <string name="login_password">Passwort</string>
     <string name="login_login_or_register">oder</string>
     <string name="login_register">Registrieren</string>
+    <string name="login_login_only_locally">Nur lokal anmelden</string>
     <string name="login_error">Ein unerwarteter Fehler ist aufgetreten</string>
     <string name="login_wrong_username_or_password">Falscher Benutzername oder Passwort</string>
 
@@ -159,8 +160,24 @@
     <string name="profile_email_label">E-Mail</string>
     <string name="profile_password_label">Neues Passwort</string>
     <string name="profile_save_button">Änderungen speichern</string>
-    <string name="profile_logout_button">Logout</string>
+    <string name="profile_content_description_save">Profiländerungen speichern</string>
+    <string name="profile_logout_button">Abmelden</string>
+    <string name="profile_content_description_logout">Vom Profil abmelden</string>
     <string name="profile_delete_button">Konto löschen</string>
+    <string name="profile_content_description_delete">Profilkonto löschen</string>
+    <string name="profile_delete_dialog_title">Konto löschen</string>
+    <string name="profile_delete_dialog_message">Bist du sicher, dass du dein Konto löschen möchtest? Diese Aktion kann nicht rückgängig gemacht werden.</string>
+    <string name="profile_delete_dialog_remote_checkbox">Auch Remote-Daten löschen</string>
+    <string name="profile_delete_confirm">Löschen</string>
+    <string name="profile_delete_cancel">Abbrechen</string>
+    <string name="profile_remote_deleted_title">Konto remote gelöscht</string>
+    <string name="profile_remote_deleted_message">Dein remote Konto wurde von einem anderen Gerät aus gelöscht. Möchtest du deine lokalen Daten behalten oder ebenfalls löschen?</string>
+    <string name="profile_remote_deleted_keep_local">Lokale Daten behalten</string>
+    <string name="profile_remote_deleted_delete_local">Lokale Daten löschen</string>
+    <string name="profile_remote_logged_in">Remote angemeldet</string>
+    <string name="profile_local_login_only">Mit dem Server verbunden, aber nur lokal angemeldet. Bitte melden Sie sich remote an, um die Synchronisierung zu aktivieren.</string>
+    <string name="profile_local_only_no_server">Nur lokales Profil. Geben Sie ein Passwort ein und klicken Sie auf Speichern, um die Synchronisierung zu aktivieren.</string>
+    <string name="profile_pending_sync">Änderungen stehen zur Synchronisierung aus</string>
     <string name="profile_error_update">Fehler beim Aktualisieren des Profils</string>
 
     <!-- Inventory -->

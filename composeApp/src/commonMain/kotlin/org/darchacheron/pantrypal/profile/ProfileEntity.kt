@@ -21,7 +21,10 @@ data class ProfileEntity(
     val username: String,
     val email: String,
     val passwordHash: String? = null,
-    val createdAt: Instant // TODO: lastModifiedAt
+    val createdAt: Instant,
+    val lastModifiedAt: Instant,
+    val lastSyncedAt: Instant? = null,
+    val isLocalOnly: Boolean = false
 ) {
     fun toProfile(): Profile = Profile(
         id = id,
@@ -29,7 +32,10 @@ data class ProfileEntity(
         username = username,
         email = email,
         passwordHash = passwordHash,
-        createdAt = createdAt
+        createdAt = createdAt,
+        lastModifiedAt = lastModifiedAt,
+        lastSyncedAt = lastSyncedAt,
+        isLocalOnly = isLocalOnly
     )
 }
 
@@ -40,5 +46,8 @@ fun Profile.toProfileEntity(): ProfileEntity = ProfileEntity(
     username = username,
     email = email,
     passwordHash = passwordHash,
-    createdAt = createdAt
+    createdAt = createdAt,
+    lastModifiedAt = lastModifiedAt,
+    lastSyncedAt = lastSyncedAt,
+    isLocalOnly = isLocalOnly
 )

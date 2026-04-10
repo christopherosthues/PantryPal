@@ -19,7 +19,7 @@ import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 @Serializable
-data class Login(val username: String, val password: String)
+data class Login(val username: String, val password: String, val isLocalOnly: Boolean = false)
 
 @OptIn(ExperimentalUuidApi::class)
 class LoginViewModel(
@@ -40,16 +40,21 @@ class LoginViewModel(
         loginState.value = loginState.value.copy(data = loginState.value.data?.copy(password = password))
     }
 
+    fun onLocalOnlyChanged(isLocalOnly: Boolean) {
+        loginState.value = loginState.value.copy(data = loginState.value.data?.copy(isLocalOnly = isLocalOnly))
+    }
+
     fun login() {
         viewModelScope.launch {
             val uiState = loginState.value
             val username = uiState.data?.username ?: ""
             val password = uiState.data?.password ?: ""
+            val isLocalOnlyRequested = uiState.data?.isLocalOnly ?: false
 
             try {
                 loginState.emit(UiState.loading())
                 
-                if (authenticationService.isRemoteEnabled()) {
+                if (authenticationService.isRemoteEnabled() && !isLocalOnlyRequested) {
                     val result = authenticationService.login(username, password)
 
                     if (result.isSuccess) {
@@ -62,13 +67,17 @@ class LoginViewModel(
                             
                             val profile = existingProfile?.copy(
                                 username = loginResponse.user.username,
-                                email = loginResponse.user.email
+                                email = loginResponse.user.email,
+                                isLocalOnly = false
                             ) ?: Profile(
                                 id = Uuid.generateV7(),
                                 serverId = serverUuid,
                                 username = loginResponse.user.username,
                                 email = loginResponse.user.email,
-                                createdAt = Clock.System.now()
+                                createdAt = Clock.System.now(),
+                                lastModifiedAt = Clock.System.now(),
+                                lastSyncedAt = null,
+                                isLocalOnly = false
                             )
                             profileRepository.upsert(profile)
                             
@@ -78,7 +87,8 @@ class LoginViewModel(
                                 loginResponse.tokenResponse.refreshToken,
                                 loginResponse.tokenResponse.expiresIn,
                                 loginResponse.tokenResponse.refreshExpiresIn,
-                                profile.id.toString()
+                                profile.id.toString(),
+                                isLoggedInRemotely = true
                             )
                         }
                         loginState.emit(UiState.success(Login(username, password)))
@@ -87,14 +97,15 @@ class LoginViewModel(
                         loginState.emit(uiState.copy(error = Res.string.login_wrong_username_or_password))
                     }
                 } else {
-                    // Local only mode: Try to find local profile by username
-                    val existingProfile = profileRepository.getProfileByUsername(username).firstOrNull()
+                    // Local only mode: Try to find local profile by username or email
+                    val existingProfile = profileRepository.getProfileByIdentifier(username).firstOrNull()
                     
                     if (existingProfile != null) {
                         if (verifyPassword(password, existingProfile.passwordHash)) {
                             // Mark this profile as current
                             preferencesRepository.updateAccessPreferences(
-                                "", "", 0, 0, existingProfile.id.toString()
+                                "", "", 0, 0, existingProfile.id.toString(),
+                                isLoggedInRemotely = false
                             )
                             loginState.emit(UiState.success(Login(username, password)))
                             navigator.goToMain()

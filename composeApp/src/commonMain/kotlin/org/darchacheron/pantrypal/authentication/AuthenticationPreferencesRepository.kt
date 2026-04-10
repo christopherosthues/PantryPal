@@ -23,7 +23,8 @@ class AuthenticationPreferencesRepository(private val dataStore: DataStore<Prefe
             val expiresIn = it[AuthenticationPreferencesKeys.EXPIRES_IN] ?: 0
             val refreshExpiresIn = it[AuthenticationPreferencesKeys.REFRESH_EXPIRES_IN] ?: 0
             val localProfileId = it[AuthenticationPreferencesKeys.LOCAL_PROFILE_ID] ?: ""
-            AuthenticationPreferences(accessToken, refreshToken, expiresIn, refreshExpiresIn, localProfileId)
+            val isLoggedInRemotely = it[AuthenticationPreferencesKeys.IS_LOGGED_IN_REMOTELY] ?: false
+            AuthenticationPreferences(accessToken, refreshToken, expiresIn, refreshExpiresIn, localProfileId, isLoggedInRemotely)
         }
 
     suspend fun updateAccessPreferences(
@@ -31,15 +32,23 @@ class AuthenticationPreferencesRepository(private val dataStore: DataStore<Prefe
         refreshToken: String,
         expiresIn: Int,
         refreshExpiresIn: Int,
-        localProfileId: String = ""
+        localProfileId: String? = null,
+        isLoggedInRemotely: Boolean? = null
     ) {
         dataStore.edit {
             it[AuthenticationPreferencesKeys.ACCESS_TOKEN] = accessToken
             it[AuthenticationPreferencesKeys.REFRESH_TOKEN] = refreshToken
             it[AuthenticationPreferencesKeys.EXPIRES_IN] = expiresIn
             it[AuthenticationPreferencesKeys.REFRESH_EXPIRES_IN] = refreshExpiresIn
-            if (localProfileId.isNotBlank()) {
-                it[AuthenticationPreferencesKeys.LOCAL_PROFILE_ID] = localProfileId
+            if (isLoggedInRemotely != null) {
+                it[AuthenticationPreferencesKeys.IS_LOGGED_IN_REMOTELY] = isLoggedInRemotely
+            }
+            if (localProfileId != null) {
+                if (localProfileId.isNotBlank()) {
+                    it[AuthenticationPreferencesKeys.LOCAL_PROFILE_ID] = localProfileId
+                } else {
+                    it.remove(AuthenticationPreferencesKeys.LOCAL_PROFILE_ID)
+                }
             }
         }
     }

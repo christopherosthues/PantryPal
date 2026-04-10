@@ -10,6 +10,9 @@ import kotlin.uuid.Uuid
 @OptIn(ExperimentalUuidApi::class)
 @Dao
 interface ProfileDao {
+    @Query("SELECT * FROM profile LIMIT 1")
+    fun getProfile(): Flow<ProfileEntity?>
+
     @Query("SELECT * FROM profile WHERE id = :id")
     fun getProfileById(id: Uuid): Flow<ProfileEntity?>
 
@@ -21,6 +24,9 @@ interface ProfileDao {
 
     @Query("SELECT * FROM profile WHERE email = :email")
     fun getProfileByEmail(email: String): Flow<ProfileEntity?>
+
+    @Query("SELECT * FROM profile WHERE username = :identifier OR email = :identifier")
+    fun getProfileByIdentifier(identifier: String): Flow<ProfileEntity?>
 
     @Upsert
     suspend fun upsert(profile: ProfileEntity)

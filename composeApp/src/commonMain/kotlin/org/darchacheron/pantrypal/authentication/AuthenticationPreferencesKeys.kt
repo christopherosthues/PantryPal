@@ -1,5 +1,6 @@
 package org.darchacheron.pantrypal.authentication
 
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 
@@ -9,4 +10,5 @@ internal object AuthenticationPreferencesKeys {
     val EXPIRES_IN = intPreferencesKey("expires_in")
     val REFRESH_EXPIRES_IN = intPreferencesKey("refresh_expires_in")
     val LOCAL_PROFILE_ID = stringPreferencesKey("local_profile_id")
+    val IS_LOGGED_IN_REMOTELY = booleanPreferencesKey("is_logged_in_remotely")
 }

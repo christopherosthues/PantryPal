@@ -45,6 +45,13 @@ data class RegistrationResponse(
 )
 
 @Serializable
+data class UpdateUserDto(
+    val username: String? = null,
+    val email: String? = null,
+    val password: String? = null
+)
+
+@Serializable
 data class ProblemDetails(
     // TODO: use newer rfc 9467 standard
     val type: String? = null,

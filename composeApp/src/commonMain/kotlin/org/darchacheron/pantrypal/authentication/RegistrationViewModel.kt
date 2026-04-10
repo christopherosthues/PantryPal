@@ -98,13 +98,16 @@ class RegistrationViewModel(
     }
 
     private suspend fun createLocalProfile(userName: String, email: String, password: String, serverId: Uuid? = null) {
+        val now = Clock.System.now()
         val profile = Profile(
             id = Uuid.generateV7(),
             serverId = serverId,
             username = userName,
             email = email,
             passwordHash = hashPassword(password),
-            createdAt = Clock.System.now()
+            createdAt = now,
+            lastModifiedAt = now,
+            lastSyncedAt = if (serverId != null) now else null
         )
         profileRepository.upsert(profile)
     }

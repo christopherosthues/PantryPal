@@ -133,21 +133,21 @@ private fun SettingsContent(
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.primary
             )
-            Spacer(modifier = Modifier.height(8.dp))
-            DataSynchronizationDropdown(
-                selectedDataSynchronization = settings.dataSynchronization,
-                onDataSynchronizationSelected = onDataSynchronizationSelected
+            Spacer(modifier = Modifier.height(16.dp))
+            OutlinedTextField(
+                value = settings.serverUrl,
+                onValueChange = onServerUrlChanged,
+                label = { Text("Server URL") },
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text("https://example.com") },
+                singleLine = true
             )
-            
-            if (settings.dataSynchronization != DataSynchronization.NO_SYNCHRONIZATION) {
-                Spacer(modifier = Modifier.height(16.dp))
-                OutlinedTextField(
-                    value = settings.serverUrl,
-                    onValueChange = onServerUrlChanged,
-                    label = { Text("Server URL") },
-                    modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("https://example.com") },
-                    singleLine = true
+
+            if (settings.serverUrl.isNotBlank()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                DataSynchronizationDropdown(
+                    selectedDataSynchronization = settings.dataSynchronization,
+                    onDataSynchronizationSelected = onDataSynchronizationSelected
                 )
             }
         }

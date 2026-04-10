@@ -13,5 +13,6 @@ data class ProfileDto(
     val username: String,
     val email: String,
     val createdAt: Instant,
-    val lastModifiedAt: Instant?
+    val lastModifiedAt: Instant,
+    val lastSyncedAt: Instant? = null
 )
