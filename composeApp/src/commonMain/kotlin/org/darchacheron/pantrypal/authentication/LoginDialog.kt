@@ -99,13 +99,69 @@ fun LoginDialog(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Checkbox(
-                        checked = data.isLocalOnly,
-                        onCheckedChange = { viewModel.onLocalOnlyChanged(it) }
+                        checked = data.loginRemotely,
+                        onCheckedChange = { viewModel.onLoginRemotelyChanged(it) }
                     )
                     Text(
-                        text = stringResource(Res.string.login_login_only_locally),
+                        text = stringResource(Res.string.login_remotely_checkbox),
                         style = MaterialTheme.typography.bodyMedium
                     )
+                }
+
+                if (data.loginRemotely) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Checkbox(
+                            checked = data.useSameCredentials,
+                            onCheckedChange = { viewModel.onUseSameCredentialsChanged(it) }
+                        )
+                        Text(
+                            text = stringResource(Res.string.login_use_same_credentials_checkbox),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+
+                    OutlinedTextField(
+                        value = data.serverUrl,
+                        onValueChange = { viewModel.onServerUrlChanged(it) },
+                        label = { Text(text = stringResource(Res.string.registration_server_url)) },
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Uri,
+                            imeAction = ImeAction.Next
+                        ),
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    if (!data.useSameCredentials) {
+                        OutlinedTextField(
+                            value = data.remoteUsername,
+                            onValueChange = { viewModel.onRemoteUsernameChanged(it) },
+                            label = { Text(text = stringResource(Res.string.login_remote_username_label)) },
+                            placeholder = { Text(text = stringResource(Res.string.login_remote_username_placeholder)) },
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Email,
+                                imeAction = ImeAction.Next
+                            ),
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        OutlinedTextField(
+                            value = data.remotePassword,
+                            onValueChange = { viewModel.onRemotePasswordChanged(it) },
+                            label = { Text(text = stringResource(Res.string.login_remote_password_label)) },
+                            visualTransformation = PasswordVisualTransformation(),
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Password,
+                                imeAction = ImeAction.Done
+                            ),
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
                 }
 
                 Row(

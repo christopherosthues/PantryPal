@@ -76,12 +76,12 @@ class FoodRepository(
         // Phase 1: Try push immediately if enabled
         val settings = settingsRepository.getSettings()
         val prefs = authenticationPreferencesRepository.authenticationPreferencesFlow.firstOrNull()
-        val canSync = prefs?.isLoggedInRemotely == true && prefs.serverUrl == settings.serverUrl
+        val canSync = prefs?.isLoggedInRemotely == true
 
         if (canSync && (settings.dataSynchronization == DataSynchronization.UPLOAD_AND_DOWNLOAD || 
             settings.dataSynchronization == DataSynchronization.ONLY_UPLOAD)) {
             try {
-                val syncedFoods = foodNetworkService.pushFoods(listOf(food), settings.serverUrl)
+                val syncedFoods = foodNetworkService.pushFoods(listOf(food), prefs!!.serverUrl)
                 syncedFoods.firstOrNull()?.let { synced ->
                     foodDao.updateServerId(food.id, synced.serverId!!)
                 }
@@ -102,12 +102,12 @@ class FoodRepository(
             // Phase 1: Try delete on server
             val settings = settingsRepository.getSettings()
             val prefs = authenticationPreferencesRepository.authenticationPreferencesFlow.firstOrNull()
-            val canSync = prefs?.isLoggedInRemotely == true && prefs.serverUrl == settings.serverUrl
+            val canSync = prefs?.isLoggedInRemotely == true
 
             if (canSync && food.serverId != null && (settings.dataSynchronization == DataSynchronization.UPLOAD_AND_DOWNLOAD || 
                 settings.dataSynchronization == DataSynchronization.ONLY_UPLOAD)) {
                 try {
-                    foodNetworkService.deleteFood(food.serverId, settings.serverUrl)
+                    foodNetworkService.deleteFood(food.serverId, prefs!!.serverUrl)
                 } catch (e: Exception) {
                     Logger.withTag(loggerTag).w { "Failed to delete food ${food.name} from server. Error: ${e.message}" }
                 }
@@ -121,8 +121,8 @@ class FoodRepository(
         if (settings.dataSynchronization == DataSynchronization.NO_SYNCHRONIZATION) return@withContext
 
         val prefs = authenticationPreferencesRepository.authenticationPreferencesFlow.firstOrNull()
-        if (prefs?.isLoggedInRemotely != true || prefs.serverUrl != settings.serverUrl) {
-            Logger.withTag(loggerTag).d { "Skipping sync: Not logged in to remote or server mismatch" }
+        if (prefs?.isLoggedInRemotely != true) {
+            Logger.withTag(loggerTag).d { "Skipping sync: Not logged in to remote" }
             return@withContext
         }
 
@@ -135,7 +135,7 @@ class FoodRepository(
                 if (dirtyEntities.isNotEmpty()) {
                     val dirtyFoods = dirtyEntities.mapNotNull { foodDao.getByIdWithImages(it.id)?.toFood() }
                     try {
-                        val syncedFoods = foodNetworkService.pushFoods(dirtyFoods, settings.serverUrl)
+                        val syncedFoods = foodNetworkService.pushFoods(dirtyFoods, prefs.serverUrl)
                         syncedFoods.forEach { synced ->
                             foodDao.updateServerId(synced.id, synced.serverId!!)
                         }
@@ -148,7 +148,7 @@ class FoodRepository(
             // 2. Download changes
             if (settings.dataSynchronization == DataSynchronization.UPLOAD_AND_DOWNLOAD || 
                 settings.dataSynchronization == DataSynchronization.ONLY_DOWNLOAD) {
-                val remoteChanges = foodNetworkService.fetchChanges(Instant.fromEpochMilliseconds(0), settings.serverUrl)
+                val remoteChanges = foodNetworkService.fetchChanges(Instant.fromEpochMilliseconds(0), prefs.serverUrl)
                 remoteChanges.forEach { remoteFood ->
                     val local = foodDao.getByIdWithImages(remoteFood.id)?.toFood()
                     if (local == null || remoteFood.lastModifiedAt > local.lastModifiedAt) {

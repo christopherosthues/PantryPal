@@ -5,6 +5,5 @@ import kotlin.uuid.ExperimentalUuidApi
 @OptIn(ExperimentalUuidApi::class)
 data class Settings(
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
-    val dataSynchronization: DataSynchronization = DataSynchronization.NO_SYNCHRONIZATION,
-    val serverUrl: String = ""
+    val dataSynchronization: DataSynchronization = DataSynchronization.NO_SYNCHRONIZATION
 )

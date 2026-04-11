@@ -137,9 +137,18 @@
     <string name="login_login">Log in</string>
     <string name="login_username_or_email">Username or Email</string>
     <string name="login_password">Password</string>
+    <string name="login_server_url">Server URL</string>
+    <string name="login_error_server_url_missing">Server URL is required for remote operations</string>
+    <string name="login_error_invalid_server_url">Invalid server URL</string>
     <string name="login_login_or_register">or</string>
     <string name="login_register">Register</string>
     <string name="login_login_only_locally">Login only locally</string>
+    <string name="login_remotely_checkbox">Login also remotely</string>
+    <string name="login_use_same_credentials_checkbox">Use same credentials</string>
+    <string name="login_remote_username_label">Remote Username / Email</string>
+    <string name="login_remote_password_label">Remote Password</string>
+    <string name="login_remote_username_placeholder">(Optional)</string>
+    <string name="login_local_username_placeholder">Local Name / Email</string>
     <string name="login_error">An unexpected error occurred</string>
     <string name="login_wrong_username_or_password">Wrong username or password</string>
     <string name="login_error_profile_not_found">Credentials valid, but no profile found on this server</string>
@@ -153,9 +162,13 @@
     <string name="registration_password">Password</string>
     <string name="registration_repeat_password">Repeat password</string>
     <string name="registration_remote_checkbox">Register also on server</string>
+    <string name="registration_server_url">Server URL</string>
+    <string name="registration_error_server_url_missing">Server URL is required for remote operations</string>
+    <string name="registration_error_invalid_server_url">Invalid server URL</string>
     <string name="registration_error">An unexpected error occurred</string>
     <string name="registration_error_empty_username">Username cannot be empty</string>
     <string name="registration_error_empty_email">Email cannot be empty</string>
+    <string name="registration_error_invalid_email">Invalid email format</string>
     <string name="registration_error_empty_password">Password cannot be empty</string>
     <string name="registration_error_password_mismatch">Passwords do not match</string>
     <string name="registration_error_username_exists">Username already exists</string>
@@ -170,7 +183,14 @@
     <string name="profile_title">Profile</string>
     <string name="profile_username_label">Username</string>
     <string name="profile_email_label">Email</string>
-    <string name="profile_password_label">New Password</string>
+    <string name="profile_password_label">Local Password</string>
+    <string name="profile_change_password_title">Change Password</string>
+    <string name="profile_current_password_label">Current Local Password</string>
+    <string name="profile_new_password_label">New Local Password</string>
+    <string name="profile_repeat_new_password_label">Repeat New Local Password</string>
+    <string name="profile_error_wrong_password">Current password is incorrect</string>
+    <string name="profile_error_password_mismatch">New passwords do not match</string>
+    <string name="profile_password_change_success">Password changed successfully</string>
     <string name="profile_save_button">Save Changes</string>
     <string name="profile_content_description_save">Save profile changes</string>
     <string name="profile_logout_button">Logout</string>
@@ -188,8 +208,26 @@
     <string name="profile_remote_deleted_delete_local">Delete Local Data</string>
     <string name="profile_remote_logged_in">Logged in remotely</string>
     <string name="profile_local_login_only">Connected to server, but logged in locally. Please login remotely to enable synchronization.</string>
-    <string name="profile_local_only_no_server">Local only profile. Enter a password and click save to enable synchronization.</string>
+    <string name="profile_local_only_no_server">Local only profile. Enable synchronization to back up your data.</string>
+    <string name="profile_enable_sync_button">Enable Synchronization</string>
+    <string name="profile_link_account_title">Link to Existing Account</string>
+    <string name="profile_link_account_button">Link Existing Account</string>
+    <string name="profile_create_account_title">Create New Account</string>
+    <string name="profile_create_account_button">Create New Account</string>
+    <string name="profile_server_url_label">Server URL</string>
+    <string name="profile_remote_password_label">Remote Password</string>
+    <string name="profile_link_success">Account linked successfully</string>
+    <string name="profile_link_error">Failed to link account. Please check your credentials and server URL.</string>
     <string name="profile_pending_sync">Changes pending synchronization</string>
+    <string name="profile_error_username_empty">Username cannot be empty</string>
+    <string name="profile_error_username_exists">Username already exists</string>
+    <string name="profile_error_email_empty">Email cannot be empty</string>
+    <string name="profile_error_email_invalid">Invalid email format</string>
+    <string name="profile_error_email_exists">Email already exists</string>
+    <string name="profile_error_server_url_empty">Server URL is required</string>
+    <string name="profile_error_server_url_invalid">Invalid server URL</string>
+    <string name="profile_error_current_password_empty">Current password is required</string>
+    <string name="profile_error_new_password_empty">New password is required</string>
     <string name="profile_error_update">Failed to update profile</string>
 
     <!-- Inventory -->
@@ -203,7 +241,7 @@
     <string name="inventory_list_card_content_description_add_to_pantry">Add to Pantry</string>
     <string name="inventory_list_sort_name_asc">Name (A-Z)</string>
     <string name="inventory_list_sort_name_desc">Name (Z-A)</string>
-    <string name="inventory_list_empty_selection">Select a inventory item to see details</string>
+    <string name="inventory_list_empty_selection">Select an inventory item to see details</string>
 
     <string name="inventory_detail_title_add">Add Template</string>
     <string name="inventory_detail_title_edit">Edit Template</string>

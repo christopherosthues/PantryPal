@@ -19,11 +19,17 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.serialization.json.Json
-import org.darchacheron.pantrypal.settings.DataSynchronization
 import org.darchacheron.pantrypal.settings.SettingsRepository
-import org.darthacheron.pantrypal.shared.auth.*
+import org.darthacheron.pantrypal.shared.auth.LoginDto
+import org.darthacheron.pantrypal.shared.auth.LoginResponse
+import org.darthacheron.pantrypal.shared.auth.ProblemDetails
+import org.darthacheron.pantrypal.shared.auth.RefreshTokenDto
+import org.darthacheron.pantrypal.shared.auth.RegistrationDto
+import org.darthacheron.pantrypal.shared.auth.RegistrationResponse
+import org.darthacheron.pantrypal.shared.auth.UpdateUserDto
 import kotlin.uuid.ExperimentalUuidApi
 
 class InvalidCredentialsException(message: String) : Exception(message)
@@ -40,19 +46,15 @@ class AuthenticationService(
     private val authenticationTag = "Authentication"
 
     suspend fun isRemoteEnabled(): Boolean {
-        val settings = settingsRepository.getSettings()
-        return settings.serverUrl.isNotBlank() && settings.dataSynchronization != DataSynchronization.NO_SYNCHRONIZATION
+        return preferencesRepository.authenticationPreferencesFlow.first().isLoggedInRemotely
     }
 
     suspend fun getServerUrl(): String {
-        return settingsRepository.getSettings().serverUrl
+        return preferencesRepository.authenticationPreferencesFlow.first().serverUrl
     }
 
-    suspend fun login(username: String, password: String): Result<LoginResponse?> {
-        if (!isRemoteEnabled()) return Result.success(null)
-
-        val settings = settingsRepository.getSettings()
-        val loginUrl = "${settings.serverUrl}/login"
+    suspend fun login(username: String, password: String, serverUrl: String): Result<LoginResponse?> {
+        val loginUrl = "$serverUrl/login"
 
         try {
             val response: HttpResponse = createHttpClient().use { client ->
@@ -109,18 +111,15 @@ class AuthenticationService(
         try {
             // Passing null for localProfileId to preserve it in updateAccessPreferences
             // Setting isLoggedInRemotely to false on logout
-            preferencesRepository.updateAccessPreferences("", "", 0, 0, null, isLoggedInRemotely = false)
+            preferencesRepository.updateAccessPreferences("", "", 0, 0, null, isLoggedInRemotely = false, serverUrl = "")
             return Result.success(true)
         } catch (exception: Exception) {
             return Result.failure(exception)
         }
     }
 
-    suspend fun refreshToken(): Result<Boolean> {
-        if (!isRemoteEnabled()) return Result.success(false)
-
-        val settings = settingsRepository.getSettings()
-        val refreshUrl = "${settings.serverUrl}/refresh"
+    suspend fun refreshToken(serverUrl: String): Result<Boolean> {
+        val refreshUrl = "$serverUrl/refresh"
 
         try {
             val authenticationPreferences =
@@ -158,11 +157,9 @@ class AuthenticationService(
         username: String,
         email: String,
         password: String,
+        serverUrl: String
     ): Result<RegistrationResponse?> {
-        if (!isRemoteEnabled()) return Result.success(null)
-
-        val settings = settingsRepository.getSettings()
-        val registerUrl = "${settings.serverUrl}/register"
+        val registerUrl = "$serverUrl/register"
 
         try {
             val response: HttpResponse = createHttpClient().use {
@@ -199,14 +196,12 @@ class AuthenticationService(
     }
 
     suspend fun updateUser(
+        serverUrl: String,
         username: String? = null,
         email: String? = null,
         password: String? = null
     ): Result<Boolean> {
-        if (!isRemoteEnabled()) return Result.success(true)
-
-        val settings = settingsRepository.getSettings()
-        val updateUrl = "${settings.serverUrl}/users/me"
+        val updateUrl = "$serverUrl/users/me"
 
         try {
             val prefs = preferencesRepository.authenticationPreferencesFlow.firstOrNull() ?: return Result.failure(Exception("Not authenticated"))
@@ -217,17 +212,18 @@ class AuthenticationService(
                     setBody(UpdateUserDto(username, email, password))
                 }
             }
-            return if (response.status == HttpStatusCode.OK) Result.success(true) else Result.failure(Exception("Update failed"))
+            return when (response.status) {
+                HttpStatusCode.OK -> Result.success(true)
+                HttpStatusCode.Conflict -> Result.failure(UserAlreadyExistsException("Username or email already exists"))
+                else -> Result.failure(Exception("Update failed with status ${response.status}"))
+            }
         } catch (e: Exception) {
             return Result.failure(e)
         }
     }
 
-    suspend fun deleteUser(remote: Boolean): Result<Boolean> {
-        if (!isRemoteEnabled()) return Result.success(true)
-
-        val settings = settingsRepository.getSettings()
-        val deleteUrl = "${settings.serverUrl}/users/me"
+    suspend fun deleteUser(serverUrl: String, remote: Boolean): Result<Boolean> {
+        val deleteUrl = "$serverUrl/users/me"
 
         try {
             val prefs = preferencesRepository.authenticationPreferencesFlow.firstOrNull() ?: return Result.failure(Exception("Not authenticated"))

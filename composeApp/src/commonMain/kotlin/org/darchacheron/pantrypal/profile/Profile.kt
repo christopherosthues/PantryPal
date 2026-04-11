@@ -11,6 +11,7 @@ data class Profile(
     val username: String,
     val email: String,
     val passwordHash: String? = null,
+    val serverUrl: String? = null,
     val createdAt: Instant,
     val lastModifiedAt: Instant,
     val lastSyncedAt: Instant? = null,

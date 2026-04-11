@@ -74,16 +74,16 @@ class SettingsViewModel(
     }
 
     fun triggerSync() {
-        if (!isLoggedInRemotely.value) {
-            val currentSettings = _settingsFlow.value.data
-            if (currentSettings?.serverUrl?.isNotBlank() == true) {
-                _closeAfterLogin = false
-                _showLoginDialog.value = true
-                return
-            }
-        }
-
         viewModelScope.launch {
+            val prefs = authenticationPreferencesRepository.authenticationPreferencesFlow.first()
+            if (!prefs.isLoggedInRemotely) {
+                if (prefs.serverUrl.isNotBlank()) {
+                    _closeAfterLogin = false
+                    _showLoginDialog.value = true
+                    return@launch
+                }
+            }
+
             _isSyncing.value = true
             try {
                 foodRepository.syncWithServer()
@@ -118,31 +118,17 @@ class SettingsViewModel(
     }
 
     fun onDataSynchronizationSelected(dataSynchronization: DataSynchronization) {
-        val currentSettings = _settingsFlow.value.data ?: return
-        if (currentSettings.serverUrl.isBlank() && dataSynchronization != DataSynchronization.NO_SYNCHRONIZATION) {
-            return
-        }
         _settingsFlow.update { state ->
             state.data?.let { UiState.success(it.copy(dataSynchronization = dataSynchronization)) } ?: state
         }
     }
 
-    fun onServerUrlChanged(serverUrl: String) {
-        _settingsFlow.update { state ->
-            state.data?.let {
-                val urlToSet = serverUrl.trim()
-                val newSync = if (urlToSet.isBlank()) DataSynchronization.NO_SYNCHRONIZATION else it.dataSynchronization
-                UiState.success(it.copy(serverUrl = urlToSet, dataSynchronization = newSync))
-            } ?: state
-        }
-    }
 
     @OptIn(ExperimentalUuidApi::class)
     fun saveSettings(onSuccess: () -> Unit) {
         val currentSettings = settingsFlow.value.data ?: return
         viewModelScope.launch {
             try {
-                val serverUrlChanged = currentSettings.serverUrl != _originalSettings.serverUrl
                 val syncEnabled = currentSettings.dataSynchronization != DataSynchronization.NO_SYNCHRONIZATION
 
                 settingsRepository.saveSettings(currentSettings)
@@ -153,11 +139,10 @@ class SettingsViewModel(
                     val profileId = prefs.localProfileId
                     val syncJustEnabled = _originalSettings.dataSynchronization == DataSynchronization.NO_SYNCHRONIZATION
 
-                    if (serverUrlChanged || syncJustEnabled) {
+                    if (syncJustEnabled) {
                         if (profileId.isNotEmpty()) {
                             val profile = profileRepository.getProfileById(Uuid.parse(profileId)).first()
-                            val isSameServer = prefs.serverUrl == currentSettings.serverUrl
-                            if (profile?.serverId == null || profile.isLocalOnly || !prefs.isLoggedInRemotely || !isSameServer) {
+                            if (profile?.serverId == null || profile.isLocalOnly || !prefs.isLoggedInRemotely) {
                                 authRequired = true
                                 _closeAfterLogin = true
                                 _showLoginDialog.value = true

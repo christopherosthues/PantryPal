@@ -44,12 +44,17 @@ import org.jetbrains.compose.resources.stringResource
 import pantrypal.composeapp.generated.resources.Res
 import pantrypal.composeapp.generated.resources.ic_fridge
 import pantrypal.composeapp.generated.resources.login_login
-import pantrypal.composeapp.generated.resources.login_login_only_locally
 import pantrypal.composeapp.generated.resources.login_login_or_register
 import pantrypal.composeapp.generated.resources.login_password
 import pantrypal.composeapp.generated.resources.login_register
+import pantrypal.composeapp.generated.resources.login_remote_password_label
+import pantrypal.composeapp.generated.resources.login_remote_username_label
+import pantrypal.composeapp.generated.resources.login_remote_username_placeholder
+import pantrypal.composeapp.generated.resources.login_remotely_checkbox
 import pantrypal.composeapp.generated.resources.login_title
+import pantrypal.composeapp.generated.resources.login_use_same_credentials_checkbox
 import pantrypal.composeapp.generated.resources.login_username_or_email
+import pantrypal.composeapp.generated.resources.registration_server_url
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -103,7 +108,11 @@ internal fun LoginView(loginViewModel: LoginViewModel) {
                     imeAction = ImeAction.Next
                 ),
                 singleLine = true,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                isError = data.usernameError != null,
+                supportingText = {
+                    data.usernameError?.let { Text(stringResource(it)) }
+                }
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -118,7 +127,11 @@ internal fun LoginView(loginViewModel: LoginViewModel) {
                     imeAction = ImeAction.Done
                 ),
                 singleLine = true,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                isError = data.passwordError != null,
+                supportingText = {
+                    data.passwordError?.let { Text(stringResource(it)) }
+                }
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -128,13 +141,85 @@ internal fun LoginView(loginViewModel: LoginViewModel) {
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Checkbox(
-                    checked = data.isLocalOnly,
-                    onCheckedChange = { loginViewModel.onLocalOnlyChanged(it) }
+                    checked = data.loginRemotely,
+                    onCheckedChange = { loginViewModel.onLoginRemotelyChanged(it) }
                 )
                 Text(
-                    text = stringResource(Res.string.login_login_only_locally),
+                    text = stringResource(Res.string.login_remotely_checkbox),
                     style = MaterialTheme.typography.bodyMedium
                 )
+            }
+
+            if (data.loginRemotely) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Checkbox(
+                        checked = data.useSameCredentials,
+                        onCheckedChange = { loginViewModel.onUseSameCredentialsChanged(it) }
+                    )
+                    Text(
+                        text = stringResource(Res.string.login_use_same_credentials_checkbox),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+
+                OutlinedTextField(
+                    value = data.serverUrl,
+                    onValueChange = { loginViewModel.onServerUrlChanged(it) },
+                    label = { Text(text = stringResource(Res.string.registration_server_url)) },
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Uri,
+                        imeAction = ImeAction.Next
+                    ),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    isError = data.serverUrlError != null,
+                    supportingText = {
+                        data.serverUrlError?.let { Text(stringResource(it)) }
+                    }
+                )
+
+                if (!data.useSameCredentials) {
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    OutlinedTextField(
+                        value = data.remoteUsername,
+                        onValueChange = { loginViewModel.onRemoteUsernameChanged(it) },
+                        label = { Text(text = stringResource(Res.string.login_remote_username_label)) },
+                        placeholder = { Text(text = stringResource(Res.string.login_remote_username_placeholder)) },
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Email,
+                            imeAction = ImeAction.Next
+                        ),
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        isError = data.remoteUsernameError != null,
+                        supportingText = {
+                            data.remoteUsernameError?.let { Text(stringResource(it)) }
+                        }
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    OutlinedTextField(
+                        value = data.remotePassword,
+                        onValueChange = { loginViewModel.onRemotePasswordChanged(it) },
+                        label = { Text(text = stringResource(Res.string.login_remote_password_label)) },
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Password,
+                            imeAction = ImeAction.Done
+                        ),
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        isError = data.remotePasswordError != null,
+                        supportingText = {
+                            data.remotePasswordError?.let { Text(stringResource(it)) }
+                        }
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))

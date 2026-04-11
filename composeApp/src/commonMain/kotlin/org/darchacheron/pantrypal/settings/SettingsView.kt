@@ -127,8 +127,7 @@ fun SettingsView(
                 SettingsContent(
                     settings = uiState.data!!,
                     onDataSynchronizationSelected = viewModel::onDataSynchronizationSelected,
-                    onThemeModeSelected = viewModel::onThemeModeSelected,
-                    onServerUrlChanged = viewModel::onServerUrlChanged
+                    onThemeModeSelected = viewModel::onThemeModeSelected
                 )
             }
         }
@@ -139,8 +138,7 @@ fun SettingsView(
 private fun SettingsContent(
     settings: Settings,
     onDataSynchronizationSelected: (DataSynchronization) -> Unit,
-    onThemeModeSelected: (ThemeMode) -> Unit,
-    onServerUrlChanged: (String) -> Unit
+    onThemeModeSelected: (ThemeMode) -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -156,22 +154,10 @@ private fun SettingsContent(
                 color = MaterialTheme.colorScheme.primary
             )
             Spacer(modifier = Modifier.height(16.dp))
-            OutlinedTextField(
-                value = settings.serverUrl,
-                onValueChange = onServerUrlChanged,
-                label = { Text("Server URL") },
-                modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("https://example.com") },
-                singleLine = true
+            DataSynchronizationDropdown(
+                selectedDataSynchronization = settings.dataSynchronization,
+                onDataSynchronizationSelected = onDataSynchronizationSelected
             )
-
-            if (settings.serverUrl.isNotBlank()) {
-                Spacer(modifier = Modifier.height(8.dp))
-                DataSynchronizationDropdown(
-                    selectedDataSynchronization = settings.dataSynchronization,
-                    onDataSynchronizationSelected = onDataSynchronizationSelected
-                )
-            }
         }
 
         HorizontalDivider()

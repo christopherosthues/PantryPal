@@ -50,6 +50,7 @@ import pantrypal.composeapp.generated.resources.registration_error_username_exis
 import pantrypal.composeapp.generated.resources.registration_password
 import pantrypal.composeapp.generated.resources.registration_remote_checkbox
 import pantrypal.composeapp.generated.resources.registration_repeat_password
+import pantrypal.composeapp.generated.resources.registration_server_url
 import pantrypal.composeapp.generated.resources.registration_title
 import pantrypal.composeapp.generated.resources.registration_username
 
@@ -148,6 +149,22 @@ fun RegistrationView(registrationViewModel: RegistrationViewModel) {
                     onCheckedChange = { registrationViewModel.onRegisterRemotelyChanged(it) }
                 )
                 Text(text = stringResource(Res.string.registration_remote_checkbox))
+            }
+
+            if (data.registerRemotely) {
+                Spacer(modifier = Modifier.height(16.dp))
+
+                val serverUrlError = data.serverUrlError?.let { stringResource(it) }
+
+                OutlinedTextField(
+                    value = data.serverUrl,
+                    onValueChange = { registrationViewModel.onServerUrlChanged(it) },
+                    label = { Text(text = stringResource(Res.string.registration_server_url)) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, imeAction = ImeAction.Done),
+                    isError = serverUrlError != null,
+                    supportingText = serverUrlError?.let { { Text(text = it) } },
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
 
             Spacer(modifier = Modifier.height(32.dp))

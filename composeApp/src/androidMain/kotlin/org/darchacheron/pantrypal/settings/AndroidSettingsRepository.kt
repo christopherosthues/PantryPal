@@ -19,14 +19,12 @@ class AndroidSettingsRepository(
     private object PreferencesKeys {
         val THEME_MODE = stringPreferencesKey(SettingsKeys.THEME_MODE)
         val DATA_SYNCHRONIZATION = stringPreferencesKey(SettingsKeys.DATA_SYNCHRONIZATION)
-        val SERVER_URL = stringPreferencesKey(SettingsKeys.SERVER_URL)
     }
 
     override suspend fun saveSettings(settings: Settings) {
         context.dataStore.edit { preferences ->
             preferences[PreferencesKeys.THEME_MODE] = settings.themeMode.name
             preferences[PreferencesKeys.DATA_SYNCHRONIZATION] = settings.dataSynchronization.name
-            preferences[PreferencesKeys.SERVER_URL] = settings.serverUrl
         }
     }
 
@@ -44,8 +42,7 @@ class AndroidSettingsRepository(
                     dataSynchronization =
                         preferences[PreferencesKeys.DATA_SYNCHRONIZATION]?.let {
                             runCatching { DataSynchronization.valueOf(it) }.getOrNull()
-                        } ?: DataSynchronization.NO_SYNCHRONIZATION,
-                    serverUrl = preferences[PreferencesKeys.SERVER_URL] ?: ""
+                        } ?: DataSynchronization.NO_SYNCHRONIZATION
                 )
             }
 }

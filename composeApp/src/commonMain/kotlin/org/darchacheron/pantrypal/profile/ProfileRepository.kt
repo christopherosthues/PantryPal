@@ -44,14 +44,14 @@ class ProfileRepository(
         // Phase 1: Try push immediately
         val settings = settingsRepository.getSettings()
         val prefs = authenticationPreferencesRepository.authenticationPreferencesFlow.firstOrNull()
-        val canSync = prefs?.isLoggedInRemotely == true && prefs.serverUrl == settings.serverUrl
+        val canSync = prefs?.isLoggedInRemotely == true
 
         if (canSync && (settings.dataSynchronization == DataSynchronization.UPLOAD_AND_DOWNLOAD ||
             settings.dataSynchronization == DataSynchronization.ONLY_UPLOAD
         )) {
             try {
                 // TODO: what if the remote profile does not exist yet?
-                profileNetworkService.updateProfile(profile, settings.serverUrl)?.let { synced ->
+                profileNetworkService.updateProfile(profile, prefs!!.serverUrl)?.let { synced ->
                     profileDao.upsert(synced.toProfileEntity())
                 }
             } catch (e: ProfileNetworkService.RemoteAccountDeletedException) {
@@ -64,13 +64,12 @@ class ProfileRepository(
 
     suspend fun delete(remote: Boolean) = withContext(Dispatchers.IO) {
         if (remote) {
-            val settings = settingsRepository.getSettings()
             val prefs = authenticationPreferencesRepository.authenticationPreferencesFlow.firstOrNull()
-            val canSync = prefs?.isLoggedInRemotely == true && prefs.serverUrl == settings.serverUrl
+            val canSync = prefs?.isLoggedInRemotely == true
 
             if (canSync) {
                 try {
-                    profileNetworkService.deleteProfile(settings.serverUrl, remote = true)
+                    profileNetworkService.deleteProfile(prefs!!.serverUrl, remote = true)
                 } catch (e: Exception) {
                     Logger.withTag(loggerTag).e { "Remote profile deletion failed: ${e.message}" }
                 }
@@ -87,8 +86,8 @@ class ProfileRepository(
         if (settings.dataSynchronization == DataSynchronization.NO_SYNCHRONIZATION) return@withContext
 
         val prefs = authenticationPreferencesRepository.authenticationPreferencesFlow.firstOrNull()
-        if (prefs?.isLoggedInRemotely != true || prefs.serverUrl != settings.serverUrl) {
-            Logger.withTag(loggerTag).d { "Skipping profile sync: Not logged in to remote or server mismatch" }
+        if (prefs?.isLoggedInRemotely != true) {
+            Logger.withTag(loggerTag).d { "Skipping profile sync: Not logged in to remote" }
             return@withContext
         }
 
@@ -102,7 +101,7 @@ class ProfileRepository(
                 if (localProfile.serverId == null || localProfile.isLocalOnly) {
                     // Skip sync for local-only profiles
                 } else if (localProfile.lastSyncedAt == null || localProfile.lastModifiedAt > localProfile.lastSyncedAt) {
-                    profileNetworkService.updateProfile(localProfile, settings.serverUrl)?.let { synced ->
+                    profileNetworkService.updateProfile(localProfile, prefs.serverUrl)?.let { synced ->
                         profileDao.upsert(synced.toProfileEntity())
                     }
                 }
@@ -112,7 +111,7 @@ class ProfileRepository(
             if (!localProfile.isLocalOnly && (settings.dataSynchronization == DataSynchronization.UPLOAD_AND_DOWNLOAD ||
                 settings.dataSynchronization == DataSynchronization.ONLY_DOWNLOAD)
             ) {
-                profileNetworkService.fetchProfile(settings.serverUrl)?.let { remoteProfile ->
+                profileNetworkService.fetchProfile(prefs.serverUrl)?.let { remoteProfile ->
                     profileDao.upsert(remoteProfile.toProfileEntity())
                 }
             }

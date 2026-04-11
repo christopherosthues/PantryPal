@@ -18,7 +18,11 @@ import pantrypal.composeapp.generated.resources.registration_error_empty_email
 import pantrypal.composeapp.generated.resources.registration_error_empty_password
 import pantrypal.composeapp.generated.resources.registration_error_empty_username
 import pantrypal.composeapp.generated.resources.registration_error_password_mismatch
+import pantrypal.composeapp.generated.resources.registration_error_invalid_email
+import pantrypal.composeapp.generated.resources.registration_error_invalid_server_url
 import pantrypal.composeapp.generated.resources.registration_error_username_exists
+import pantrypal.composeapp.generated.resources.registration_error_server_url_missing
+import pantrypal.composeapp.generated.resources.login_error_server_unreachable
 import kotlin.time.Clock
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -57,7 +61,8 @@ class RegistrationViewModel(
                 canRegister = nextData.userNameError == null && nextData.userName.isNotBlank() &&
                         nextData.emailError == null && nextData.email.isNotBlank() &&
                         nextData.passwordError == null && nextData.password.isNotBlank() &&
-                        nextData.repeatedPasswordError == null && nextData.repeatedPassword.isNotBlank()
+                        nextData.repeatedPasswordError == null && nextData.repeatedPassword.isNotBlank() &&
+                        (nextData.serverUrlError == null || !nextData.registerRemotely)
             )
             currentUiState.copy(data = finalData, error = null)
         }
@@ -74,11 +79,22 @@ class RegistrationViewModel(
 
     fun onEmailChanged(email: String) {
         viewModelScope.launch {
-            val error = if (email.isBlank()) Res.string.registration_error_empty_email
-            else if (profileRepository.getProfileByEmail(email).firstOrNull() != null) Res.string.registration_error_email_exists
-            else null
+            val error = if (email.isBlank()) {
+                Res.string.registration_error_empty_email
+            } else if (!isValidEmail(email)) {
+                Res.string.registration_error_invalid_email
+            } else if (profileRepository.getProfileByEmail(email).firstOrNull() != null) {
+                Res.string.registration_error_email_exists
+            } else {
+                null
+            }
             updateRegistration { it.copy(email = email, emailError = error) }
         }
+    }
+
+    private fun isValidEmail(email: String): Boolean {
+        val emailRegex = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[a-z|A-Z]{2,}$".toRegex()
+        return emailRegex.matches(email)
     }
 
     fun onPasswordChanged(password: String) {
@@ -110,6 +126,26 @@ class RegistrationViewModel(
         updateRegistration { it.copy(registerRemotely = registerRemotely) }
     }
 
+    fun onServerUrlChanged(serverUrl: String) {
+        val error = if (serverUrl.isBlank()) {
+            Res.string.registration_error_server_url_missing
+        } else if (!isValidUri(serverUrl)) {
+            Res.string.registration_error_invalid_server_url
+        } else {
+            null
+        }
+        updateRegistration { it.copy(serverUrl = serverUrl, serverUrlError = error) }
+    }
+
+    private fun isValidUri(uri: String): Boolean {
+        return try {
+            val regex = "^(https?)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]".toRegex()
+            regex.matches(uri)
+        } catch (e: Exception) {
+            false
+        }
+    }
+
     fun goToLogin() {
         navigator.goToLogin()
     }
@@ -128,8 +164,8 @@ class RegistrationViewModel(
             try {
                 registrationState.emit(UiState.loading())
 
-                if (registerRemotely && authenticationService.isRemoteEnabled()) {
-                    val result = authenticationService.registerUser(userName, email, password)
+                if (registerRemotely) {
+                    val result = authenticationService.registerUser(userName, email, password, registrationData.serverUrl)
 
                     if (result.isSuccess && result.getOrNull() != null) {
                         val registrationResponse = result.getOrNull()!!
@@ -139,7 +175,7 @@ class RegistrationViewModel(
                         }
 
                         // Create/Update local profile for remote registration
-                        val localProfile = createLocalProfile(userName, email, password, serverUuid)
+                        val localProfile = createLocalProfile(userName, email, password, serverUuid, registrationData.serverUrl)
                         
                         // Set remote login state
                         preferencesRepository.updateAccessPreferences(
@@ -149,7 +185,7 @@ class RegistrationViewModel(
                             refreshExpiresIn = registrationResponse.tokenResponse.refreshExpiresIn,
                             localProfileId = localProfile.id.toString(),
                             isLoggedInRemotely = true,
-                            serverUrl = authenticationService.getServerUrl()
+                            serverUrl = registrationData.serverUrl
                         )
                         
                         registrationState.emit(UiState.success(registrationData.copy(userName = userName, email = email, password = password)))
@@ -167,7 +203,7 @@ class RegistrationViewModel(
                         refreshExpiresIn = 0,
                         localProfileId = localProfile.id.toString(),
                         isLoggedInRemotely = false,
-                        serverUrl = authenticationService.getServerUrl()
+                        serverUrl = ""
                     )
 
                     registrationState.emit(UiState.success(registrationData.copy(userName = userName, email = email, password = password)))
@@ -180,7 +216,7 @@ class RegistrationViewModel(
         }
     }
 
-    private suspend fun createLocalProfile(userName: String, email: String, password: String, serverId: Uuid? = null): Profile {
+    private suspend fun createLocalProfile(userName: String, email: String, password: String, serverId: Uuid? = null, serverUrl: String? = null): Profile {
         val now = Clock.System.now()
         
         val existingProfile = (if (serverId != null) profileRepository.getProfileByServerId(serverId).firstOrNull() else null)
@@ -192,6 +228,7 @@ class RegistrationViewModel(
             username = userName,
             email = email,
             passwordHash = hashPassword(password),
+            serverUrl = serverUrl,
             lastModifiedAt = now,
             lastSyncedAt = if (serverId != null) now else null,
             isLocalOnly = serverId == null
@@ -201,6 +238,7 @@ class RegistrationViewModel(
             username = userName,
             email = email,
             passwordHash = hashPassword(password),
+            serverUrl = serverUrl,
             createdAt = now,
             lastModifiedAt = now,
             lastSyncedAt = if (serverId != null) now else null,

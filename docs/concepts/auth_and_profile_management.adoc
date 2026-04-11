@@ -6,178 +6,79 @@ This document outlines the flows for registration, login, and profile management
 == Core Principles
 * **Unique Identifiers:** Both `username` and `email` must be unique across the entire system (local and remote). Login supports both identifiers.
 * **Identity Provider (IdP):** Keycloak is used as the primary IdP for remote accounts.
-* **Server Database:** The server maintains its own `profiles` table to store metadata and link Keycloak users to application data. It uses `deletedAt` for soft deletes.
-* **Local First:** The client always attempts to create a local profile first to ensure local uniqueness and offline capability. Registration can be local-only or remote-connected.
-* **No ClientID Persistence:** The server does not store the client's local UUID. It relies on `username`/`email` uniqueness to map records during synchronization.
+* **Server Database:** The server maintains its own `profiles` table to store metadata and link Keycloak users to application data.
+* **Local First:** Every profile is primarily a local entity. It has a local password (hashed) for device access.
+* **Decoupled Passwords:** A remote-linked profile has two passwords:
+    1. **Local Password:** Used to unlock the app on the specific device.
+    2. **Remote Password:** Used to authenticate against the server (Keycloak).
+    * These can differ (e.g., if the remote password was changed on another device).
+* **Profile-Specific Server:** The server address (`serverUrl`) is stored per profile. There is no global server setting.
 
 == Login States
-The system distinguishes between three primary profile states to handle offline-first and multi-device scenarios:
+The system distinguishes between three primary profile states:
 
 1. **Local-Only Profile**:
     * `serverId` is null.
+    * `serverUrl` is null.
     * Synchronization is disabled.
-    * User must register the profile remotely to enable sync.
 2. **Remote Profile (Logged In Remotely)**:
     * `serverId` is present.
-    * `isLoggedInRemotely` is true.
-    * Full background synchronization is enabled.
+    * `serverUrl` is present.
+    * `isLoggedInRemotely` is true (valid JWT available).
+    * Background synchronization is enabled.
 3. **Remote Profile (Logged In Locally)**:
     * `serverId` is present.
+    * `serverUrl` is present.
     * `isLoggedInRemotely` is false.
-    * User has access to all local data but cannot synchronize with the server until they re-authenticate (Remote Login).
-    * This state occurs after a local-only login or if a remote session expires.
+    * User has access to local data but cannot synchronize until a **Remote Login** is performed.
+    * This state occurs if the user logs in with their local password or if the remote session expires.
 
 == Registration Flow
 
 === 1. Local-Only Registration
 1. User enters username, email, and password.
-2. Client checks local Room database for existing username or email.
-3. If unique: Create `ProfileEntity` with a new `id` (UUID v7) and `serverId = null`.
-4. User is logged into the local profile.
+2. Client creates `ProfileEntity` with a new `id`, `passwordHash` (local), `serverId = null`, and `serverUrl = null`.
+3. User is logged into the local profile.
 
-=== 2. Remote Registration
-1. User enters username, email, and password.
-2. **Local Pre-check:** Client checks local DB for uniqueness.
-3. **Remote Call:** Client calls `/register` on the server.
-4. **Server Actions:**
-    a. Verify uniqueness in Keycloak.
-    b. Create user in Keycloak.
-    c. Perform initial login to obtain JWT.
-    d. Create entry in server `profiles` table.
-    e. Return `RegistrationResponse` containing tokens and the server-generated `serverId`.
-5. **Local Persistence:** Client creates `ProfileEntity` using the `serverId` from the response.
+=== 2. Remote Registration (New Profile)
+1. User enters username, email, password, and **Server URL**.
+2. **Remote Call:** Client calls `/register` on the specified `serverUrl`.
+3. **Server Actions:** Create user in Keycloak and server DB; return `serverId` and tokens.
+4. **Local Persistence:** Client creates `ProfileEntity` with `serverId`, `serverUrl`, and local `passwordHash`.
+
+== Upgrading a Local Profile to Remote
+A user who started with a local-only profile can later decide to enable synchronization.
+
+=== Option A: Link to Existing Remote Account
+1. User provides **Server URL** and **Remote Credentials**.
+2. Client calls `/login` on that server.
+3. On success, the client updates the local `ProfileEntity`:
+    * Sets `serverId` from response.
+    * Sets `serverUrl`.
+    * (Optional) Prompts to update local password to match remote.
+
+=== Option B: Create New Remote Account
+1. User provides **Server URL** and **Credentials**.
+2. Client calls `/register` on that server.
+3. On success, the client updates the local `ProfileEntity` with `serverId` and `serverUrl`.
 
 == Login Flow
 
-=== 1. Local Login
-1. User selects a local profile or enters credentials (username or email).
-2. Password is verified against the local `passwordHash`.
-3. `isLoggedInRemotely` is set to `false`.
-4. If the profile has a `serverId`, it enters the **Remote Profile (Logged In Locally)** state.
+=== 1. Local Login (Unlock Device)
+1. User selects a profile and enters their **Local Password**.
+2. Client verifies password against the local `passwordHash`.
+3. If valid, the app is unlocked. `isLoggedInRemotely` remains `false`.
 
-=== 2. Remote Login
-1. User enters username (or email) and password.
-2. **Server Call:** Client calls `/login` with credentials.
-3. **Server Actions:**
-    a. Keycloak validates credentials (grant_type=password).
-    b. Server retrieves `Profile` from DB using the identifier to get the `serverId`.
-    c. Returns tokens and user info.
-4. **Local Profile Linking:**
-    * Client checks if a local profile with that `serverId` exists.
-    * **Linking Existing Local Profile:** If no `serverId` match is found, the client checks for a local-only profile with the same `username` or `email`. If found, it "upgrades" this local profile by setting its `serverId`, effectively linking the local data to the remote account.
-    * **New Local Profile:** If no match by ID or identifier is found, it creates a new local profile.
-5. `isLoggedInRemotely` is set to `true`.
-6. The profile enters the **Remote Profile (Logged In Remotely)** state.
+=== 2. Remote Login (Enable Sync)
+1. User enters their **Remote Password**.
+2. **Server Call:** Client calls `/login` on the profile's `serverUrl`.
+3. **Success:** Client stores tokens and sets `isLoggedInRemotely = true`.
 
 == Profile Updates & Synchronization
-
-=== Synchronization Guard
-Synchronization options (e.g., enabling sync, changing server URL) are gated in the settings:
-* If the user attempts to enable sync or change the server while in a **Local-Only** or **Logged In Locally** state, they are redirected to the Login screen to perform a **Remote Login**.
-* This ensures that a valid remote session exists before background workers start communicating with the server.
-
-=== Local Updates (Offline/Online)
-1. **User Change:** User modifies username, email, or password in the profile settings.
-2. **Local Validation:**
-    *   Client checks local DB to ensure the new username/email doesn't conflict with another *local* profile (excluding the current one).
-    *   If valid, updates `ProfileEntity` and `passwordHash` (locally).
-    *   `lastModifiedAt` is updated to the current timestamp.
-3. **Pending Sync:** If the profile has a `serverId`, the change is marked as "pending sync". This is detected by comparing `lastModifiedAt` with a `lastSyncedAt` field (to be added) or by a dedicated `isDirty` flag.
-
-=== Remote Synchronization (Network Available)
-When the client is online and has pending changes, it calls the server's `PUT /users/me` endpoint.
-
-1. **Authentication:** Request must include a valid JWT.
-2. **Account Status:** The client may first call `GET /users/me` to verify the account still exists and fetch the latest server-side state.
-3. **Server Processing:**
-    *   **Uniqueness Check:** Server verifies the new username/email is not taken by another user in its database.
-    *   **Keycloak Update:** Server uses the Admin API to update the user's attributes (username, email) and/or credentials (password) in Keycloak.
-    *   **Database Update:** Server updates the `profiles` table.
-4. **Response:**
-    *   **Success (200 OK):** Client clears the "pending sync" status.
-    *   **Conflict (409 Conflict):** Server returns `ProblemDetails` (RFC 7807) explaining which field is duplicated. Client notifies the user and may revert the local change or prompt for a different value.
-    *   **Unauthorized (401):** Tokens may need refreshing.
-    *   **Gone/Not Found (410/404):** Indicates the account was deleted remotely.
-
-=== Handling Network Transitions
-*   **Going Offline:** The app remains fully functional. Profile changes are saved locally and `lastModifiedAt` is updated.
-*   **Coming Online:**
-    *   The app detects connectivity and identifies profiles where `lastModifiedAt > lastSyncedAt`.
-    *   It attempts to sync these changes to the server's `/users/me` endpoint.
-    *   On successful sync, `lastSyncedAt` is updated to match `lastModifiedAt` (or the server's response timestamp).
-    *   If a conflict occurs (e.g., someone else took the username while we were offline), the server returns `409 Conflict`. The client must then prompt the user to resolve the conflict (e.g., choose a new username).
-
-=== Synchronization Scenarios
-
-==== Username & Email Updates
-|===
-| Scenario | Action | Result
-
-| **Online**
-| Client calls `PUT /users/me` first.
-| If server succeeds (Keycloak + DB updated), client updates local DB and sets `lastSyncedAt = lastModifiedAt`.
-
-| **Offline**
-| Client updates local DB and sets `lastModifiedAt`.
-| Local-only profiles are updated immediately. Profiles with `serverId` are marked as "pending sync".
-
-| **Reconnecting**
-| Client detects `lastModifiedAt > lastSyncedAt`.
-| Pushes local changes to server. If a conflict occurs (e.g., username taken), user is prompted to resolve it.
-|===
-
-==== Password Updates
-*   **Online Change:** The client pushes the change to the server immediately. The server updates the credential in Keycloak. On success, the client updates the local `passwordHash`. This ensures the local and remote passwords remain identical.
-*   **Offline Change:** The client updates the local `passwordHash` and `lastModifiedAt`. The user can immediately use the new password to unlock the local app.
-*   **Syncing Password:** When back online, the `PUT /users/me` call includes the new password (or a specialized `/users/me/password` call). The server updates Keycloak.
-*   **Security Note:** Local passwords are always stored as salted hashes (e.g., BCrypt). They are never stored in plain text.
-
-=== Synchronization Metadata
-To track synchronization state, the `Profile` model uses:
-* `lastModifiedAt`: Updated every time a local change is made.
-* `lastSyncedAt`: The timestamp of the last successful synchronization with the server.
-* **Sync Required:** If `serverId != null` AND `lastModifiedAt > lastSyncedAt`.
-
-=== Password Security
-Local passwords are never stored in plain text.
-* **Hashing:** The client uses SHA-256 (platform-specific implementations) to hash passwords before storing them in the local `passwordHash` field.
-* **Verification:** During local login, the entered password is hashed and compared against the stored hash.
-* **Remote Upgrade:** When a local-only profile is registered on a server, the plain password (entered during the upgrade flow) is sent to the server over TLS to be stored in the Identity Provider (Keycloak).
+* Changing the **Local Password** only updates the local `passwordHash`.
+* Changing username/email updates the local record and marks it as "pending sync".
+* Synchronization requires `isLoggedInRemotely = true`.
 
 == Profile Deletion
-
-=== 1. Local-Only Deletion
-1. Client deletes the local `ProfileEntity`.
-2. All associated local data (food, inventory) is deleted (cascading).
-
-=== 2. Account Deletion (User Initiated)
-When a user chooses to delete their account from the profile settings, they are presented with a choice:
-* **Delete Local Only:** Removes the profile from the current device.
-* **Delete Remote Data:** (Checkbox) If selected, calls `DELETE /users/me?remote=true`.
-
-**Server Actions (`DELETE /users/me`):**
-1. **Optional IdP Deletion:** If `remote=true`, the server deletes the user from Keycloak using the Admin API.
-2. **Soft Delete:** The server sets the `deletedAt` timestamp in the `profiles` table. It does *not* hard-delete the record to maintain referential integrity for existing synced data if needed, but the profile is filtered out from all future lookups and login attempts.
-
-=== 3. Remote Deletion Detection (Multi-Device)
-If an account is deleted (soft-deleted on server or removed from Keycloak), other devices logged into the same account must handle the state change.
-
-1. **Detection:** During synchronization or any profile-related network call (`GET` or `PUT` to `/users/me`), the server returns `404 Not Found`.
-2. **Client Exception:** `ProfileNetworkService` catches this and throws a `RemoteAccountDeletedException`.
-3. **Global Notification:** `ProfileRepository` observes this exception and emits to a `remoteAccountDeleted` flow.
-4. **User Confirmation:** A global dialog (handled in `MainView`) appears, notifying the user that the remote account no longer exists.
-5. **User Choice:**
-    * **Delete Local Data:** Cascades deletion of all local records and returns to the login screen.
-    * **Keep Local Data:** Logs out the user but preserves local data, effectively converting the profile to a local-only state.
-
-=== Error Handling & Status Mapping
-The client maps remote server responses to specific exceptions to provide granular feedback:
-
-* **401 Unauthorized:** Throws `InvalidCredentialsException`. UI displays "Wrong username or password".
-* **404 Not Found:** Throws `ProfileNotFoundException`. UI displays "Credentials valid, but no profile found on this server".
-* **409 Conflict:** Throws `UserAlreadyExistsException`. UI displays "Username or email already exists".
-* **Network Error:** Throws `ServerUnreachableException`. UI displays "Could not connect to the server".
-Because the server does not store the `clientId`, it uses the following logic for mapping:
-* **Registration:** Server returns the `serverId`. Client stores it.
-* **Syncing:** Client sends its records. Server matches based on the `serverId` provided in the DTO or the identity in the JWT.
-* **Identifier Conflict:** If a user tries to change their email to one that already exists on the server, the server rejects it. The client must then handle this by either reverting or asking the user for a different email.
+* **Local Only:** Deletes the profile and data from the device.
+* **Remote:** Deletes from Keycloak and marks as deleted on the server.

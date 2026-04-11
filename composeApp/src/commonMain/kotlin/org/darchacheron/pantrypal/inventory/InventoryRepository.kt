@@ -64,13 +64,13 @@ class InventoryRepository(
         // Phase 1: Try push immediately
         val settings = settingsRepository.getSettings()
         val prefs = authenticationPreferencesRepository.authenticationPreferencesFlow.firstOrNull()
-        val canSync = prefs?.isLoggedInRemotely == true && prefs.serverUrl == settings.serverUrl
+        val canSync = prefs?.isLoggedInRemotely == true
 
         if (canSync && (settings.dataSynchronization == DataSynchronization.UPLOAD_AND_DOWNLOAD ||
             settings.dataSynchronization == DataSynchronization.ONLY_UPLOAD
         )) {
             try {
-                val syncedItems = inventoryNetworkService.pushInventoryItems(listOf(inventoryItem), settings.serverUrl)
+                val syncedItems = inventoryNetworkService.pushInventoryItems(listOf(inventoryItem), prefs!!.serverUrl)
                 syncedItems.firstOrNull()?.let { synced ->
                     inventoryItemDao.updateServerId(inventoryItem.id, synced.serverId!!)
                 }
@@ -91,13 +91,13 @@ class InventoryRepository(
             // Phase 1: Try delete on server
             val settings = settingsRepository.getSettings()
             val prefs = authenticationPreferencesRepository.authenticationPreferencesFlow.firstOrNull()
-            val canSync = prefs?.isLoggedInRemotely == true && prefs.serverUrl == settings.serverUrl
+            val canSync = prefs?.isLoggedInRemotely == true
 
             if (canSync && item.serverId != null && (settings.dataSynchronization == DataSynchronization.UPLOAD_AND_DOWNLOAD ||
                 settings.dataSynchronization == DataSynchronization.ONLY_UPLOAD)
             ) {
                 try {
-                    inventoryNetworkService.deleteInventoryItem(item.serverId, settings.serverUrl)
+                    inventoryNetworkService.deleteInventoryItem(item.serverId, prefs!!.serverUrl)
                 } catch (e: Exception) {
                     Logger.withTag(loggerTag).w { "Failed to delete item ${item.name} from server. Error: ${e.message}" }
                 }
@@ -111,8 +111,8 @@ class InventoryRepository(
         if (settings.dataSynchronization == DataSynchronization.NO_SYNCHRONIZATION) return@withContext
 
         val prefs = authenticationPreferencesRepository.authenticationPreferencesFlow.firstOrNull()
-        if (prefs?.isLoggedInRemotely != true || prefs.serverUrl != settings.serverUrl) {
-            Logger.withTag(loggerTag).d { "Skipping inventory sync: Not logged in to remote or server mismatch" }
+        if (prefs?.isLoggedInRemotely != true) {
+            Logger.withTag(loggerTag).d { "Skipping inventory sync: Not logged in to remote" }
             return@withContext
         }
 
@@ -125,7 +125,7 @@ class InventoryRepository(
                 if (dirtyEntities.isNotEmpty()) {
                     val dirtyItems = dirtyEntities.mapNotNull { inventoryItemDao.getByIdWithImages(it.id)?.toInventoryItem() }
                     try {
-                        val syncedItems = inventoryNetworkService.pushInventoryItems(dirtyItems, settings.serverUrl)
+                        val syncedItems = inventoryNetworkService.pushInventoryItems(dirtyItems, prefs.serverUrl)
                         syncedItems.forEach { synced ->
                             inventoryItemDao.updateServerId(synced.id, synced.serverId!!)
                         }
@@ -139,7 +139,7 @@ class InventoryRepository(
             if (settings.dataSynchronization == DataSynchronization.UPLOAD_AND_DOWNLOAD ||
                 settings.dataSynchronization == DataSynchronization.ONLY_DOWNLOAD
             ) {
-                val remoteChanges = inventoryNetworkService.fetchChanges(Instant.fromEpochMilliseconds(0), settings.serverUrl)
+                val remoteChanges = inventoryNetworkService.fetchChanges(Instant.fromEpochMilliseconds(0), prefs.serverUrl)
                 remoteChanges.forEach { remoteItem ->
                     val local = inventoryItemDao.getByIdWithImages(remoteItem.id)?.toInventoryItem()
                     if (local == null || remoteItem.lastModifiedAt > local.lastModifiedAt) {
