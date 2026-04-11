@@ -15,12 +15,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.koinInject
 import pantrypal.composeapp.generated.resources.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -31,7 +33,6 @@ fun LoginDialog(
     onLoginSuccess: () -> Unit
 ) {
     val uiState by viewModel.loginState.collectAsStateWithLifecycle()
-    val coroutineScope = rememberCoroutineScope()
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -88,7 +89,7 @@ fun LoginDialog(
                     visualTransformation = PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Password,
-                        imeAction = ImeAction.Done
+                        imeAction = if (data.loginRemotely) ImeAction.Next else ImeAction.Done
                     ),
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
@@ -185,9 +186,7 @@ fun LoginDialog(
                         Spacer(modifier = Modifier.width(8.dp))
                         Button(
                             onClick = {
-                                coroutineScope.launch {
-                                    viewModel.login(onSuccess = onLoginSuccess)
-                                }
+                                viewModel.login(onSuccess = onLoginSuccess)
                             },
                             enabled = !uiState.isLoading
                         ) {

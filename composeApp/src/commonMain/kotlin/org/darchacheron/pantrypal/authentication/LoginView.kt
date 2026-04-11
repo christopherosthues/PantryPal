@@ -124,7 +124,7 @@ internal fun LoginView(loginViewModel: LoginViewModel) {
                 visualTransformation = PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Password,
-                    imeAction = ImeAction.Done
+                    imeAction = if (data.loginRemotely) ImeAction.Next else ImeAction.Done
                 ),
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),

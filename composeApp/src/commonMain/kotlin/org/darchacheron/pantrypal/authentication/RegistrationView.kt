@@ -14,8 +14,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -36,17 +34,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.jetbrains.compose.resources.stringResource
 import pantrypal.composeapp.generated.resources.Res
-import pantrypal.composeapp.generated.resources.login_password
 import pantrypal.composeapp.generated.resources.login_register
 import pantrypal.composeapp.generated.resources.login_title
-import pantrypal.composeapp.generated.resources.login_username_or_email
 import pantrypal.composeapp.generated.resources.registration_email
-import pantrypal.composeapp.generated.resources.registration_error_email_exists
-import pantrypal.composeapp.generated.resources.registration_error_empty_email
-import pantrypal.composeapp.generated.resources.registration_error_empty_password
-import pantrypal.composeapp.generated.resources.registration_error_empty_username
-import pantrypal.composeapp.generated.resources.registration_error_password_mismatch
-import pantrypal.composeapp.generated.resources.registration_error_username_exists
 import pantrypal.composeapp.generated.resources.registration_password
 import pantrypal.composeapp.generated.resources.registration_remote_checkbox
 import pantrypal.composeapp.generated.resources.registration_repeat_password
@@ -89,6 +79,7 @@ fun RegistrationView(registrationViewModel: RegistrationViewModel) {
                 onValueChange = { registrationViewModel.onUserNameChanged(it) },
                 label = { Text(text = stringResource(Res.string.registration_username)) },
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                singleLine = true,
                 isError = userNameError != null,
                 supportingText = userNameError?.let { { Text(text = it) } },
                 modifier = Modifier.fillMaxWidth()
@@ -103,6 +94,7 @@ fun RegistrationView(registrationViewModel: RegistrationViewModel) {
                 onValueChange = { registrationViewModel.onEmailChanged(it) },
                 label = { Text(text = stringResource(Res.string.registration_email)) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
+                singleLine = true,
                 isError = emailError != null,
                 supportingText = emailError?.let { { Text(text = it) } },
                 modifier = Modifier.fillMaxWidth()
@@ -118,6 +110,7 @@ fun RegistrationView(registrationViewModel: RegistrationViewModel) {
                 label = { Text(text = stringResource(Res.string.registration_password)) },
                 visualTransformation = PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Next),
+                singleLine = true,
                 isError = passwordError != null,
                 supportingText = passwordError?.let { { Text(text = it) } },
                 modifier = Modifier.fillMaxWidth()
@@ -132,7 +125,11 @@ fun RegistrationView(registrationViewModel: RegistrationViewModel) {
                 onValueChange = { registrationViewModel.onRepeatPasswordChanged(it) },
                 label = { Text(text = stringResource(Res.string.registration_repeat_password)) },
                 visualTransformation = PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Password,
+                    imeAction = if (data.registerRemotely) ImeAction.Next else ImeAction.Done
+                ),
+                singleLine = true,
                 isError = repeatedPasswordError != null,
                 supportingText = repeatedPasswordError?.let { { Text(text = it) } },
                 modifier = Modifier.fillMaxWidth()
@@ -161,6 +158,7 @@ fun RegistrationView(registrationViewModel: RegistrationViewModel) {
                     onValueChange = { registrationViewModel.onServerUrlChanged(it) },
                     label = { Text(text = stringResource(Res.string.registration_server_url)) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, imeAction = ImeAction.Done),
+                    singleLine = true,
                     isError = serverUrlError != null,
                     supportingText = serverUrlError?.let { { Text(text = it) } },
                     modifier = Modifier.fillMaxWidth()

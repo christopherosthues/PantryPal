@@ -17,9 +17,8 @@ import pantrypal.composeapp.generated.resources.login_error_profile_not_found
 import pantrypal.composeapp.generated.resources.login_error_server_unreachable
 import pantrypal.composeapp.generated.resources.login_error_server_url_missing
 import pantrypal.composeapp.generated.resources.login_wrong_username_or_password
-import pantrypal.composeapp.generated.resources.registration_error_empty_username
 import pantrypal.composeapp.generated.resources.registration_error_empty_password
-import pantrypal.composeapp.generated.resources.registration_error_empty_email
+import pantrypal.composeapp.generated.resources.registration_error_empty_username
 import kotlin.time.Clock
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid

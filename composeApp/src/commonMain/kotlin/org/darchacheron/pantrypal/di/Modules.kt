@@ -61,7 +61,6 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.factoryOf
-import org.koin.core.module.dsl.viewModel
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.core.parameter.parametersOf
 import org.koin.dsl.module
@@ -225,11 +224,6 @@ val sharedModule =
             get<PantryPalDatabaseFactory>()
                 .create()
                 .addMigrations(
-                    PantryPalDatabase.MIGRATION_1_2,
-                    PantryPalDatabase.MIGRATION_2_3,
-                    PantryPalDatabase.MIGRATION_3_4,
-                    PantryPalDatabase.MIGRATION_4_5,
-                    PantryPalDatabase.MIGRATION_5_6,
                 )
                 .setDriver(BundledSQLiteDriver())
                 .build()

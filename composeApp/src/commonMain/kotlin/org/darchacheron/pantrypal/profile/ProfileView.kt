@@ -141,7 +141,7 @@ fun ProfileView(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding),
+                .padding(top = padding.calculateTopPadding()),
             contentAlignment = Alignment.Center
         ) {
             val state = uiState
@@ -152,7 +152,7 @@ fun ProfileView(
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(16.dp)
+                            .padding(top = 16.dp, start = 16.dp, end = 16.dp, bottom = 72.dp)
                             .verticalScroll(rememberScrollState()),
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
@@ -160,6 +160,11 @@ fun ProfileView(
                             value = profile.username,
                             onValueChange = { viewModel.updateUsername(it) },
                             label = { Text(stringResource(Res.string.profile_username_label)) },
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Text,
+                                imeAction = ImeAction.Next
+                            ),
+                            singleLine = true,
                             modifier = Modifier.fillMaxWidth(),
                             isError = profileValidationState.usernameError != null,
                             supportingText = {
@@ -173,6 +178,11 @@ fun ProfileView(
                             value = profile.email,
                             onValueChange = { viewModel.updateEmail(it) },
                             label = { Text(stringResource(Res.string.profile_email_label)) },
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Email,
+                                imeAction = ImeAction.Next
+                            ),
+                            singleLine = true,
                             modifier = Modifier.fillMaxWidth(),
                             isError = profileValidationState.emailError != null,
                             supportingText = {
@@ -187,6 +197,11 @@ fun ProfileView(
                                 value = profile.serverUrl ?: "",
                                 onValueChange = { viewModel.updateServerUrl(it) },
                                 label = { Text(stringResource(Res.string.profile_server_url_label)) },
+                                keyboardOptions = KeyboardOptions(
+                                    keyboardType = KeyboardType.Uri,
+                                    imeAction = ImeAction.Next
+                                ),
+                                singleLine = true,
                                 modifier = Modifier.fillMaxWidth(),
                                 isError = profileValidationState.serverUrlError != null,
                                 supportingText = {
@@ -209,6 +224,7 @@ fun ProfileView(
                             label = { Text(stringResource(Res.string.profile_current_password_label)) },
                             visualTransformation = PasswordVisualTransformation(),
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Next),
+                            singleLine = true,
                             modifier = Modifier.fillMaxWidth(),
                             isError = passwordValidationState.currentPasswordError != null,
                             supportingText = {
@@ -223,6 +239,7 @@ fun ProfileView(
                             label = { Text(stringResource(Res.string.profile_new_password_label)) },
                             visualTransformation = PasswordVisualTransformation(),
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Next),
+                            singleLine = true,
                             modifier = Modifier.fillMaxWidth(),
                             isError = passwordValidationState.newPasswordError != null,
                             supportingText = {
@@ -237,6 +254,7 @@ fun ProfileView(
                             label = { Text(stringResource(Res.string.profile_repeat_new_password_label)) },
                             visualTransformation = PasswordVisualTransformation(),
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
+                            singleLine = true,
                             modifier = Modifier.fillMaxWidth(),
                             isError = passwordValidationState.repeatPasswordError != null,
                             supportingText = {

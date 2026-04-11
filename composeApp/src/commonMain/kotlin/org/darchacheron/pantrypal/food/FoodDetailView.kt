@@ -464,7 +464,7 @@ private fun DatePickerField(
 ) {
     var showDatePicker by remember { mutableStateOf(false) }
     val datePickerState = rememberDatePickerState(
-        initialSelectedDateMillis = selectedDate?.toEpochDays()?.toLong()?.times(24 * 60 * 60 * 1000)
+        initialSelectedDateMillis = selectedDate?.toEpochDays()?.times(24 * 60 * 60 * 1000)
     )
 
     OutlinedTextField(
