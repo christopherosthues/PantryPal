@@ -13,6 +13,7 @@ This document outlines the flows for registration, login, and profile management
     2. **Remote Password:** Used to authenticate against the server (Keycloak).
     * These can differ (e.g., if the remote password was changed on another device).
 * **Profile-Specific Server:** The server address (`serverUrl`) is stored per profile. There is no global server setting.
+* **Separation of Concerns:** Initial onboarding and profile switching are strictly **local** operations. Remote synchronization is enabled exclusively from within the **Profile** management view.
 
 == Login States
 The system distinguishes between three primary profile states:
@@ -33,21 +34,20 @@ The system distinguishes between three primary profile states:
     * User has access to local data but cannot synchronize until a **Remote Login** is performed.
     * This state occurs if the user logs in with their local password or if the remote session expires.
 
-== Registration Flow
+== Initial Access Flow (App Start)
 
 === 1. Local-Only Registration
 1. User enters username, email, and password.
 2. Client creates `ProfileEntity` with a new `id`, `passwordHash` (local), `serverId = null`, and `serverUrl = null`.
-3. User is logged into the local profile.
+3. User is logged into the local profile and enters the main application.
 
-=== 2. Remote Registration (New Profile)
-1. User enters username, email, password, and **Server URL**.
-2. **Remote Call:** Client calls `/register` on the specified `serverUrl`.
-3. **Server Actions:** Create user in Keycloak and server DB; return `serverId` and tokens.
-4. **Local Persistence:** Client creates `ProfileEntity` with `serverId`, `serverUrl`, and local `passwordHash`.
+=== 2. Local Login (Unlock Device)
+1. User selects an existing profile and enters their **Local Password**.
+2. Client verifies password against the local `passwordHash`.
+3. If valid, the app is unlocked. `isLoggedInRemotely` is initially `false` (unless a valid session was persisted).
 
 == Upgrading a Local Profile to Remote
-A user who started with a local-only profile can later decide to enable synchronization.
+Once inside the application, a user can navigate to the **Profile** view to enable remote synchronization.
 
 === Option A: Link to Existing Remote Account
 1. User provides **Server URL** and **Remote Credentials**.
@@ -55,24 +55,34 @@ A user who started with a local-only profile can later decide to enable synchron
 3. On success, the client updates the local `ProfileEntity`:
     * Sets `serverId` from response.
     * Sets `serverUrl`.
-    * (Optional) Prompts to update local password to match remote.
+    * Stores JWT tokens.
+    * Sets `isLoggedInRemotely = true`.
 
 === Option B: Create New Remote Account
-1. User provides **Server URL** and **Credentials**.
-2. Client calls `/register` on that server.
-3. On success, the client updates the local `ProfileEntity` with `serverId` and `serverUrl`.
+1. User provides **Server URL** and **Credentials** (often matching local ones for convenience).
+2. **Remote Call:** Client calls `/register` on the specified `serverUrl`.
+3. **Server Actions:** Create user in Keycloak and server DB; return `serverId` and tokens.
+4. **Local Persistence:** Client updates the local `ProfileEntity` with `serverId`, `serverUrl`, and sets `isLoggedInRemotely = true`.
 
-== Login Flow
+== Ongoing Remote Authentication
 
-=== 1. Local Login (Unlock Device)
-1. User selects a profile and enters their **Local Password**.
-2. Client verifies password against the local `passwordHash`.
-3. If valid, the app is unlocked. `isLoggedInRemotely` remains `false`.
-
-=== 2. Remote Login (Enable Sync)
-1. User enters their **Remote Password**.
+=== Remote Login (Enable Sync)
+If a remote session expires or a user logs in locally to a remote-linked profile:
+1. User is prompted (in Profile or via sync status) for their **Remote Password**.
 2. **Server Call:** Client calls `/login` on the profile's `serverUrl`.
 3. **Success:** Client stores tokens and sets `isLoggedInRemotely = true`.
+
+== Logout Flow
+
+=== 1. Remote Logout Only
+1. User selects "Logout from Remote" in the Profile view.
+2. Client clears JWT tokens, sets `isLoggedInRemotely = false`, and clears the server URL from session preferences.
+3. The profile remains on the device in the "Logged In Locally" state. Synchronization is disabled until the next remote login.
+
+=== 2. Full Logout (Local and Remote)
+1. User selects "Full Logout" or "Logout" in the Profile view.
+2. Client clears tokens, sets `isLoggedInRemotely = false`, clears the active profile identifier, and clears the server URL from session preferences.
+3. User is navigated back to the **Initial Access Flow** (Login/Registration screen).
 
 == Profile Updates & Synchronization
 * Changing the **Local Password** only updates the local `passwordHash`.
