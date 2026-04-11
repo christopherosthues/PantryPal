@@ -148,9 +148,16 @@
     <!-- Registration -->
     <string name="registration_title">Registration</string>
     <string name="registration_register">Register</string>
+    <string name="registration_username">Username</string>
     <string name="registration_email">Email</string>
+    <string name="registration_password">Password</string>
+    <string name="registration_repeat_password">Repeat password</string>
     <string name="registration_remote_checkbox">Register also on server</string>
     <string name="registration_error">An unexpected error occurred</string>
+    <string name="registration_error_empty_username">Username cannot be empty</string>
+    <string name="registration_error_empty_email">Email cannot be empty</string>
+    <string name="registration_error_empty_password">Password cannot be empty</string>
+    <string name="registration_error_password_mismatch">Passwords do not match</string>
     <string name="registration_error_username_exists">Username already exists</string>
     <string name="registration_error_email_exists">Email already exists</string>
 

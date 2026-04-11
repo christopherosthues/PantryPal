@@ -41,8 +41,17 @@ import pantrypal.composeapp.generated.resources.login_register
 import pantrypal.composeapp.generated.resources.login_title
 import pantrypal.composeapp.generated.resources.login_username_or_email
 import pantrypal.composeapp.generated.resources.registration_email
+import pantrypal.composeapp.generated.resources.registration_error_email_exists
+import pantrypal.composeapp.generated.resources.registration_error_empty_email
+import pantrypal.composeapp.generated.resources.registration_error_empty_password
+import pantrypal.composeapp.generated.resources.registration_error_empty_username
+import pantrypal.composeapp.generated.resources.registration_error_password_mismatch
+import pantrypal.composeapp.generated.resources.registration_error_username_exists
+import pantrypal.composeapp.generated.resources.registration_password
 import pantrypal.composeapp.generated.resources.registration_remote_checkbox
+import pantrypal.composeapp.generated.resources.registration_repeat_password
 import pantrypal.composeapp.generated.resources.registration_title
+import pantrypal.composeapp.generated.resources.registration_username
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -72,32 +81,59 @@ fun RegistrationView(registrationViewModel: RegistrationViewModel) {
         ) {
             val data = uiState.data ?: return@Scaffold
 
+            val userNameError = data.userNameError?.let { stringResource(it) }
+
             OutlinedTextField(
                 value = data.userName,
                 onValueChange = { registrationViewModel.onUserNameChanged(it) },
-                label = { Text(text = stringResource(Res.string.login_username_or_email)) },
+                label = { Text(text = stringResource(Res.string.registration_username)) },
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                isError = userNameError != null,
+                supportingText = userNameError?.let { { Text(text = it) } },
                 modifier = Modifier.fillMaxWidth()
             )
 
             Spacer(modifier = Modifier.height(16.dp))
+
+            val emailError = data.emailError?.let { stringResource(it) }
 
             OutlinedTextField(
                 value = data.email,
                 onValueChange = { registrationViewModel.onEmailChanged(it) },
                 label = { Text(text = stringResource(Res.string.registration_email)) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
+                isError = emailError != null,
+                supportingText = emailError?.let { { Text(text = it) } },
                 modifier = Modifier.fillMaxWidth()
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            val passwordError = data.passwordError?.let { stringResource(it) }
+
             OutlinedTextField(
                 value = data.password,
                 onValueChange = { registrationViewModel.onPasswordChanged(it) },
-                label = { Text(text = stringResource(Res.string.login_password)) },
+                label = { Text(text = stringResource(Res.string.registration_password)) },
+                visualTransformation = PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Next),
+                isError = passwordError != null,
+                supportingText = passwordError?.let { { Text(text = it) } },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            val repeatedPasswordError = data.repeatedPasswordError?.let { stringResource(it) }
+
+            OutlinedTextField(
+                value = data.repeatedPassword,
+                onValueChange = { registrationViewModel.onRepeatPasswordChanged(it) },
+                label = { Text(text = stringResource(Res.string.registration_repeat_password)) },
                 visualTransformation = PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
+                isError = repeatedPasswordError != null,
+                supportingText = repeatedPasswordError?.let { { Text(text = it) } },
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -119,7 +155,7 @@ fun RegistrationView(registrationViewModel: RegistrationViewModel) {
             Button(
                 onClick = { registrationViewModel.register() },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = !uiState.isLoading
+                enabled = !uiState.isLoading && data.canRegister
             ) {
                 Text(text = stringResource(Res.string.login_register))
             }

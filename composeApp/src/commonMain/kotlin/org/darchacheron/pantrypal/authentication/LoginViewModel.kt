@@ -6,7 +6,6 @@ import co.touchlab.kermit.Logger
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
-import kotlinx.serialization.Serializable
 import org.darchacheron.pantrypal.navigation.Navigator
 import org.darchacheron.pantrypal.profile.Profile
 import org.darchacheron.pantrypal.profile.ProfileRepository
@@ -20,9 +19,6 @@ import kotlin.time.Clock
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
-@Serializable
-data class Login(val username: String, val password: String, val isLocalOnly: Boolean = false)
-
 @OptIn(ExperimentalUuidApi::class)
 class LoginViewModel(
     private val authenticationService: AuthenticationService,
@@ -32,7 +28,7 @@ class LoginViewModel(
 ) : ViewModel() {
     private val loginTag = "Login"
 
-    val loginState = MutableStateFlow(UiState.success(Login("", "")))
+    val loginState = MutableStateFlow(UiState.success(Login(username = "", password = "", isLocalOnly = false)))
 
     fun onUsernameChanged(username: String) {
         loginState.value = loginState.value.copy(data = loginState.value.data?.copy(username = username))

@@ -1,7 +1,7 @@
 <resources>
     <string name="settings_title">Einstellungen</string>
     <string name="settings_data_synchronization">Datensynchronisierung</string>
-    <string name="settings_default_data_synchronization">Synchronization</string>
+    <string name="settings_default_data_synchronization">Synchronisierung</string>
     <string name="settings_select_data_synchronization">Datensynchronization auswählen</string>
     <string name="settings_theme">Design</string>
     <string name="settings_error_loading">Fehler beim Laden der Einstellungen</string>
@@ -133,7 +133,7 @@
     <!-- Login -->
     <string name="login_title">Anmelden</string>
     <string name="login_login">Anmelden</string>
-    <string name="login_username_or_email">Benutzername or E-Mail</string>
+    <string name="login_username_or_email">Benutzername oder E-Mail</string>
     <string name="login_password">Passwort</string>
     <string name="login_login_or_register">oder</string>
     <string name="login_register">Registrieren</string>
@@ -146,9 +146,16 @@
     <!-- Registration -->
     <string name="registration_title">Registrierung</string>
     <string name="registration_register">Registrieren</string>
-    <string name="registration_email">Email</string>
+    <string name="registration_username">Benutzername</string>
+    <string name="registration_email">E-Mail</string>
+    <string name="registration_password">Passwort</string>
+    <string name="registration_repeat_password">Passwort wiederholen</string>
     <string name="registration_remote_checkbox">Auch auf dem Server registrieren</string>
     <string name="registration_error">Ein unerwarteter Fehler ist aufgetreten</string>
+    <string name="registration_error_empty_username">Benutzername darf nicht leer sein</string>
+    <string name="registration_error_empty_email">E-Mail darf nicht leer sein</string>
+    <string name="registration_error_empty_password">Passwort darf nicht leer sein</string>
+    <string name="registration_error_password_mismatch">Passwörter stimmen nicht überein</string>
     <string name="registration_error_username_exists">Benutzername existiert bereits</string>
     <string name="registration_error_email_exists">E-Mail existiert bereits</string>
 
@@ -159,7 +166,7 @@
 
     <!-- Profile -->
     <string name="profile_title">Profil</string>
-    <string name="profile_username_label">Nutzername</string>
+    <string name="profile_username_label">Benutzername</string>
     <string name="profile_email_label">E-Mail</string>
     <string name="profile_password_label">Neues Passwort</string>
     <string name="profile_save_button">Änderungen speichern</string>
