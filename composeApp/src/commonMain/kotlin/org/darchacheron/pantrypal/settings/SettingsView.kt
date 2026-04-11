@@ -12,7 +12,7 @@ import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
-import org.darchacheron.pantrypal.authentication.LoginDialog
+import org.darchacheron.pantrypal.authentication.RemoteLoginDialog
 import org.darchacheron.pantrypal.authentication.LoginViewModel
 import pantrypal.composeapp.generated.resources.*
 
@@ -37,7 +37,7 @@ fun SettingsView(
     }
 
     if (showLoginDialog) {
-        LoginDialog(
+        RemoteLoginDialog(
             viewModel = loginViewModel,
             onDismiss = { viewModel.onDismissLoginDialog() },
             onLoginSuccess = { viewModel.onLoginSuccess() }

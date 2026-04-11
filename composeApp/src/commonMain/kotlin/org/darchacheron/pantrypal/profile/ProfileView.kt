@@ -40,7 +40,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import org.darchacheron.pantrypal.authentication.LoginDialog
+import org.darchacheron.pantrypal.authentication.RemoteLoginDialog
 import org.darchacheron.pantrypal.authentication.LoginViewModel
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.painterResource
@@ -358,7 +358,7 @@ fun ProfileView(
             }
         }
 
-        LoginDialog(
+        RemoteLoginDialog(
             viewModel = loginViewModel,
             onDismiss = { showEnableSyncDialog = false },
             onLoginSuccess = {
