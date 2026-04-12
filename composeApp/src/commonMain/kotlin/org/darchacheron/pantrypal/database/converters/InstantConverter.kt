@@ -1,8 +1,8 @@
 package org.darchacheron.pantrypal.database.converters
 
 import androidx.room.TypeConverter
-import kotlin.time.Instant
 import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
 /**
  * Converts [Instant] to and from a string using UTC ISO 8601.

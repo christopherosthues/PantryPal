@@ -7,10 +7,17 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import org.darchacheron.pantrypal.profile.Profile
 import org.darchacheron.pantrypal.profile.ProfileRepository
 import org.darchacheron.pantrypal.ui.UiState
-import pantrypal.composeapp.generated.resources.*
+import pantrypal.composeapp.generated.resources.Res
+import pantrypal.composeapp.generated.resources.remote_login_error_credentials
+import pantrypal.composeapp.generated.resources.remote_login_error_generic
+import pantrypal.composeapp.generated.resources.remote_login_error_invalid_server_url
+import pantrypal.composeapp.generated.resources.remote_login_error_password_empty
+import pantrypal.composeapp.generated.resources.remote_login_error_profile_not_found
+import pantrypal.composeapp.generated.resources.remote_login_error_server_url_empty
+import pantrypal.composeapp.generated.resources.remote_login_error_unreachable
+import pantrypal.composeapp.generated.resources.remote_login_error_username_empty
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -25,12 +32,12 @@ class RemoteLoginViewModel(
     val loginState = MutableStateFlow(UiState.success(Login(username = "", password = "", loginRemotely = true)))
 
     fun onUsernameChanged(username: String) {
-        val error = if (username.isBlank()) Res.string.registration_error_empty_username else null
+        val error = if (username.isBlank()) Res.string.remote_login_error_username_empty else null
         loginState.value = loginState.value.copy(data = loginState.value.data?.copy(username = username, usernameError = error))
     }
 
     fun onPasswordChanged(password: String) {
-        val error = if (password.isBlank()) Res.string.registration_error_empty_password else null
+        val error = if (password.isBlank()) Res.string.remote_login_error_password_empty else null
         loginState.value = loginState.value.copy(data = loginState.value.data?.copy(password = password, passwordError = error))
     }
 
@@ -44,9 +51,9 @@ class RemoteLoginViewModel(
 
     fun onServerUrlChanged(serverUrl: String) {
         val error = if (serverUrl.isBlank()) {
-            Res.string.login_error_server_url_missing
+            Res.string.remote_login_error_server_url_empty
         } else if (!isValidUri(serverUrl)) {
-            Res.string.login_error_invalid_server_url
+            Res.string.remote_login_error_invalid_server_url
         } else {
             null
         }
@@ -63,12 +70,12 @@ class RemoteLoginViewModel(
     }
 
     fun onRemoteUsernameChanged(remoteUsername: String) {
-        val error = if (remoteUsername.isBlank()) Res.string.registration_error_empty_username else null
+        val error = if (remoteUsername.isBlank()) Res.string.remote_login_error_username_empty else null
         loginState.value = loginState.value.copy(data = loginState.value.data?.copy(remoteUsername = remoteUsername, remoteUsernameError = error))
     }
 
     fun onRemotePasswordChanged(remotePassword: String) {
-        val error = if (remotePassword.isBlank()) Res.string.registration_error_empty_password else null
+        val error = if (remotePassword.isBlank()) Res.string.remote_login_error_password_empty else null
         loginState.value = loginState.value.copy(data = loginState.value.data?.copy(remotePassword = remotePassword, remotePasswordError = error))
     }
 
@@ -84,7 +91,7 @@ class RemoteLoginViewModel(
             val serverUrl = if (data.loginRemotely) data.serverUrl else existingProfile.serverUrl ?: ""
 
             if (serverUrl.isBlank()) {
-                loginState.emit(uiState.copy(error = Res.string.login_error_server_url_missing))
+                loginState.emit(uiState.copy(error = Res.string.remote_login_error_server_url_empty))
                 return@launch
             }
 
@@ -125,17 +132,18 @@ class RemoteLoginViewModel(
                     onSuccess()
                 } else {
                     val errorRes = when (authResult.exceptionOrNull()) {
-                        is InvalidCredentialsException -> Res.string.login_wrong_username_or_password
-                        is ProfileNotFoundException -> Res.string.login_error_profile_not_found
-                        is ServerUnreachableException -> Res.string.login_error_server_unreachable
-                        else -> Res.string.login_error
+                        is InvalidCredentialsException -> Res.string.remote_login_error_credentials
+                        is ProfileNotFoundException -> Res.string.remote_login_error_profile_not_found
+                        is ServerUnreachableException -> Res.string.remote_login_error_unreachable
+                        else -> Res.string.remote_login_error_generic
                     }
                     loginState.emit(uiState.copy(error = errorRes))
                 }
             } catch (exception: Exception) {
                 Logger.withTag(loginTag).e(exception) { "Error remote login user: ${data.username}" }
-                loginState.emit(uiState.copy(error = Res.string.login_error))
+                loginState.emit(uiState.copy(error = Res.string.remote_login_error_generic))
             }
         }
     }
+
 }

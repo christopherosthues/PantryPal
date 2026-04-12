@@ -1,26 +1,72 @@
 package org.darchacheron.pantrypal.settings
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import org.darchacheron.pantrypal.authentication.RemoteLoginDialog
+import org.darchacheron.pantrypal.authentication.RemoteLoginViewModel
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
-import org.darchacheron.pantrypal.authentication.RemoteLoginDialog
-import org.darchacheron.pantrypal.authentication.LoginViewModel
-import pantrypal.composeapp.generated.resources.*
+import pantrypal.composeapp.generated.resources.Res
+import pantrypal.composeapp.generated.resources.arrow_drop_down
+import pantrypal.composeapp.generated.resources.ic_back
+import pantrypal.composeapp.generated.resources.ic_reset
+import pantrypal.composeapp.generated.resources.ic_save
+import pantrypal.composeapp.generated.resources.ic_sync
+import pantrypal.composeapp.generated.resources.ic_sync_disabled
+import pantrypal.composeapp.generated.resources.settings_content_description_back
+import pantrypal.composeapp.generated.resources.settings_content_description_reset
+import pantrypal.composeapp.generated.resources.settings_content_description_save
+import pantrypal.composeapp.generated.resources.settings_content_description_sync
+import pantrypal.composeapp.generated.resources.settings_data_synchronization
+import pantrypal.composeapp.generated.resources.settings_default_data_synchronization
+import pantrypal.composeapp.generated.resources.settings_select_data_synchronization
+import pantrypal.composeapp.generated.resources.settings_theme
+import pantrypal.composeapp.generated.resources.settings_title
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsView(
     viewModel: SettingsViewModel = koinInject(),
-    loginViewModel: LoginViewModel = koinInject(),
+    remoteLoginViewModel: RemoteLoginViewModel = koinInject(),
     onBack: () -> Unit = {}
 ) {
     val uiState by viewModel.settingsFlow.collectAsState()
@@ -38,7 +84,7 @@ fun SettingsView(
 
     if (showLoginDialog) {
         RemoteLoginDialog(
-            viewModel = loginViewModel,
+            viewModel = remoteLoginViewModel,
             onDismiss = { viewModel.onDismissLoginDialog() },
             onLoginSuccess = { viewModel.onLoginSuccess() }
         )

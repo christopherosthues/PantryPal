@@ -4,9 +4,6 @@ import androidx.room.ConstructedBy
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
-import androidx.room.migration.Migration
-import androidx.sqlite.SQLiteConnection
-import androidx.sqlite.execSQL
 import org.darchacheron.pantrypal.camera.ImageEntity
 import org.darchacheron.pantrypal.database.converters.InstantConverter
 import org.darchacheron.pantrypal.database.converters.LocalDateConverter
@@ -18,9 +15,6 @@ import org.darchacheron.pantrypal.inventory.InventoryItemDao
 import org.darchacheron.pantrypal.inventory.InventoryItemEntity
 import org.darchacheron.pantrypal.profile.ProfileDao
 import org.darchacheron.pantrypal.profile.ProfileEntity
-import kotlin.time.Clock
-import kotlin.uuid.ExperimentalUuidApi
-import kotlin.uuid.Uuid
 
 @Database(
     entities = [

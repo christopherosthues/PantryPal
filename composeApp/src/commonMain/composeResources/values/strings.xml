@@ -230,6 +230,21 @@
     <string name="profile_error_new_password_empty">New password is required</string>
     <string name="profile_error_update">Failed to update profile</string>
 
+    <!-- Remote Login (used in Profile context) -->
+    <string name="remote_login_title">Link Account</string>
+    <string name="remote_login_button">Link</string>
+    <string name="remote_login_username_label">Username / Email</string>
+    <string name="remote_login_password_label">Password</string>
+    <string name="remote_login_server_url_label">Server URL</string>
+    <string name="remote_login_error_server_url_empty">Server URL is required</string>
+    <string name="remote_login_error_invalid_server_url">Invalid server URL</string>
+    <string name="remote_login_error_username_empty">Username cannot be empty</string>
+    <string name="remote_login_error_password_empty">Password cannot be empty</string>
+    <string name="remote_login_error_generic">An error occurred during linking</string>
+    <string name="remote_login_error_credentials">Incorrect username or password</string>
+    <string name="remote_login_error_profile_not_found">No profile found on this server</string>
+    <string name="remote_login_error_unreachable">Could not connect to the server</string>
+
     <!-- Inventory -->
     <string name="inventory_list_title">Inventory Templates</string>
     <string name="inventory_list_content_description_add_item">Add inventory template</string>

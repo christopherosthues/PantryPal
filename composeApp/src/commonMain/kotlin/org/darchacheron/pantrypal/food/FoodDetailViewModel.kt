@@ -21,7 +21,11 @@ import org.darchacheron.pantrypal.navigation.Navigator
 import org.darchacheron.pantrypal.navigation.OcrType
 import org.darchacheron.pantrypal.ui.UiState
 import org.jetbrains.compose.resources.StringResource
-import pantrypal.composeapp.generated.resources.*
+import pantrypal.composeapp.generated.resources.Res
+import pantrypal.composeapp.generated.resources.food_detail_delete_error
+import pantrypal.composeapp.generated.resources.food_detail_delete_success
+import pantrypal.composeapp.generated.resources.food_detail_error_loading
+import pantrypal.composeapp.generated.resources.food_detail_error_saving
 import kotlin.time.Clock
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid

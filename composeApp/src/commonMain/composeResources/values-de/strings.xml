@@ -229,6 +229,21 @@
     <string name="profile_error_new_password_empty">Neues Passwort ist erforderlich</string>
     <string name="profile_error_update">Fehler beim Aktualisieren des Profils</string>
 
+    <!-- Remote Login (used in Profile context) -->
+    <string name="remote_login_title">Konto verknüpfen</string>
+    <string name="remote_login_button">Verknüpfen</string>
+    <string name="remote_login_username_label">Benutzername / E-Mail</string>
+    <string name="remote_login_password_label">Passwort</string>
+    <string name="remote_login_server_url_label">Server-URL</string>
+    <string name="remote_login_error_server_url_empty">Server-URL ist erforderlich</string>
+    <string name="remote_login_error_invalid_server_url">Ungültige Server-URL</string>
+    <string name="remote_login_error_username_empty">Benutzername darf nicht leer sein</string>
+    <string name="remote_login_error_password_empty">Passwort darf nicht leer sein</string>
+    <string name="remote_login_error_generic">Fehler bei der Verknüpfung</string>
+    <string name="remote_login_error_credentials">Falscher Benutzername oder Passwort</string>
+    <string name="remote_login_error_profile_not_found">Kein Profil auf diesem Server gefunden</string>
+    <string name="remote_login_error_unreachable">Server nicht erreichbar</string>
+
     <!-- Inventory -->
     <string name="inventory_list_title">Vorlagen</string>
     <string name="inventory_list_content_description_add_item">Vorlagen hinzufügen</string>

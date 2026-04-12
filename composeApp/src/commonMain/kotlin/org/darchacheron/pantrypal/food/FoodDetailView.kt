@@ -56,7 +56,6 @@ import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import pantrypal.composeapp.generated.resources.Res
-import pantrypal.composeapp.generated.resources.food_detail_add_image
 import pantrypal.composeapp.generated.resources.food_detail_best_before
 import pantrypal.composeapp.generated.resources.food_detail_content_description_cancel_editing
 import pantrypal.composeapp.generated.resources.food_detail_content_description_delete

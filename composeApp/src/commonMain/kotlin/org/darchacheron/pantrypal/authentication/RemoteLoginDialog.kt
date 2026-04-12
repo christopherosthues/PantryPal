@@ -1,10 +1,26 @@
 package org.darchacheron.pantrypal.authentication
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -17,7 +33,18 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.jetbrains.compose.resources.stringResource
-import pantrypal.composeapp.generated.resources.*
+import pantrypal.composeapp.generated.resources.Res
+import pantrypal.composeapp.generated.resources.login_remote_password_label
+import pantrypal.composeapp.generated.resources.login_remote_username_label
+import pantrypal.composeapp.generated.resources.login_remote_username_placeholder
+import pantrypal.composeapp.generated.resources.login_remotely_checkbox
+import pantrypal.composeapp.generated.resources.login_use_same_credentials_checkbox
+import pantrypal.composeapp.generated.resources.profile_delete_cancel
+import pantrypal.composeapp.generated.resources.remote_login_button
+import pantrypal.composeapp.generated.resources.remote_login_password_label
+import pantrypal.composeapp.generated.resources.remote_login_server_url_label
+import pantrypal.composeapp.generated.resources.remote_login_title
+import pantrypal.composeapp.generated.resources.remote_login_username_label
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -48,7 +75,7 @@ fun RemoteLoginDialog(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Text(
-                    text = stringResource(Res.string.login_title),
+                    text = stringResource(Res.string.remote_login_title),
                     style = MaterialTheme.typography.headlineSmall,
                     color = MaterialTheme.colorScheme.onSurface
                 )
@@ -67,7 +94,7 @@ fun RemoteLoginDialog(
                 OutlinedTextField(
                     value = data.username,
                     onValueChange = { viewModel.onUsernameChanged(it) },
-                    label = { Text(text = stringResource(Res.string.login_username_or_email)) },
+                    label = { Text(text = stringResource(Res.string.remote_login_username_label)) },
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Email,
                         imeAction = ImeAction.Next
@@ -79,7 +106,7 @@ fun RemoteLoginDialog(
                 OutlinedTextField(
                     value = data.password,
                     onValueChange = { viewModel.onPasswordChanged(it) },
-                    label = { Text(text = stringResource(Res.string.login_password)) },
+                    label = { Text(text = stringResource(Res.string.remote_login_password_label)) },
                     visualTransformation = PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Password,
@@ -121,7 +148,7 @@ fun RemoteLoginDialog(
                     OutlinedTextField(
                         value = data.serverUrl,
                         onValueChange = { viewModel.onServerUrlChanged(it) },
-                        label = { Text(text = stringResource(Res.string.registration_server_url)) },
+                        label = { Text(text = stringResource(Res.string.remote_login_server_url_label)) },
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Uri,
                             imeAction = ImeAction.Next
@@ -184,7 +211,7 @@ fun RemoteLoginDialog(
                                     color = MaterialTheme.colorScheme.onPrimary
                                 )
                             } else {
-                                Text(text = stringResource(Res.string.login_login))
+                                Text(text = stringResource(Res.string.remote_login_button))
                             }
                         }
                     }

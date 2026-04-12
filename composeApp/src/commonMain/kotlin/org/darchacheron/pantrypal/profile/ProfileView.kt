@@ -9,8 +9,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
@@ -40,8 +40,8 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import org.darchacheron.pantrypal.authentication.RemoteLoginDialog
 import org.darchacheron.pantrypal.authentication.LoginViewModel
+import org.darchacheron.pantrypal.authentication.RemoteLoginDialog
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
@@ -352,9 +352,6 @@ fun ProfileView(
         LaunchedEffect(showEnableSyncDialog) {
             if (currentProfile != null) {
                 loginViewModel.onUsernameChanged(currentProfile.username)
-                loginViewModel.onLoginRemotelyChanged(true)
-                loginViewModel.onUseSameCredentialsChanged(true)
-                currentProfile.serverUrl?.let { loginViewModel.onServerUrlChanged(it) }
             }
         }
 

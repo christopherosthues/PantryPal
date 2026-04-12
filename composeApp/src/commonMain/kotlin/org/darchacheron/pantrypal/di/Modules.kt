@@ -26,9 +26,9 @@ import org.darchacheron.pantrypal.authentication.AuthenticationPreferencesReposi
 import org.darchacheron.pantrypal.authentication.AuthenticationService
 import org.darchacheron.pantrypal.authentication.LoginView
 import org.darchacheron.pantrypal.authentication.LoginViewModel
-import org.darchacheron.pantrypal.authentication.RemoteLoginViewModel
 import org.darchacheron.pantrypal.authentication.RegistrationView
 import org.darchacheron.pantrypal.authentication.RegistrationViewModel
+import org.darchacheron.pantrypal.authentication.RemoteLoginViewModel
 import org.darchacheron.pantrypal.camera.OcrCameraView
 import org.darchacheron.pantrypal.camera.OcrCameraViewModel
 import org.darchacheron.pantrypal.camera.SimpleCameraView

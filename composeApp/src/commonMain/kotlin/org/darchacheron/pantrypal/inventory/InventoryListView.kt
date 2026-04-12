@@ -67,12 +67,6 @@ import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import pantrypal.composeapp.generated.resources.Res
-import pantrypal.composeapp.generated.resources.inventory_list_content_description_settings
-import pantrypal.composeapp.generated.resources.inventory_list_empty
-import pantrypal.composeapp.generated.resources.inventory_list_search_placeholder
-import pantrypal.composeapp.generated.resources.inventory_list_sort_name_asc
-import pantrypal.composeapp.generated.resources.inventory_list_sort_name_desc
-import pantrypal.composeapp.generated.resources.inventory_list_title
 import pantrypal.composeapp.generated.resources.ic_add
 import pantrypal.composeapp.generated.resources.ic_arrow_downward
 import pantrypal.composeapp.generated.resources.ic_arrow_upward
@@ -87,8 +81,12 @@ import pantrypal.composeapp.generated.resources.ic_x
 import pantrypal.composeapp.generated.resources.inventory_list_card_content_description_add_to_pantry
 import pantrypal.composeapp.generated.resources.inventory_list_card_content_description_delete
 import pantrypal.composeapp.generated.resources.inventory_list_content_description_add_item
-import kotlin.collections.component1
-import kotlin.collections.component2
+import pantrypal.composeapp.generated.resources.inventory_list_content_description_settings
+import pantrypal.composeapp.generated.resources.inventory_list_empty
+import pantrypal.composeapp.generated.resources.inventory_list_search_placeholder
+import pantrypal.composeapp.generated.resources.inventory_list_sort_name_asc
+import pantrypal.composeapp.generated.resources.inventory_list_sort_name_desc
+import pantrypal.composeapp.generated.resources.inventory_list_title
 import kotlin.uuid.ExperimentalUuidApi
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalUuidApi::class)

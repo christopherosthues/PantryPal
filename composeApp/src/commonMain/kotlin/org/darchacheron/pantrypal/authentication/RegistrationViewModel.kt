@@ -17,8 +17,8 @@ import pantrypal.composeapp.generated.resources.registration_error_email_exists
 import pantrypal.composeapp.generated.resources.registration_error_empty_email
 import pantrypal.composeapp.generated.resources.registration_error_empty_password
 import pantrypal.composeapp.generated.resources.registration_error_empty_username
-import pantrypal.composeapp.generated.resources.registration_error_password_mismatch
 import pantrypal.composeapp.generated.resources.registration_error_invalid_email
+import pantrypal.composeapp.generated.resources.registration_error_password_mismatch
 import pantrypal.composeapp.generated.resources.registration_error_username_exists
 import kotlin.time.Clock
 import kotlin.uuid.ExperimentalUuidApi

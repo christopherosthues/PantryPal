@@ -6,7 +6,6 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 import kotlinx.datetime.LocalDate
 import org.darchacheron.pantrypal.camera.Image
-import org.darchacheron.pantrypal.camera.toImageEntity
 import org.darchacheron.pantrypal.profile.ProfileEntity
 import kotlin.time.Instant
 import kotlin.uuid.ExperimentalUuidApi
