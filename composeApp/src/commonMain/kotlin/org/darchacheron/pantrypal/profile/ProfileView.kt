@@ -42,6 +42,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import org.darchacheron.pantrypal.authentication.LoginViewModel
 import org.darchacheron.pantrypal.authentication.RemoteLoginDialog
+import org.darchacheron.pantrypal.authentication.RemoteLoginViewModel
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
@@ -53,7 +54,7 @@ import kotlin.uuid.ExperimentalUuidApi
 @Composable
 fun ProfileView(
     viewModel: ProfileViewModel = koinInject(),
-    loginViewModel: LoginViewModel = koinInject(),
+    remoteLoginViewModel: RemoteLoginViewModel = koinInject(),
     onGoToSettings: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -351,12 +352,12 @@ fun ProfileView(
         val currentProfile = uiState.data
         LaunchedEffect(showEnableSyncDialog) {
             if (currentProfile != null) {
-                loginViewModel.onUsernameChanged(currentProfile.username)
+                remoteLoginViewModel.onUsernameChanged(currentProfile.username)
             }
         }
 
         RemoteLoginDialog(
-            viewModel = loginViewModel,
+            viewModel = remoteLoginViewModel,
             onDismiss = { showEnableSyncDialog = false },
             onLoginSuccess = {
                 showEnableSyncDialog = false

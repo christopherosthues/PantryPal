@@ -137,9 +137,6 @@
     <string name="login_login">Log in</string>
     <string name="login_username_or_email">Username or Email</string>
     <string name="login_password">Password</string>
-    <string name="login_server_url">Server URL</string>
-    <string name="login_error_server_url_missing">Server URL is required for remote operations</string>
-    <string name="login_error_invalid_server_url">Invalid server URL</string>
     <string name="login_login_or_register">or</string>
     <string name="login_register">Register</string>
     <string name="login_login_only_locally">Login only locally</string>
@@ -151,8 +148,6 @@
     <string name="login_local_username_placeholder">Local Name / Email</string>
     <string name="login_error">An unexpected error occurred</string>
     <string name="login_wrong_username_or_password">Wrong username or password</string>
-    <string name="login_error_profile_not_found">Credentials valid, but no profile found on this server</string>
-    <string name="login_error_server_unreachable">Could not connect to the server</string>
 
     <!-- Registration -->
     <string name="registration_title">Registration</string>

@@ -136,9 +136,6 @@
     <string name="login_login">Anmelden</string>
     <string name="login_username_or_email">Benutzername oder E-Mail</string>
     <string name="login_password">Passwort</string>
-    <string name="login_server_url">Server-URL</string>
-    <string name="login_error_server_url_missing">Server-URL ist für Remote-Operationen erforderlich</string>
-    <string name="login_error_invalid_server_url">Ungültige Server-URL</string>
     <string name="login_login_or_register">oder</string>
     <string name="login_register">Registrieren</string>
     <string name="login_login_only_locally">Nur lokal anmelden</string>
@@ -150,8 +147,6 @@
     <string name="login_local_username_placeholder">Lokaler Name / E-Mail</string>
     <string name="login_error">Ein unerwarteter Fehler ist aufgetreten</string>
     <string name="login_wrong_username_or_password">Falscher Benutzername oder Passwort</string>
-    <string name="login_error_profile_not_found">Anmeldedaten gültig, aber kein Profil auf diesem Server gefunden</string>
-    <string name="login_error_server_unreachable">Verbindung zum Server konnte nicht hergestellt werden</string>
 
     <!-- Registration -->
     <string name="registration_title">Registrierung</string>
@@ -160,10 +155,6 @@
     <string name="registration_email">E-Mail</string>
     <string name="registration_password">Passwort</string>
     <string name="registration_repeat_password">Passwort wiederholen</string>
-    <string name="registration_remote_checkbox">Auch auf dem Server registrieren</string>
-    <string name="registration_server_url">Server-URL</string>
-    <string name="registration_error_server_url_missing">Server-URL ist für Remote-Operationen erforderlich</string>
-    <string name="registration_error_invalid_server_url">Ungültige Server-URL</string>
     <string name="registration_error">Ein unerwarteter Fehler ist aufgetreten</string>
     <string name="registration_error_empty_username">Benutzername darf nicht leer sein</string>
     <string name="registration_error_empty_email">E-Mail darf nicht leer sein</string>
