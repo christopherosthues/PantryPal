@@ -26,6 +26,7 @@ import org.darchacheron.pantrypal.authentication.AuthenticationPreferencesReposi
 import org.darchacheron.pantrypal.authentication.AuthenticationService
 import org.darchacheron.pantrypal.authentication.LoginView
 import org.darchacheron.pantrypal.authentication.LoginViewModel
+import org.darchacheron.pantrypal.authentication.RemoteLoginViewModel
 import org.darchacheron.pantrypal.authentication.RegistrationView
 import org.darchacheron.pantrypal.authentication.RegistrationViewModel
 import org.darchacheron.pantrypal.camera.OcrCameraView
@@ -239,6 +240,7 @@ val sharedModule =
         viewModelOf(::OcrCameraViewModel)
         viewModelOf(::SimpleCameraViewModel)
         viewModelOf(::LoginViewModel)
+        viewModelOf(::RemoteLoginViewModel)
         viewModelOf(::RegistrationViewModel)
         viewModelOf(::ProfileViewModel)
         viewModelOf(::InventoryListViewModel)

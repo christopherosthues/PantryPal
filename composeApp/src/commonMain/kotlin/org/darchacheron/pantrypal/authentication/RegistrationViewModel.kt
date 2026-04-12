@@ -19,17 +19,13 @@ import pantrypal.composeapp.generated.resources.registration_error_empty_passwor
 import pantrypal.composeapp.generated.resources.registration_error_empty_username
 import pantrypal.composeapp.generated.resources.registration_error_password_mismatch
 import pantrypal.composeapp.generated.resources.registration_error_invalid_email
-import pantrypal.composeapp.generated.resources.registration_error_invalid_server_url
 import pantrypal.composeapp.generated.resources.registration_error_username_exists
-import pantrypal.composeapp.generated.resources.registration_error_server_url_missing
-import pantrypal.composeapp.generated.resources.login_error_server_unreachable
 import kotlin.time.Clock
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 @OptIn(ExperimentalUuidApi::class)
 class RegistrationViewModel(
-    private val authenticationService: AuthenticationService,
     private val profileRepository: ProfileRepository,
     private val preferencesRepository: AuthenticationPreferencesRepository,
     private val navigator: Navigator
@@ -43,7 +39,6 @@ class RegistrationViewModel(
                 email = "",
                 password = "",
                 repeatedPassword = "",
-                registerRemotely = true,
                 userNameError = null,
                 emailError = null,
                 passwordError = null,
@@ -61,8 +56,7 @@ class RegistrationViewModel(
                 canRegister = nextData.userNameError == null && nextData.userName.isNotBlank() &&
                         nextData.emailError == null && nextData.email.isNotBlank() &&
                         nextData.passwordError == null && nextData.password.isNotBlank() &&
-                        nextData.repeatedPasswordError == null && nextData.repeatedPassword.isNotBlank() &&
-                        (nextData.serverUrlError == null || !nextData.registerRemotely)
+                        nextData.repeatedPasswordError == null && nextData.repeatedPassword.isNotBlank()
             )
             currentUiState.copy(data = finalData, error = null)
         }
@@ -122,30 +116,6 @@ class RegistrationViewModel(
         }
     }
 
-    fun onRegisterRemotelyChanged(registerRemotely: Boolean) {
-        updateRegistration { it.copy(registerRemotely = registerRemotely) }
-    }
-
-    fun onServerUrlChanged(serverUrl: String) {
-        val error = if (serverUrl.isBlank()) {
-            Res.string.registration_error_server_url_missing
-        } else if (!isValidUri(serverUrl)) {
-            Res.string.registration_error_invalid_server_url
-        } else {
-            null
-        }
-        updateRegistration { it.copy(serverUrl = serverUrl, serverUrlError = error) }
-    }
-
-    private fun isValidUri(uri: String): Boolean {
-        return try {
-            val regex = "^(https?)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]".toRegex()
-            regex.matches(uri)
-        } catch (e: Exception) {
-            false
-        }
-    }
-
     fun goToLogin() {
         navigator.goToLogin()
     }
@@ -158,57 +128,25 @@ class RegistrationViewModel(
         val userName = registrationData.userName
         val email = registrationData.email
         val password = registrationData.password
-        val registerRemotely = registrationData.registerRemotely
 
         viewModelScope.launch {
             try {
                 registrationState.emit(UiState.loading())
 
-                if (registerRemotely) {
-                    val result = authenticationService.registerUser(userName, email, password, registrationData.serverUrl)
+                // Local only mode
+                val localProfile = createLocalProfile(userName, email, password)
+                preferencesRepository.updateAccessPreferences(
+                    accessToken = "",
+                    refreshToken = "",
+                    expiresIn = 0,
+                    refreshExpiresIn = 0,
+                    localProfileId = localProfile.id.toString(),
+                    isLoggedInRemotely = false,
+                    serverUrl = ""
+                )
 
-                    if (result.isSuccess && result.getOrNull() != null) {
-                        val registrationResponse = result.getOrNull()!!
-                        val serverUuid = run {
-                            val serverIdFromToken = JwtUtils.getUserIdFromToken(registrationResponse.tokenResponse.accessToken)
-                            serverIdFromToken?.let { id -> Uuid.parse(id) } ?: Uuid.parse(registrationResponse.user.id)
-                        }
-
-                        // Create/Update local profile for remote registration
-                        val localProfile = createLocalProfile(userName, email, password, serverUuid, registrationData.serverUrl)
-                        
-                        // Set remote login state
-                        preferencesRepository.updateAccessPreferences(
-                            accessToken = registrationResponse.tokenResponse.accessToken,
-                            refreshToken = registrationResponse.tokenResponse.refreshToken,
-                            expiresIn = registrationResponse.tokenResponse.expiresIn,
-                            refreshExpiresIn = registrationResponse.tokenResponse.refreshExpiresIn,
-                            localProfileId = localProfile.id.toString(),
-                            isLoggedInRemotely = true,
-                            serverUrl = registrationData.serverUrl
-                        )
-                        
-                        registrationState.emit(UiState.success(registrationData.copy(userName = userName, email = email, password = password)))
-                        navigator.goToMain()
-                    } else {
-                        registrationState.emit(uiState.copy(error = Res.string.registration_error))
-                    }
-                } else {
-                    // Local only mode
-                    val localProfile = createLocalProfile(userName, email, password)
-                    preferencesRepository.updateAccessPreferences(
-                        accessToken = "",
-                        refreshToken = "",
-                        expiresIn = 0,
-                        refreshExpiresIn = 0,
-                        localProfileId = localProfile.id.toString(),
-                        isLoggedInRemotely = false,
-                        serverUrl = ""
-                    )
-
-                    registrationState.emit(UiState.success(registrationData.copy(userName = userName, email = email, password = password)))
-                    navigator.goToMain()
-                }
+                registrationState.emit(UiState.success(registrationData.copy(userName = userName, email = email, password = password)))
+                navigator.goToMain()
             } catch (exception: Exception) {
                 Logger.withTag(registrationTag).e(exception) { "Error registration of user: $userName with email: $email" }
                 registrationState.emit(uiState.copy(error = Res.string.registration_error))
@@ -216,33 +154,27 @@ class RegistrationViewModel(
         }
     }
 
-    private suspend fun createLocalProfile(userName: String, email: String, password: String, serverId: Uuid? = null, serverUrl: String? = null): Profile {
+    private suspend fun createLocalProfile(userName: String, email: String, password: String): Profile {
         val now = Clock.System.now()
         
-        val existingProfile = (if (serverId != null) profileRepository.getProfileByServerId(serverId).firstOrNull() else null)
-            ?: profileRepository.getProfileByIdentifier(userName).firstOrNull()
+        val existingProfile = profileRepository.getProfileByIdentifier(userName).firstOrNull()
             ?: profileRepository.getProfileByIdentifier(email).firstOrNull()
 
         val profile = existingProfile?.copy(
-            serverId = serverId,
             username = userName,
             email = email,
             passwordHash = hashPassword(password),
-            serverUrl = serverUrl,
             lastModifiedAt = now,
-            lastSyncedAt = if (serverId != null) now else null,
-            isLocalOnly = serverId == null
+            isLocalOnly = true
         ) ?: Profile(
             id = Uuid.generateV7(),
-            serverId = serverId,
+            serverId = null,
             username = userName,
             email = email,
             passwordHash = hashPassword(password),
-            serverUrl = serverUrl,
             createdAt = now,
             lastModifiedAt = now,
-            lastSyncedAt = if (serverId != null) now else null,
-            isLocalOnly = serverId == null
+            isLocalOnly = true
         )
 
         profileRepository.upsert(profile)

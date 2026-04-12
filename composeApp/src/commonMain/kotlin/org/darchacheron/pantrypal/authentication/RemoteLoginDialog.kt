@@ -22,7 +22,7 @@ import pantrypal.composeapp.generated.resources.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RemoteLoginDialog(
-    viewModel: LoginViewModel,
+    viewModel: RemoteLoginViewModel,
     onDismiss: () -> Unit,
     onLoginSuccess: () -> Unit
 ) {
@@ -161,16 +161,9 @@ fun RemoteLoginDialog(
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
+                    horizontalArrangement = Arrangement.End,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    TextButton(onClick = {
-                        viewModel.openRegister()
-                        onDismiss()
-                    }) {
-                        Text(stringResource(Res.string.login_register))
-                    }
-
                     Row(
                         verticalAlignment = Alignment.CenterVertically
                     ) {

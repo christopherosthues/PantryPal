@@ -127,43 +127,13 @@ fun RegistrationView(registrationViewModel: RegistrationViewModel) {
                 visualTransformation = PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Password,
-                    imeAction = if (data.registerRemotely) ImeAction.Next else ImeAction.Done
+                    imeAction = ImeAction.Done
                 ),
                 singleLine = true,
                 isError = repeatedPasswordError != null,
                 supportingText = repeatedPasswordError?.let { { Text(text = it) } },
                 modifier = Modifier.fillMaxWidth()
             )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Checkbox(
-                    checked = data.registerRemotely,
-                    onCheckedChange = { registrationViewModel.onRegisterRemotelyChanged(it) }
-                )
-                Text(text = stringResource(Res.string.registration_remote_checkbox))
-            }
-
-            if (data.registerRemotely) {
-                Spacer(modifier = Modifier.height(16.dp))
-
-                val serverUrlError = data.serverUrlError?.let { stringResource(it) }
-
-                OutlinedTextField(
-                    value = data.serverUrl,
-                    onValueChange = { registrationViewModel.onServerUrlChanged(it) },
-                    label = { Text(text = stringResource(Res.string.registration_server_url)) },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, imeAction = ImeAction.Done),
-                    singleLine = true,
-                    isError = serverUrlError != null,
-                    supportingText = serverUrlError?.let { { Text(text = it) } },
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
 
             Spacer(modifier = Modifier.height(32.dp))
 
