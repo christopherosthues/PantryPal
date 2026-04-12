@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import co.touchlab.kermit.Logger
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.darchacheron.pantrypal.navigation.Navigator
 import org.darchacheron.pantrypal.profile.Profile
@@ -12,9 +13,9 @@ import org.darchacheron.pantrypal.profile.ProfileRepository
 import org.darchacheron.pantrypal.ui.UiState
 import pantrypal.composeapp.generated.resources.Res
 import pantrypal.composeapp.generated.resources.login_error
-import pantrypal.composeapp.generated.resources.login_wrong_username_or_password
-import pantrypal.composeapp.generated.resources.registration_error_empty_password
-import pantrypal.composeapp.generated.resources.registration_error_empty_username
+import pantrypal.composeapp.generated.resources.login_error_empty_password
+import pantrypal.composeapp.generated.resources.login_error_empty_username_or_email
+import pantrypal.composeapp.generated.resources.login_error_wrong_username_or_password
 import kotlin.uuid.ExperimentalUuidApi
 
 @OptIn(ExperimentalUuidApi::class)
@@ -25,16 +26,38 @@ class LoginViewModel(
 ) : ViewModel() {
     private val loginTag = "Login"
 
-    val loginState = MutableStateFlow(UiState.success(Login(username = "", password = "")))
+    val loginState = MutableStateFlow(
+        UiState.success(
+            Login(
+                username = "",
+                password = "",
+                usernameError = null,
+                passwordError = null,
+                canLogin = false
+            )
+        )
+    )
+
+    private fun updateLogin(block: (Login) -> Login) {
+        loginState.update { currentUiState ->
+            val currentData = currentUiState.data ?: return@update currentUiState
+            val nextData = block(currentData)
+            val finalData = nextData.copy(
+                canLogin = nextData.usernameError == null && nextData.username.isNotBlank() &&
+                        nextData.passwordError == null && nextData.password.isNotBlank()
+            )
+            currentUiState.copy(data = finalData, error = null)
+        }
+    }
 
     fun onUsernameChanged(username: String) {
-        val error = if (username.isBlank()) Res.string.registration_error_empty_username else null
-        loginState.value = loginState.value.copy(data = loginState.value.data?.copy(username = username, usernameError = error))
+        val error = if (username.isBlank()) Res.string.login_error_empty_username_or_email else null
+        updateLogin { it.copy(username = username, usernameError = error) }
     }
 
     fun onPasswordChanged(password: String) {
-        val error = if (password.isBlank()) Res.string.registration_error_empty_password else null
-        loginState.value = loginState.value.copy(data = loginState.value.data?.copy(password = password, passwordError = error))
+        val error = if (password.isBlank()) Res.string.login_error_empty_password else null
+        updateLogin { it.copy(password = password, passwordError = error) }
     }
 
     fun login() {
@@ -54,11 +77,11 @@ class LoginViewModel(
                     if (verifyPassword(localPassword, existingProfile.passwordHash)) {
                         loginLocally(existingProfile, localUsername, localPassword)
                     } else {
-                        loginState.emit(uiState.copy(error = Res.string.login_wrong_username_or_password))
+                        loginState.emit(uiState.copy(error = Res.string.login_error_wrong_username_or_password))
                     }
                 } else {
                     // No local profile
-                    loginState.emit(uiState.copy(error = Res.string.login_wrong_username_or_password))
+                    loginState.emit(uiState.copy(error = Res.string.login_error_wrong_username_or_password))
                 }
             } catch (exception: Exception) {
                 Logger.withTag(loginTag).e(exception) { "Error login user: $localUsername" }

@@ -133,9 +133,9 @@
 
     <!-- Login -->
     <string name="login_title">Anmelden</string>
-    <string name="login_login">Anmelden</string>
     <string name="login_username_or_email">Benutzername oder E-Mail</string>
     <string name="login_password">Passwort</string>
+    <string name="login_login">Anmelden</string>
     <string name="login_login_or_register">oder</string>
     <string name="login_register">Registrieren</string>
     <string name="login_login_only_locally">Nur lokal anmelden</string>
@@ -146,15 +146,17 @@
     <string name="login_remote_username_placeholder">(Optional)</string>
     <string name="login_local_username_placeholder">Lokaler Name / E-Mail</string>
     <string name="login_error">Ein unerwarteter Fehler ist aufgetreten</string>
-    <string name="login_wrong_username_or_password">Falscher Benutzername oder Passwort</string>
+    <string name="login_error_wrong_username_or_password">Falscher Benutzername oder Passwort</string>
 
     <!-- Registration -->
     <string name="registration_title">Registrierung</string>
-    <string name="registration_register">Registrieren</string>
     <string name="registration_username">Benutzername</string>
     <string name="registration_email">E-Mail</string>
     <string name="registration_password">Passwort</string>
     <string name="registration_repeat_password">Passwort wiederholen</string>
+    <string name="registration_register">Registrieren</string>
+    <string name="registration_register_or_login">oder</string>
+    <string name="registration_login">Anmelden</string>
     <string name="registration_error">Ein unerwarteter Fehler ist aufgetreten</string>
     <string name="registration_error_empty_username">Benutzername darf nicht leer sein</string>
     <string name="registration_error_empty_email">E-Mail darf nicht leer sein</string>

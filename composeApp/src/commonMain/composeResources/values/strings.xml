@@ -134,9 +134,9 @@
 
     <!-- Login -->
     <string name="login_title">Login</string>
-    <string name="login_login">Log in</string>
     <string name="login_username_or_email">Username or Email</string>
     <string name="login_password">Password</string>
+    <string name="login_login">Log in</string>
     <string name="login_login_or_register">or</string>
     <string name="login_register">Register</string>
     <string name="login_login_only_locally">Login only locally</string>
@@ -147,15 +147,19 @@
     <string name="login_remote_username_placeholder">(Optional)</string>
     <string name="login_local_username_placeholder">Local Name / Email</string>
     <string name="login_error">An unexpected error occurred</string>
-    <string name="login_wrong_username_or_password">Wrong username or password</string>
+    <string name="login_error_wrong_username_or_password">Wrong username or password</string>
+    <string name="login_error_empty_username_or_email">Username or Email cannot be empty</string>
+    <string name="login_error_empty_password">Password cannot be empty</string>
 
     <!-- Registration -->
     <string name="registration_title">Registration</string>
-    <string name="registration_register">Register</string>
     <string name="registration_username">Username</string>
     <string name="registration_email">Email</string>
     <string name="registration_password">Password</string>
     <string name="registration_repeat_password">Repeat password</string>
+    <string name="registration_register">Register</string>
+    <string name="registration_register_or_login">or</string>
+    <string name="registration_login">Login</string>
     <string name="registration_remote_checkbox">Register also on server</string>
     <string name="registration_server_url">Server URL</string>
     <string name="registration_error_server_url_missing">Server URL is required for remote operations</string>

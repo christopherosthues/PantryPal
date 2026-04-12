@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import org.darchacheron.pantrypal.profile.ProfileRepository
 import org.darchacheron.pantrypal.ui.UiState
+import org.jetbrains.compose.resources.StringResource
 import pantrypal.composeapp.generated.resources.Res
 import pantrypal.composeapp.generated.resources.remote_login_error_credentials
 import pantrypal.composeapp.generated.resources.remote_login_error_generic
@@ -21,6 +22,22 @@ import pantrypal.composeapp.generated.resources.remote_login_error_username_empt
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
+data class RemoteLogin(
+    val username: String,
+    val password: String,
+    val serverUrl: String = "",
+    val loginRemotely: Boolean = false,
+    val useSameCredentials: Boolean = true,
+    val remoteUsername: String = "",
+    val remotePassword: String = "",
+    val usernameError: StringResource? = null,
+    val passwordError: StringResource? = null,
+    val serverUrlError: StringResource? = null,
+    val remoteUsernameError: StringResource? = null,
+    val remotePasswordError: StringResource? = null,
+    val canLogin: Boolean = false
+)
+
 @OptIn(ExperimentalUuidApi::class)
 class RemoteLoginViewModel(
     private val authenticationService: AuthenticationService,
@@ -29,7 +46,7 @@ class RemoteLoginViewModel(
 ) : ViewModel() {
     private val loginTag = "RemoteLogin"
 
-    val loginState = MutableStateFlow(UiState.success(Login(username = "", password = "", loginRemotely = true)))
+    val loginState = MutableStateFlow(UiState.success(RemoteLogin(username = "", password = "", loginRemotely = true)))
 
     fun onUsernameChanged(username: String) {
         val error = if (username.isBlank()) Res.string.remote_login_error_username_empty else null

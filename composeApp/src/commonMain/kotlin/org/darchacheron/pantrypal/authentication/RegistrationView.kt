@@ -1,5 +1,6 @@
 package org.darchacheron.pantrypal.authentication
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -7,11 +8,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -23,18 +26,27 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import org.darchacheron.pantrypal.ui.PantryPalTheme
+import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import pantrypal.composeapp.generated.resources.Res
+import pantrypal.composeapp.generated.resources.ic_fridge
+import pantrypal.composeapp.generated.resources.login_login_or_register
 import pantrypal.composeapp.generated.resources.login_register
 import pantrypal.composeapp.generated.resources.login_title
 import pantrypal.composeapp.generated.resources.registration_email
+import pantrypal.composeapp.generated.resources.registration_login
 import pantrypal.composeapp.generated.resources.registration_password
+import pantrypal.composeapp.generated.resources.registration_register
+import pantrypal.composeapp.generated.resources.registration_register_or_login
 import pantrypal.composeapp.generated.resources.registration_repeat_password
 import pantrypal.composeapp.generated.resources.registration_title
 import pantrypal.composeapp.generated.resources.registration_username
@@ -49,7 +61,11 @@ fun RegistrationView(registrationViewModel: RegistrationViewModel) {
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text(text = stringResource(Res.string.registration_title)) }
+                title = {
+                    if (!uiState.isLoading) {
+                        Text(text = stringResource(Res.string.registration_title))
+                    }
+                }
             )
         }
     ) { padding ->
@@ -61,13 +77,22 @@ fun RegistrationView(registrationViewModel: RegistrationViewModel) {
         }
 
         Column(
-            modifier = Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp),
+            modifier = Modifier.fillMaxSize()
+                .padding(padding)
+                .verticalScroll(rememberScrollState())
+                .padding(start = 16.dp, end = 16.dp, bottom = 72.dp),
             verticalArrangement = Arrangement.Center
         ) {
             val data = uiState.data ?: return@Scaffold
 
-            val userNameError = data.userNameError?.let { stringResource(it) }
+            Image(
+                painter = painterResource(Res.drawable.ic_fridge),
+                contentDescription = null,
+                colorFilter = ColorFilter.tint(PantryPalTheme.extraColors.leftCardBackgroundTo),
+                modifier = Modifier.size(128.dp).align(Alignment.CenterHorizontally)
+            )
+
+            Spacer(modifier = Modifier.height(64.dp))
 
             OutlinedTextField(
                 value = data.userName,
@@ -75,14 +100,12 @@ fun RegistrationView(registrationViewModel: RegistrationViewModel) {
                 label = { Text(text = stringResource(Res.string.registration_username)) },
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                 singleLine = true,
-                isError = userNameError != null,
-                supportingText = userNameError?.let { { Text(text = it) } },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                isError = data.userNameError != null,
+                supportingText = data.userNameError?.let { { Text(text = stringResource(it)) } },
             )
 
             Spacer(modifier = Modifier.height(16.dp))
-
-            val emailError = data.emailError?.let { stringResource(it) }
 
             OutlinedTextField(
                 value = data.email,
@@ -90,14 +113,12 @@ fun RegistrationView(registrationViewModel: RegistrationViewModel) {
                 label = { Text(text = stringResource(Res.string.registration_email)) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
                 singleLine = true,
-                isError = emailError != null,
-                supportingText = emailError?.let { { Text(text = it) } },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                isError = data.emailError != null,
+                supportingText = data.emailError?.let { { Text(text = stringResource(it)) } },
             )
 
             Spacer(modifier = Modifier.height(16.dp))
-
-            val passwordError = data.passwordError?.let { stringResource(it) }
 
             OutlinedTextField(
                 value = data.password,
@@ -106,28 +127,23 @@ fun RegistrationView(registrationViewModel: RegistrationViewModel) {
                 visualTransformation = PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Next),
                 singleLine = true,
-                isError = passwordError != null,
-                supportingText = passwordError?.let { { Text(text = it) } },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                isError = data.passwordError != null,
+                supportingText = data.passwordError?.let { { Text(text = stringResource(it)) } },
             )
 
             Spacer(modifier = Modifier.height(16.dp))
-
-            val repeatedPasswordError = data.repeatedPasswordError?.let { stringResource(it) }
 
             OutlinedTextField(
                 value = data.repeatedPassword,
                 onValueChange = { registrationViewModel.onRepeatPasswordChanged(it) },
                 label = { Text(text = stringResource(Res.string.registration_repeat_password)) },
                 visualTransformation = PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Password,
-                    imeAction = ImeAction.Done
-                ),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
                 singleLine = true,
-                isError = repeatedPasswordError != null,
-                supportingText = repeatedPasswordError?.let { { Text(text = it) } },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                isError = data.repeatedPasswordError != null,
+                supportingText = data.repeatedPasswordError?.let { { Text(text = stringResource(it)) } },
             )
 
             Spacer(modifier = Modifier.height(32.dp))
@@ -137,17 +153,20 @@ fun RegistrationView(registrationViewModel: RegistrationViewModel) {
                 modifier = Modifier.fillMaxWidth(),
                 enabled = !uiState.isLoading && data.canRegister
             ) {
-                Text(text = stringResource(Res.string.login_register))
+                Text(text = stringResource(Res.string.registration_register))
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = stringResource(Res.string.registration_register_or_login),
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+            )
 
-            TextButton(
+            OutlinedButton(
                 onClick = { registrationViewModel.goToLogin() },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = !uiState.isLoading
             ) {
-                Text(text = stringResource(Res.string.login_title))
+                Text(text = stringResource(Res.string.registration_login))
             }
         }
     }

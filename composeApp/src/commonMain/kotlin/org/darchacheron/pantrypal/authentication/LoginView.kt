@@ -51,7 +51,6 @@ import pantrypal.composeapp.generated.resources.login_username_or_email
 @Composable
 internal fun LoginView(loginViewModel: LoginViewModel) {
     val uiState by loginViewModel.loginState.collectAsStateWithLifecycle()
-    val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
     Scaffold(
@@ -64,8 +63,6 @@ internal fun LoginView(loginViewModel: LoginViewModel) {
                     }
                 },
             )
-        },
-        floatingActionButton = {
         }
     ) { padding ->
         if (uiState.hasError) {
@@ -75,8 +72,10 @@ internal fun LoginView(loginViewModel: LoginViewModel) {
             }
         }
         Column(
-            modifier = Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp),
+            modifier = Modifier.fillMaxSize()
+                .padding(padding)
+                .verticalScroll(rememberScrollState())
+                .padding(start = 16.dp, end = 16.dp, bottom = 72.dp),
             verticalArrangement = Arrangement.Center
         ) {
             val data = uiState.data ?: return@Scaffold
@@ -94,16 +93,11 @@ internal fun LoginView(loginViewModel: LoginViewModel) {
                 value = data.username,
                 onValueChange = { loginViewModel.onUsernameChanged(it) },
                 label = { Text(text = stringResource(Res.string.login_username_or_email)) },
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Email,
-                    imeAction = ImeAction.Next
-                ),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
                 isError = data.usernameError != null,
-                supportingText = {
-                    data.usernameError?.let { Text(stringResource(it)) }
-                }
+                supportingText = { data.usernameError?.let { Text(stringResource(it)) } }
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -113,25 +107,19 @@ internal fun LoginView(loginViewModel: LoginViewModel) {
                 onValueChange = { loginViewModel.onPasswordChanged(it) },
                 label = { Text(text = stringResource(Res.string.login_password)) },
                 visualTransformation = PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Password,
-                    imeAction = if (data.loginRemotely) ImeAction.Next else ImeAction.Done
-                ),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
                 isError = data.passwordError != null,
-                supportingText = {
-                    data.passwordError?.let { Text(stringResource(it)) }
-                }
+                supportingText = { data.passwordError?.let { Text(stringResource(it)) } }
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
             Button(
-                onClick = {
-                    coroutineScope.launch { loginViewModel.login() }
-                },
-                modifier = Modifier.fillMaxWidth()
+                onClick = { loginViewModel.login() },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !uiState.isLoading && data.canLogin
             ) {
                 Text(text = stringResource(Res.string.login_login))
             }
@@ -143,7 +131,8 @@ internal fun LoginView(loginViewModel: LoginViewModel) {
 
             OutlinedButton(
                 onClick = { loginViewModel.openRegister() },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !uiState.isLoading
             ) {
                 Text(text = stringResource(Res.string.login_register))
             }
