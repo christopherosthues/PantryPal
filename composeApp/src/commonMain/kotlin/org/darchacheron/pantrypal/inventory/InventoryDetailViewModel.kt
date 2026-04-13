@@ -4,7 +4,6 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import co.touchlab.kermit.Logger
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,6 +16,7 @@ import org.darchacheron.pantrypal.camera.Image
 import org.darchacheron.pantrypal.navigation.InventoryNavRoute
 import org.darchacheron.pantrypal.navigation.Navigator
 import org.darchacheron.pantrypal.navigation.OcrType
+import org.darchacheron.pantrypal.ui.NutrientViewModel
 import org.darchacheron.pantrypal.ui.UiState
 import org.jetbrains.compose.resources.StringResource
 import pantrypal.composeapp.generated.resources.Res
@@ -33,7 +33,7 @@ class InventoryDetailViewModel(
     private val inventoryRepository: InventoryRepository,
     private val authenticationPreferencesRepository: AuthenticationPreferencesRepository,
     private val navigator: Navigator,
-) : ViewModel() {
+) : NutrientViewModel() {
     private val id = if (navigationRoute.itemId != null) Uuid.parse(navigationRoute.itemId) else Uuid.generateV7()
 
     val canSave by derivedStateOf { item.name.isNotBlank() }
@@ -41,17 +41,6 @@ class InventoryDetailViewModel(
 
     private val _isSaved = MutableStateFlow(false)
     val isSaved: StateFlow<Boolean> = _isSaved.asStateFlow()
-
-    var kiloCaloriesStr by mutableStateOf("")
-    var kiloJouleStr by mutableStateOf("")
-    var fatInGramsStr by mutableStateOf("")
-    var saturatedFattyAcidsInGramsStr by mutableStateOf("")
-    var carbsInGramsStr by mutableStateOf("")
-    var sugarInGramsStr by mutableStateOf("")
-    var dietaryFiberInGramsStr by mutableStateOf("")
-    var proteinInGramsStr by mutableStateOf("")
-    var saltInGramsStr by mutableStateOf("")
-    var fillingQuantityStr by mutableStateOf("")
 
     private var item by mutableStateOf(
         InventoryItem(
@@ -232,67 +221,67 @@ class InventoryDetailViewModel(
         _uiState.value = UiState.success(item)
     }
 
-    fun openOcrCamera(type: OcrType) {
+    override fun openOcrCamera(type: OcrType) {
         navigator.goToOcrCamera(type) { text ->
             handleOcrResult(type, text)
         }
     }
 
-    fun updateKiloCalories(value: String) {
+    override fun updateKiloCalories(value: String) {
         kiloCaloriesStr = value
         syncItemFromStrings()
         _uiState.value = UiState.success(item)
     }
 
-    fun updateKiloJoule(value: String) {
+    override fun updateKiloJoule(value: String) {
         kiloJouleStr = value
         syncItemFromStrings()
         _uiState.value = UiState.success(item)
     }
 
-    fun updateFatInGrams(value: String) {
+    override fun updateFatInGrams(value: String) {
         fatInGramsStr = value
         syncItemFromStrings()
         _uiState.value = UiState.success(item)
     }
 
-    fun updateSaturatedFattyAcidsInGrams(value: String) {
+    override fun updateSaturatedFattyAcidsInGrams(value: String) {
         saturatedFattyAcidsInGramsStr = value
         syncItemFromStrings()
         _uiState.value = UiState.success(item)
     }
 
-    fun updateCarbsInGrams(value: String) {
+    override fun updateCarbsInGrams(value: String) {
         carbsInGramsStr = value
         syncItemFromStrings()
         _uiState.value = UiState.success(item)
     }
 
-    fun updateSugarInGrams(value: String) {
+    override fun updateSugarInGrams(value: String) {
         sugarInGramsStr = value
         syncItemFromStrings()
         _uiState.value = UiState.success(item)
     }
 
-    fun updateDietaryFiberInGrams(value: String) {
+    override fun updateDietaryFiberInGrams(value: String) {
         dietaryFiberInGramsStr = value
         syncItemFromStrings()
         _uiState.value = UiState.success(item)
     }
 
-    fun updateProteinInGrams(value: String) {
+    override fun updateProteinInGrams(value: String) {
         proteinInGramsStr = value
         syncItemFromStrings()
         _uiState.value = UiState.success(item)
     }
 
-    fun updateSaltInGrams(value: String) {
+    override fun updateSaltInGrams(value: String) {
         saltInGramsStr = value
         syncItemFromStrings()
         _uiState.value = UiState.success(item)
     }
 
-    fun updateFillingQuantity(value: String) {
+    override fun updateFillingQuantity(value: String) {
         fillingQuantityStr = value
         syncItemFromStrings()
         _uiState.value = UiState.success(item)
@@ -309,16 +298,6 @@ class InventoryDetailViewModel(
     fun cancelEditing() {
         goBack()
     }
-
-    private val kcal = "kcal"
-    private val kj = "kj"
-    private val saturatedFatCandidates = listOf("sat.fat", "sat fat", "saturated", "gesättigt")
-    private val fatCandidates = listOf("fat", "fett")
-    private val sugarCandidates = listOf("sugar", "zucker")
-    private val carbsCandidates = listOf("carb", "kohlenhydrat")
-    private val proteinCandidates = listOf("protein", "eiweiß")
-    private val saltCandidates = listOf("salt", "salz")
-    private val fiberCandidates = listOf("fiber", "ballaststoff")
 
     private fun handleOcrResult(type: OcrType, text: String) {
         when (type) {
@@ -337,25 +316,7 @@ class InventoryDetailViewModel(
                 _uiState.value = UiState.success(item)
             }
             OcrType.NUTRIENTS -> {
-                val lines = text.lines()
-                lines.forEach { line ->
-                    val lowerLine = line.lowercase()
-                    val values = """(\d+[,.]?\d*)""".toRegex().findAll(line).map { it.value.replace(',', '.') }.toList()
-                    
-                    if (values.isNotEmpty()) {
-                        when {
-                            lowerLine.contains(kcal) -> kiloCaloriesStr = values.last()
-                            lowerLine.contains(kj) -> kiloJouleStr = values.first()
-                            saturatedFatCandidates.any { lowerLine.contains(it) } -> saturatedFattyAcidsInGramsStr = values.last()
-                            fatCandidates.any { lowerLine.contains(it) } -> fatInGramsStr = values.first()
-                            sugarCandidates.any { lowerLine.contains(it) } -> sugarInGramsStr = values.last()
-                            carbsCandidates.any { lowerLine.contains(it) } -> carbsInGramsStr = values.first()
-                            proteinCandidates.any { lowerLine.contains(it) } -> proteinInGramsStr = values.last()
-                            saltCandidates.any { lowerLine.contains(it) } -> saltInGramsStr = values.last()
-                            fiberCandidates.any { lowerLine.contains(it) } -> dietaryFiberInGramsStr = values.last()
-                        }
-                    }
-                }
+                parseNutrientsFromOcr(text)
                 syncItemFromStrings()
                 _uiState.value = UiState.success(item)
             }
