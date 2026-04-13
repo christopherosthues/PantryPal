@@ -8,6 +8,9 @@
 *   **FR-1.4: Filter:** Users shall be able to filter items by "Opened" status, "Unopened" status and "Overdue" status.
 *   **FR-1.5: Detailed View:** The system shall show detailed nutritional info: Calories, Joule, Fat, Saturated Fat, Carbs, Sugar, Fiber, Protein, and Salt.
 *   **FR-1.6: Expiration Warning:** The system shall provide visual warnings for items past their Best-before date (MHD) and stronger warnings for items past their Use-by date (VD).
+*   **FR-1.7: Price Tracking:** The system shall allow users to record the purchase price of a food item or an inventory item.
+*   **FR-1.8: Price History:** The system shall automatically track changes to the price of a product over time, creating a history of price points (date and price) linked to the inventory item.
+*   **FR-1.9: Price Visualization:** The system shall provide a visual representation (e.g., a chart) of the price history for a specific product.
 
 == Inventory Management
 *   **FR-2.1: Frequently used Items:** The system shall provide a separate inventory list for frequently used items so that new food items can be created quickly.

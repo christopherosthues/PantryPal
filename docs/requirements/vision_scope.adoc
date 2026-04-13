@@ -14,6 +14,7 @@ PantryPal is a multi-platform application (Android, Desktop, and others) that em
 *   OCR-based scanning for names, quantities, nutrients, and dates.
 *   Advanced filtering and sorting for expiration management.
 *   Inventory management for frequently used items.
+*   Price tracking and visualization over time.
 
 === Out-of-Scope
 *   Recipe suggestions based on current stock (Phase 2).

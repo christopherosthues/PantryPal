@@ -22,11 +22,13 @@ The PantryPal UI shall follow modern design principles to ensure a consistent an
 === Food Details
 *   Detailed view of a single item.
 *   Sections for basic info, nutritional values, and images.
+*   Display of current price and access to a "Price History" chart (linked via the corresponding inventory item).
 *   Action buttons for editing, deleting, and scanning (OCR).
 
 === Inventory
 *   A separate list view for frequently used items.
 *   Simplified view focusing on basic info and nutritional values.
+*   Display of current price and a "Price History" chart for each item.
 
 === OCR Camera View
 *   A camera overlay with real-time text recognition indicators.
