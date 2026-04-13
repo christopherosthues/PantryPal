@@ -1,15 +1,24 @@
 package org.darchacheron.pantrypal.food
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
@@ -17,7 +26,6 @@ import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -41,10 +49,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import coil3.compose.AsyncImage
 import kotlinx.datetime.LocalDate
 import org.darchacheron.pantrypal.navigation.OcrType
 import org.darchacheron.pantrypal.ui.AdaptiveRow
@@ -56,9 +66,13 @@ import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import pantrypal.composeapp.generated.resources.Res
+import pantrypal.composeapp.generated.resources.food_detail_add_image
+import pantrypal.composeapp.generated.resources.food_detail_additional_images
 import pantrypal.composeapp.generated.resources.food_detail_best_before
 import pantrypal.composeapp.generated.resources.food_detail_content_description_cancel_editing
 import pantrypal.composeapp.generated.resources.food_detail_content_description_delete
+import pantrypal.composeapp.generated.resources.food_detail_content_description_open_camera
+import pantrypal.composeapp.generated.resources.food_detail_content_description_remove_image
 import pantrypal.composeapp.generated.resources.food_detail_content_description_save
 import pantrypal.composeapp.generated.resources.food_detail_name
 import pantrypal.composeapp.generated.resources.food_detail_nutritional_header_volume
@@ -169,7 +183,7 @@ fun FoodDetailView(
                     Icon(
                         painter = painterResource(Res.drawable.ic_cancel),
                         contentDescription =
-                        stringResource(Res.string.food_detail_content_description_cancel_editing)
+                            stringResource(Res.string.food_detail_content_description_cancel_editing)
                     )
                 }
 
@@ -258,27 +272,50 @@ fun FoodDetailView(
                             Switch(
                                 checked = food.isUseBy,
                                 onCheckedChange = { viewModel.updateIsUseBy(it) },
-                                modifier = Modifier.scale(0.7f)
+                                modifier = Modifier.scale(0.8f)
                             )
                         }
                     )
                 },
                 rightContent = {
                     DatePickerField(
-                        viewModel = viewModel,
                         label = stringResource(Res.string.food_detail_opened_at),
                         selectedDate = food.openedAt,
-                        isDetectable = false,
                         onDateSelected = { viewModel.updateOpenedAt(it) },
                         modifier = Modifier.weight(1f)
                     )
                 }
             )
 
-            HorizontalDivider(
-                modifier = Modifier.padding(vertical = 8.dp),
-                thickness = 1.dp,
-                color = MaterialTheme.colorScheme.outlineVariant
+            OutlinedTextField(
+                value = viewModel.fillingQuantityStr,
+                onValueChange = { viewModel.updateFillingQuantity(it) },
+                label = {
+                    Text(
+                        stringResource(
+                            if (food.isLiquid) Res.string.food_detail_volume
+                            else Res.string.food_detail_weight
+                        )
+                    )
+                },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                leadingIcon = {
+                    Switch(
+                        checked = food.isLiquid,
+                        onCheckedChange = { viewModel.updateIsLiquid(it) },
+                        modifier = Modifier.scale(0.8f)
+                    )
+                },
+                trailingIcon = {
+                    IconButton(onClick = { viewModel.openOcrCamera(OcrType.AMOUNT) }) {
+                        Icon(
+                            painter = painterResource(Res.drawable.ic_camera),
+                            contentDescription = stringResource(Res.string.food_detail_ocr_amount)
+                        )
+                    }
+                }
             )
 
             Row(
@@ -291,208 +328,171 @@ fun FoodDetailView(
                         if (food.isLiquid) Res.string.food_detail_nutritional_header_volume
                         else Res.string.food_detail_nutritional_header_weight
                     ),
-                    style = MaterialTheme.typography.titleMedium
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.secondary,
+                    modifier = Modifier.padding(top = 8.dp)
                 )
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(stringResource(Res.string.food_detail_weight))
-                    Switch(
-                        checked = food.isLiquid,
-                        onCheckedChange = { viewModel.updateIsLiquid(it) },
-                        modifier = Modifier.padding(horizontal = 8.dp).scale(0.8f)
+
+                TextButton(
+                    onClick = { viewModel.openOcrCamera(OcrType.NUTRIENTS) },
+                    contentPadding = PaddingValues(horizontal = 8.dp)
+                ) {
+                    Icon(
+                        painter = painterResource(Res.drawable.ic_camera),
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
                     )
-                    Text(stringResource(Res.string.food_detail_volume))
+                    Spacer(Modifier.width(4.dp))
+                    Text("Scan table", style = MaterialTheme.typography.labelMedium)
                 }
             }
 
-            AdaptiveRow(
-                useTwoColumns = useTwoColumns,
-                leftContent = {
-                    OutlinedTextField(
-                        value = viewModel.fillingQuantityStr,
-                        onValueChange = { viewModel.updateFillingQuantity(it) },
-                        label = {
-                            Text(
-                                stringResource(
-                                    if (food.isLiquid) Res.string.food_detail_volume
-                                    else Res.string.food_detail_weight
-                                )
-                            )
-                        },
-                        modifier = Modifier.weight(1f),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        singleLine = true,
-                        trailingIcon = {
-                            IconButton(onClick = { viewModel.openOcrCamera(OcrType.AMOUNT) }) {
-                                Icon(
-                                    painter = painterResource(Res.drawable.ic_camera),
-                                    contentDescription = stringResource(Res.string.food_detail_ocr_amount)
-                                )
-                            }
-                        }
-                    )
-                },
-                rightContent = {
-                    OutlinedTextField(
-                        value = viewModel.kiloCaloriesStr,
-                        onValueChange = { viewModel.updateKiloCalories(it) },
-                        label = { Text(stringResource(Res.string.nutrient_calories)) },
-                        modifier = Modifier.weight(1f),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        singleLine = true,
-                        trailingIcon = {
-                            IconButton(onClick = { viewModel.openOcrCamera(OcrType.NUTRIENTS) }) {
-                                Icon(
-                                    painter = painterResource(Res.drawable.ic_camera),
-                                    contentDescription = stringResource(Res.string.nutrient_calories)
-                                )
-                            }
-                        }
-                    )
-                }
-            )
-
-            AdaptiveRow(
-                useTwoColumns = useTwoColumns,
-                leftContent = {
-                    OutlinedTextField(
-                        value = viewModel.kiloJouleStr,
-                        onValueChange = { viewModel.updateKiloJoule(it) },
-                        label = { Text(stringResource(Res.string.nutrient_kj)) },
-                        modifier = Modifier.weight(1f),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        singleLine = true
-                    )
-                },
-                rightContent = {
-                    OutlinedTextField(
-                        value = viewModel.fatInGramsStr,
-                        onValueChange = { viewModel.updateFatInGrams(it) },
-                        label = { Text(stringResource(Res.string.nutrient_fat)) },
-                        modifier = Modifier.weight(1f),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        singleLine = true
-                    )
-                }
-            )
-
-            AdaptiveRow(
-                useTwoColumns = useTwoColumns,
-                leftContent = {
-                    OutlinedTextField(
-                        value = viewModel.saturatedFattyAcidsInGramsStr,
-                        onValueChange = { viewModel.updateSaturatedFattyAcidsInGrams(it) },
-                        label = { Text(stringResource(Res.string.nutrient_saturated_fat)) },
-                        modifier = Modifier.weight(1f),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        singleLine = true
-                    )
-                },
-                rightContent = {
-                    OutlinedTextField(
-                        value = viewModel.carbsInGramsStr,
-                        onValueChange = { viewModel.updateCarbsInGrams(it) },
-                        label = { Text(stringResource(Res.string.nutrient_carbs)) },
-                        modifier = Modifier.weight(1f),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        singleLine = true
-                    )
-                }
-            )
-
-            AdaptiveRow(
-                useTwoColumns = useTwoColumns,
-                leftContent = {
-                    OutlinedTextField(
-                        value = viewModel.sugarInGramsStr,
-                        onValueChange = { viewModel.updateSugarInGrams(it) },
-                        label = { Text(stringResource(Res.string.nutrient_sugar)) },
-                        modifier = Modifier.weight(1f),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        singleLine = true
-                    )
-                },
-                rightContent = {
-                    OutlinedTextField(
-                        value = viewModel.dietaryFiberInGramsStr,
-                        onValueChange = { viewModel.updateDietaryFiberInGrams(it) },
-                        label = { Text(stringResource(Res.string.nutrient_fiber)) },
-                        modifier = Modifier.weight(1f),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        singleLine = true
-                    )
-                }
-            )
-
-            AdaptiveRow(
-                useTwoColumns = useTwoColumns,
-                leftContent = {
-                    OutlinedTextField(
-                        value = viewModel.proteinInGramsStr,
-                        onValueChange = { viewModel.updateProteinInGrams(it) },
-                        label = { Text(stringResource(Res.string.nutrient_protein)) },
-                        modifier = Modifier.weight(1f),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        singleLine = true
-                    )
-                },
-                rightContent = {
-                    OutlinedTextField(
-                        value = viewModel.saltInGramsStr,
-                        onValueChange = { viewModel.updateSaltInGrams(it) },
-                        label = { Text(stringResource(Res.string.nutrient_salt)) },
-                        modifier = Modifier.weight(1f),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        singleLine = true
-                    )
-                }
-            )
+            NutrientFields(useTwoColumns, food, viewModel)
         }
     }
 }
 
+@Composable
+private fun NutrientFields(
+    useTwoColumns: Boolean,
+    food: Food,
+    viewModel: FoodDetailViewModel
+) {
+    AdaptiveRow(
+        useTwoColumns = useTwoColumns,
+        leftContent = {
+            OutlinedTextField(
+                value = food.kiloCalories?.toString() ?: "",
+                onValueChange = { viewModel.updateKiloCalories(it) },
+                label = { Text(stringResource(Res.string.nutrient_calories)) },
+                modifier = Modifier.weight(1f),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                singleLine = true
+            )
+        },
+        rightContent = {
+            OutlinedTextField(
+                value = food.kiloJoule?.toString() ?: "",
+                onValueChange = { viewModel.updateKiloJoule(it) },
+                label = { Text(stringResource(Res.string.nutrient_kj)) },
+                modifier = Modifier.weight(1f),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                singleLine = true
+            )
+        }
+    )
+
+    AdaptiveRow(
+        useTwoColumns = useTwoColumns,
+        isDependent = true,
+        leftContent = {
+            OutlinedTextField(
+                value = viewModel.fatInGramsStr,
+                onValueChange = { viewModel.updateFatInGrams(it) },
+                label = { Text(stringResource(Res.string.nutrient_fat)) },
+                modifier = Modifier.weight(1f),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                singleLine = true
+            )
+        },
+        rightContent = {
+            OutlinedTextField(
+                value = viewModel.saturatedFattyAcidsInGramsStr,
+                onValueChange = { viewModel.updateSaturatedFattyAcidsInGrams(it) },
+                label = { Text(stringResource(Res.string.nutrient_saturated_fat)) },
+                modifier = Modifier.weight(1f),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                singleLine = true
+            )
+        }
+    )
+
+    AdaptiveRow(
+        useTwoColumns = useTwoColumns,
+        isDependent = true,
+        leftContent = {
+            OutlinedTextField(
+                value = viewModel.carbsInGramsStr,
+                onValueChange = { viewModel.updateCarbsInGrams(it) },
+                label = { Text(stringResource(Res.string.nutrient_carbs)) },
+                modifier = Modifier.weight(1f),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                singleLine = true
+            )
+        },
+        rightContent = {
+            OutlinedTextField(
+                value = viewModel.sugarInGramsStr,
+                onValueChange = { viewModel.updateSugarInGrams(it) },
+                label = { Text(stringResource(Res.string.nutrient_sugar)) },
+                modifier = Modifier.weight(1f),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                singleLine = true
+            )
+        }
+    )
+
+    OutlinedTextField(
+        value = viewModel.dietaryFiberInGramsStr,
+        onValueChange = { viewModel.updateDietaryFiberInGrams(it) },
+        label = { Text(stringResource(Res.string.nutrient_fiber)) },
+        modifier = Modifier.fillMaxWidth(),
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+        singleLine = true
+    )
+
+    OutlinedTextField(
+        value = viewModel.proteinInGramsStr,
+        onValueChange = { viewModel.updateProteinInGrams(it) },
+        label = { Text(stringResource(Res.string.nutrient_protein)) },
+        modifier = Modifier.fillMaxWidth(),
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+        singleLine = true
+    )
+
+    OutlinedTextField(
+        value = viewModel.saltInGramsStr,
+        onValueChange = { viewModel.updateSaltInGrams(it) },
+        label = { Text(stringResource(Res.string.nutrient_salt)) },
+        modifier = Modifier.fillMaxWidth(),
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+        singleLine = true
+    )
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun DatePickerField(
-    viewModel: FoodDetailViewModel,
+fun DatePickerField(
+    viewModel: FoodDetailViewModel? = null,
     label: String,
     selectedDate: LocalDate?,
-    isDetectable: Boolean,
     onDateSelected: (LocalDate?) -> Unit,
+    isDetectable: Boolean = false,
+    enabled: Boolean = true,
     modifier: Modifier = Modifier,
-    leadingIcon: (@Composable () -> Unit)? = null
+    leadingIcon: @Composable (() -> Unit)? = null
 ) {
-    var showDatePicker by remember { mutableStateOf(false) }
-    val datePickerState = rememberDatePickerState(
-        initialSelectedDateMillis = selectedDate?.toEpochDays()?.times(24 * 60 * 60 * 1000)
-    )
+    var showDialog by remember { mutableStateOf(false) }
 
     OutlinedTextField(
         value = selectedDate?.format() ?: "",
         onValueChange = { },
         label = { Text(label) },
-        modifier = modifier.clickable { showDatePicker = true },
-        enabled = false,
-        colors = androidx.compose.material3.TextFieldDefaults.colors(
-            disabledTextColor = MaterialTheme.colorScheme.onSurface,
-            disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-            disabledIndicatorColor = MaterialTheme.colorScheme.outline,
-            disabledPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
-            disabledLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-            disabledTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-            disabledContainerColor = Color.Transparent
-        ),
+        modifier = modifier.fillMaxWidth(),
+        readOnly = true,
         leadingIcon = leadingIcon,
         trailingIcon = {
             Row {
-                if (isDetectable) {
+                if (viewModel != null && isDetectable) {
                     IconButton(onClick = { viewModel.openOcrCamera(OcrType.DATE) }) {
                         Icon(
                             painter = painterResource(Res.drawable.ic_camera),
-                            contentDescription = stringResource(Res.string.food_detail_ocr_name)
+                            contentDescription = "OCR Date"
                         )
                     }
                 }
-                IconButton(onClick = { showDatePicker = true }) {
+
+                IconButton(onClick = { showDialog = true }, enabled = enabled) {
                     Icon(
                         painter = painterResource(Res.drawable.ic_calendar),
                         contentDescription = null
@@ -502,23 +502,29 @@ private fun DatePickerField(
         }
     )
 
-    if (showDatePicker) {
+    if (showDialog) {
+        val datePickerState = rememberDatePickerState(
+            initialSelectedDateMillis = selectedDate?.toEpochDays()?.times(86400000L)
+        )
         DatePickerDialog(
-            onDismissRequest = { showDatePicker = false },
+            onDismissRequest = { showDialog = false },
             confirmButton = {
                 TextButton(onClick = {
                     datePickerState.selectedDateMillis?.let {
-                        val date = LocalDate.fromEpochDays((it / (24 * 60 * 60 * 1000)).toInt())
+                        val date = LocalDate.fromEpochDays((it / 86400000L).toInt())
                         onDateSelected(date)
                     }
-                    showDatePicker = false
+                    showDialog = false
                 }) {
-                    Text(text = "OK")
+                    Text("OK")
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) {
-                    Text(text = "Cancel")
+                TextButton(onClick = {
+                    onDateSelected(null)
+                    showDialog = false
+                }) {
+                    Text("Clear")
                 }
             }
         ) {
