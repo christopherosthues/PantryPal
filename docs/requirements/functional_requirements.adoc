@@ -15,6 +15,8 @@
 == Inventory Management
 *   **FR-2.1: Frequently used Items:** The system shall provide a separate inventory list for frequently used items so that new food items can be created quickly.
 *   **FR-2.2: Multi-Image Support:** Users shall be able to attach a main image and multiple additional images to an inventory item.
+*   **FR-2.3: Receipt Management:** The system shall allow users to store images of receipts.
+*   **FR-2.4: Receipt Linking:** The system shall allow users to link inventory items to a specific receipt.
 
 == Smart Data Entry (OCR)
 *   **FR-3.1: OCR Scan:** The system shall use the device camera to scan and recognize text from product labels.

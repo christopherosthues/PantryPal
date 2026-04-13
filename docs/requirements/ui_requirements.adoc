@@ -29,12 +29,18 @@ The PantryPal UI shall follow modern design principles to ensure a consistent an
 *   A separate list view for frequently used items.
 *   Simplified view focusing on basic info and nutritional values.
 *   Display of current price and a "Price History" chart for each item.
+*   Ability to link the item to a receipt.
+
+=== Receipts
+*   A list view of stored receipts.
+*   Each receipt shows: Date, Store Name (optional), and an image of the receipt.
+*   Ability to view linked inventory items for each receipt.
 
 === OCR Camera View
 *   A camera overlay with real-time text recognition indicators.
 *   Buttons to capture and confirm recognized data fields.
 
 == Navigation
-*   **Mobile:** Bottom navigation bar for quick access to Food, Inventory, and Profile.
+*   **Mobile:** Bottom navigation bar for quick access to Food, Inventory, Receipts, and Profile.
 *   **Desktop:** Side navigation drawer or permanent sidebar.
 *   **Back Navigation:** Standard "Back" button or gesture support across all screens.
