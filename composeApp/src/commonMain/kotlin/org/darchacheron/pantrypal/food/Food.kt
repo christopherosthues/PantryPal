@@ -4,6 +4,7 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
 import org.darchacheron.pantrypal.camera.Image
+import org.darchacheron.pantrypal.common.Product
 import kotlin.time.Clock
 import kotlin.time.Instant
 import kotlin.uuid.ExperimentalUuidApi
@@ -11,28 +12,48 @@ import kotlin.uuid.Uuid
 
 @OptIn(ExperimentalUuidApi::class)
 data class Food(
-    val id: Uuid = Uuid.generateV7(),
-    val serverId: Uuid? = null,
-    val profileId: Uuid,
-    val name: String,
-    val kiloCalories: Int?,
-    val kiloJoule: Int?,
-    val fatInGrams: Float?,
-    val saturatedFattyAcidsInGrams: Float?,
-    val carbsInGrams: Float?,
-    val sugarInGrams: Float?,
-    val dietaryFiberInGrams: Float?,
-    val proteinInGrams: Float?,
-    val saltInGrams: Float?,
-    val fillingQuantity: Float?,
-    val isLiquid: Boolean = false,
+    override val id: Uuid = Uuid.generateV7(),
+    override val serverId: Uuid? = null,
+    override val profileId: Uuid,
+    override val name: String,
+    override val kiloCalories: Int?,
+    override val kiloJoule: Int?,
+    override val fatInGrams: Float?,
+    override val saturatedFattyAcidsInGrams: Float?,
+    override val carbsInGrams: Float?,
+    override val sugarInGrams: Float?,
+    override val dietaryFiberInGrams: Float?,
+    override val proteinInGrams: Float?,
+    override val saltInGrams: Float?,
+    override val fillingQuantity: Float?,
+    override val isLiquid: Boolean = false,
+    override val createdAt: Instant,
+    override val lastModifiedAt: Instant,
+    override val image: Image? = null,
+    override val additionalImages: List<Image> = emptyList(),
     val bestBeforeUsedByDate: LocalDate?,
     val isUseBy: Boolean,
     val openedAt: LocalDate?,
-    val createdAt: Instant,
-    val lastModifiedAt: Instant,
-    val image: Image? = null,
-    val additionalImages: List<Image> = emptyList(),
+) : Product(
+    id,
+    serverId,
+    profileId,
+    name,
+    kiloCalories,
+    kiloJoule,
+    fatInGrams,
+    saturatedFattyAcidsInGrams,
+    carbsInGrams,
+    sugarInGrams,
+    dietaryFiberInGrams,
+    proteinInGrams,
+    saltInGrams,
+    fillingQuantity,
+    isLiquid,
+    createdAt,
+    lastModifiedAt,
+    image,
+    additionalImages,
 ) {
     val isOverdue: Boolean
         get() = bestBeforeUsedByDate != null && bestBeforeUsedByDate < Clock.System.todayIn(TimeZone.currentSystemDefault())

@@ -7,13 +7,15 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
+import org.darchacheron.pantrypal.common.Product
+import org.darchacheron.pantrypal.common.ProductViewModel
 import org.jetbrains.compose.resources.stringResource
 import pantrypal.composeapp.generated.resources.*
 
 @Composable
-fun NutrientFields(
+fun <T: Product> NutrientFields(
     useTwoColumns: Boolean,
-    viewModel: NutrientViewModel
+    viewModel: ProductViewModel<T>
 ) {
     AdaptiveRow(
         useTwoColumns = useTwoColumns,
