@@ -29,6 +29,7 @@ import org.darthacheron.pantrypal.shared.auth.ProblemDetails
 import org.darthacheron.pantrypal.shared.auth.RefreshTokenDto
 import org.darthacheron.pantrypal.shared.auth.RegistrationDto
 import org.darthacheron.pantrypal.shared.auth.RegistrationResponse
+import org.darthacheron.pantrypal.shared.auth.TokenResponse
 import org.darthacheron.pantrypal.shared.auth.UpdateUserDto
 import kotlin.uuid.ExperimentalUuidApi
 
