@@ -418,21 +418,3 @@ class ProfileViewModel(
         }
     }
 }
-
-data class PasswordChange(
-    val current: String = "",
-    val new: String = "",
-    val repeat: String = ""
-)
-
-data class ProfileValidationState(
-    val usernameError: org.jetbrains.compose.resources.StringResource? = null,
-    val emailError: org.jetbrains.compose.resources.StringResource? = null,
-    val serverUrlError: org.jetbrains.compose.resources.StringResource? = null
-)
-
-data class PasswordValidationState(
-    val currentPasswordError: org.jetbrains.compose.resources.StringResource? = null,
-    val newPasswordError: org.jetbrains.compose.resources.StringResource? = null,
-    val repeatPasswordError: org.jetbrains.compose.resources.StringResource? = null
-)
