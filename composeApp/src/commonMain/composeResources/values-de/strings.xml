@@ -206,6 +206,7 @@
     <string name="profile_link_account_button">Vorhandenes Konto verknüpfen</string>
     <string name="profile_create_account_title">Neues Konto erstellen</string>
     <string name="profile_create_account_button">Neues Konto erstellen</string>
+    <string name="profile_synchronization_title">Synchronization</string>
     <string name="profile_server_url_label">Server-URL</string>
     <string name="profile_remote_password_label">Remote-Passwort</string>
     <string name="profile_link_success">Konto erfolgreich verknüpft</string>

@@ -193,6 +193,12 @@ fun ProfileView(
                             }
                         )
 
+                        Text(
+                            text = stringResource(Res.string.profile_synchronization_title),
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.padding(top = 8.dp)
+                        )
+
                         OutlinedTextField(
                             value = profile.serverUrl ?: "",
                             onValueChange = { viewModel.updateServerUrl(it) },
@@ -210,6 +216,33 @@ fun ProfileView(
                                 }
                             }
                         )
+
+                        if (isLoggedInRemotely) {
+                            Text(
+                                text = stringResource(Res.string.profile_remote_logged_in),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        } else if (profile.serverId != null) {
+                            Text(
+                                text = stringResource(Res.string.profile_local_login_only),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.secondary
+                            )
+                        } else {
+                            Text(
+                                text = stringResource(Res.string.profile_local_only_no_server),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+
+                            Button(
+                                onClick = { showEnableSyncDialog = true },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(stringResource(Res.string.profile_enable_sync_button))
+                            }
+                        }
 
                         Text(
                             text = stringResource(Res.string.profile_change_password_title),
@@ -270,33 +303,6 @@ fun ProfileView(
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text(stringResource(Res.string.profile_change_password_title))
-                        }
-
-                        if (isLoggedInRemotely) {
-                            Text(
-                                text = stringResource(Res.string.profile_remote_logged_in),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        } else if (profile.serverId != null) {
-                            Text(
-                                text = stringResource(Res.string.profile_local_login_only),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.secondary
-                            )
-                        } else {
-                            Text(
-                                text = stringResource(Res.string.profile_local_only_no_server),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-
-                            Button(
-                                onClick = { showEnableSyncDialog = true },
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Text(stringResource(Res.string.profile_enable_sync_button))
-                            }
                         }
 
                         if (profile.serverId != null && (profile.lastSyncedAt == null || (profile.lastModifiedAt > profile.lastSyncedAt))) {
