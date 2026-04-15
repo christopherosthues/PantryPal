@@ -351,6 +351,8 @@ fun ProfileView(
         LaunchedEffect(showEnableSyncDialog) {
             if (currentProfile != null) {
                 remoteLoginViewModel.onUsernameChanged(currentProfile.username)
+                remoteLoginViewModel.onEmailChanged(currentProfile.email)
+                currentProfile.serverUrl?.let { remoteLoginViewModel.onServerUrlChanged(it) }
             }
         }
 

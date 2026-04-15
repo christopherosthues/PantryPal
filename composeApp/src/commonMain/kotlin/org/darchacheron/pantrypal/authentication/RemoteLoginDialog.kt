@@ -13,12 +13,12 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -33,20 +33,8 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.jetbrains.compose.resources.stringResource
-import pantrypal.composeapp.generated.resources.Res
-import pantrypal.composeapp.generated.resources.login_remote_password_label
-import pantrypal.composeapp.generated.resources.login_remote_username_label
-import pantrypal.composeapp.generated.resources.login_remote_username_placeholder
-import pantrypal.composeapp.generated.resources.login_remotely_checkbox
-import pantrypal.composeapp.generated.resources.login_use_same_credentials_checkbox
-import pantrypal.composeapp.generated.resources.profile_delete_cancel
-import pantrypal.composeapp.generated.resources.remote_login_button
-import pantrypal.composeapp.generated.resources.remote_login_password_label
-import pantrypal.composeapp.generated.resources.remote_login_server_url_label
-import pantrypal.composeapp.generated.resources.remote_login_title
-import pantrypal.composeapp.generated.resources.remote_login_username_label
+import pantrypal.composeapp.generated.resources.*
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RemoteLoginDialog(
     viewModel: RemoteLoginViewModel,
@@ -54,6 +42,7 @@ fun RemoteLoginDialog(
     onLoginSuccess: () -> Unit
 ) {
     val uiState by viewModel.loginState.collectAsStateWithLifecycle()
+    val data = uiState.data ?: return
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -80,6 +69,19 @@ fun RemoteLoginDialog(
                     color = MaterialTheme.colorScheme.onSurface
                 )
 
+                TabRow(selectedTabIndex = if (data.isCreatingNew) 1 else 0) {
+                    Tab(
+                        selected = !data.isCreatingNew,
+                        onClick = { viewModel.setIsCreatingNew(false) },
+                        text = { Text(stringResource(Res.string.profile_link_account_title)) }
+                    )
+                    Tab(
+                        selected = data.isCreatingNew,
+                        onClick = { viewModel.setIsCreatingNew(true) },
+                        text = { Text(stringResource(Res.string.profile_create_account_title)) }
+                    )
+                }
+
                 if (uiState.hasError) {
                     val errorMessage = stringResource(uiState.error!!)
                     Text(
@@ -89,101 +91,76 @@ fun RemoteLoginDialog(
                     )
                 }
 
-                val data = uiState.data ?: return@Column
+                OutlinedTextField(
+                    value = data.serverUrl,
+                    onValueChange = { },
+                    label = { Text(stringResource(Res.string.profile_server_url_label)) },
+                    readOnly = true,
+                    enabled = false,
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
 
                 OutlinedTextField(
                     value = data.username,
                     onValueChange = { viewModel.onUsernameChanged(it) },
-                    label = { Text(text = stringResource(Res.string.remote_login_username_label)) },
+                    label = { Text(stringResource(Res.string.registration_username)) },
                     keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Email,
+                        keyboardType = KeyboardType.Text,
                         imeAction = ImeAction.Next
                     ),
+                    isError = data.usernameError != null,
+                    supportingText = { data.usernameError?.let { Text(stringResource(it)) } },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
+
+                if (data.isCreatingNew) {
+                    OutlinedTextField(
+                        value = data.email,
+                        onValueChange = { viewModel.onEmailChanged(it) },
+                        label = { Text(stringResource(Res.string.registration_email)) },
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Email,
+                            imeAction = ImeAction.Next
+                        ),
+                        isError = data.emailError != null,
+                        supportingText = { data.emailError?.let { Text(stringResource(it)) } },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
 
                 OutlinedTextField(
                     value = data.password,
                     onValueChange = { viewModel.onPasswordChanged(it) },
-                    label = { Text(text = stringResource(Res.string.remote_login_password_label)) },
+                    label = { Text(stringResource(Res.string.registration_password)) },
                     visualTransformation = PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Password,
-                        imeAction = if (data.loginRemotely) ImeAction.Next else ImeAction.Done
+                        imeAction = if (data.isCreatingNew) ImeAction.Next else ImeAction.Done
                     ),
+                    isError = data.passwordError != null,
+                    supportingText = { data.passwordError?.let { Text(stringResource(it)) } },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Checkbox(
-                        checked = data.loginRemotely,
-                        onCheckedChange = { viewModel.onLoginRemotelyChanged(it) }
-                    )
-                    Text(
-                        text = stringResource(Res.string.login_remotely_checkbox),
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
-
-                if (data.loginRemotely) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Checkbox(
-                            checked = data.useSameCredentials,
-                            onCheckedChange = { viewModel.onUseSameCredentialsChanged(it) }
-                        )
-                        Text(
-                            text = stringResource(Res.string.login_use_same_credentials_checkbox),
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
-
+                if (data.isCreatingNew) {
                     OutlinedTextField(
-                        value = data.serverUrl,
-                        onValueChange = { viewModel.onServerUrlChanged(it) },
-                        label = { Text(text = stringResource(Res.string.remote_login_server_url_label)) },
+                        value = data.repeatedPassword,
+                        onValueChange = { viewModel.onRepeatedPasswordChanged(it) },
+                        label = { Text(stringResource(Res.string.registration_repeat_password)) },
+                        visualTransformation = PasswordVisualTransformation(),
                         keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Uri,
-                            imeAction = ImeAction.Next
+                            keyboardType = KeyboardType.Password,
+                            imeAction = ImeAction.Done
                         ),
+                        isError = data.repeatedPasswordError != null,
+                        supportingText = { data.repeatedPasswordError?.let { Text(stringResource(it)) } },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
-
-                    if (!data.useSameCredentials) {
-                        OutlinedTextField(
-                            value = data.remoteUsername,
-                            onValueChange = { viewModel.onRemoteUsernameChanged(it) },
-                            label = { Text(text = stringResource(Res.string.login_remote_username_label)) },
-                            placeholder = { Text(text = stringResource(Res.string.login_remote_username_placeholder)) },
-                            keyboardOptions = KeyboardOptions(
-                                keyboardType = KeyboardType.Email,
-                                imeAction = ImeAction.Next
-                            ),
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-
-                        OutlinedTextField(
-                            value = data.remotePassword,
-                            onValueChange = { viewModel.onRemotePasswordChanged(it) },
-                            label = { Text(text = stringResource(Res.string.login_remote_password_label)) },
-                            visualTransformation = PasswordVisualTransformation(),
-                            keyboardOptions = KeyboardOptions(
-                                keyboardType = KeyboardType.Password,
-                                imeAction = ImeAction.Done
-                            ),
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
                 }
 
                 Row(
@@ -191,28 +168,25 @@ fun RemoteLoginDialog(
                     horizontalArrangement = Arrangement.End,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
+                    TextButton(onClick = onDismiss) {
+                        Text(stringResource(Res.string.profile_delete_cancel))
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Button(
+                        onClick = { viewModel.submit(onSuccess = onLoginSuccess) },
+                        enabled = !uiState.isLoading && data.canSubmit
                     ) {
-                        TextButton(onClick = onDismiss) {
-                            Text(stringResource(Res.string.profile_delete_cancel))
-                        }
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Button(
-                            onClick = {
-                                viewModel.login(onSuccess = onLoginSuccess)
-                            },
-                            enabled = !uiState.isLoading
-                        ) {
-                            if (uiState.isLoading) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(18.dp),
-                                    strokeWidth = 2.dp,
-                                    color = MaterialTheme.colorScheme.onPrimary
-                                )
-                            } else {
-                                Text(text = stringResource(Res.string.remote_login_button))
-                            }
+                        if (uiState.isLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(18.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.onPrimary
+                            )
+                        } else {
+                            Text(
+                                if (data.isCreatingNew) stringResource(Res.string.profile_create_account_button)
+                                else stringResource(Res.string.profile_link_account_button)
+                            )
                         }
                     }
                 }

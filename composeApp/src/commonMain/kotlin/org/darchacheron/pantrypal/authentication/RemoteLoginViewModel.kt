@@ -6,10 +6,10 @@ import co.touchlab.kermit.Logger
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.darchacheron.pantrypal.profile.ProfileRepository
 import org.darchacheron.pantrypal.ui.UiState
-import org.jetbrains.compose.resources.StringResource
 import pantrypal.composeapp.generated.resources.Res
 import pantrypal.composeapp.generated.resources.remote_login_error_credentials
 import pantrypal.composeapp.generated.resources.remote_login_error_generic
@@ -19,24 +19,11 @@ import pantrypal.composeapp.generated.resources.remote_login_error_profile_not_f
 import pantrypal.composeapp.generated.resources.remote_login_error_server_url_empty
 import pantrypal.composeapp.generated.resources.remote_login_error_unreachable
 import pantrypal.composeapp.generated.resources.remote_login_error_username_empty
+import pantrypal.composeapp.generated.resources.registration_error_password_mismatch
+import pantrypal.composeapp.generated.resources.registration_error_invalid_email
+import kotlin.time.Clock
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
-
-data class RemoteLogin(
-    val username: String,
-    val password: String,
-    val serverUrl: String = "",
-    val loginRemotely: Boolean = false,
-    val useSameCredentials: Boolean = true,
-    val remoteUsername: String = "",
-    val remotePassword: String = "",
-    val usernameError: StringResource? = null,
-    val passwordError: StringResource? = null,
-    val serverUrlError: StringResource? = null,
-    val remoteUsernameError: StringResource? = null,
-    val remotePasswordError: StringResource? = null,
-    val canLogin: Boolean = false
-)
 
 @OptIn(ExperimentalUuidApi::class)
 class RemoteLoginViewModel(
@@ -46,24 +33,67 @@ class RemoteLoginViewModel(
 ) : ViewModel() {
     private val loginTag = "RemoteLogin"
 
-    val loginState = MutableStateFlow(UiState.success(RemoteLogin(username = "", password = "", loginRemotely = true)))
+    val loginState = MutableStateFlow(UiState.success(RemoteLogin()))
+
+    private fun updateState(block: (RemoteLogin) -> RemoteLogin) {
+        loginState.update { currentUiState ->
+            val currentData = currentUiState.data ?: return@update currentUiState
+            val nextData = block(currentData)
+            
+            val isServerUrlValid = nextData.serverUrl.isNotBlank() && nextData.serverUrlError == null
+            val isUsernameValid = nextData.username.isNotBlank() && nextData.usernameError == null
+            val isPasswordValid = nextData.password.isNotBlank() && nextData.passwordError == null
+            
+            val canSubmit = if (nextData.isCreatingNew) {
+                isServerUrlValid && isUsernameValid && isPasswordValid &&
+                        nextData.email.isNotBlank() && nextData.emailError == null &&
+                        nextData.repeatedPassword.isNotBlank() && nextData.repeatedPasswordError == null
+            } else {
+                isServerUrlValid && isUsernameValid && isPasswordValid
+            }
+
+            currentUiState.copy(data = nextData.copy(canSubmit = canSubmit), error = null)
+        }
+    }
 
     fun onUsernameChanged(username: String) {
         val error = if (username.isBlank()) Res.string.remote_login_error_username_empty else null
-        loginState.value = loginState.value.copy(data = loginState.value.data?.copy(username = username, usernameError = error))
+        updateState { it.copy(username = username, usernameError = error) }
+    }
+
+    fun onEmailChanged(email: String) {
+        val error = if (email.isBlank()) {
+            Res.string.remote_login_error_username_empty // Reusing for now
+        } else if (!isValidEmail(email)) {
+            Res.string.registration_error_invalid_email
+        } else {
+            null
+        }
+        updateState { it.copy(email = email, emailError = error) }
+    }
+
+    private fun isValidEmail(email: String): Boolean {
+        val emailRegex = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[a-z|A-Z]{2,}$".toRegex()
+        return emailRegex.matches(email)
     }
 
     fun onPasswordChanged(password: String) {
         val error = if (password.isBlank()) Res.string.remote_login_error_password_empty else null
-        loginState.value = loginState.value.copy(data = loginState.value.data?.copy(password = password, passwordError = error))
+        updateState { current ->
+            val repeatedError = if (current.isCreatingNew && current.repeatedPassword.isNotEmpty() && password != current.repeatedPassword) {
+                Res.string.registration_error_password_mismatch
+            } else {
+                null
+            }
+            current.copy(password = password, passwordError = error, repeatedPasswordError = repeatedError)
+        }
     }
 
-    fun onLoginRemotelyChanged(loginRemotely: Boolean) {
-        loginState.value = loginState.value.copy(data = loginState.value.data?.copy(loginRemotely = loginRemotely))
-    }
-
-    fun onUseSameCredentialsChanged(useSameCredentials: Boolean) {
-        loginState.value = loginState.value.copy(data = loginState.value.data?.copy(useSameCredentials = useSameCredentials))
+    fun onRepeatedPasswordChanged(repeated: String) {
+        updateState { current ->
+            val error = if (current.password != repeated) Res.string.registration_error_password_mismatch else null
+            current.copy(repeatedPassword = repeated, repeatedPasswordError = error)
+        }
     }
 
     fun onServerUrlChanged(serverUrl: String) {
@@ -74,93 +104,116 @@ class RemoteLoginViewModel(
         } else {
             null
         }
-        loginState.value = loginState.value.copy(data = loginState.value.data?.copy(serverUrl = serverUrl, serverUrlError = error))
+        updateState { it.copy(serverUrl = serverUrl, serverUrlError = error) }
     }
 
     private fun isValidUri(uri: String): Boolean {
         return try {
-            val regex = "^(https?)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]".toRegex()
+            val regex = "^https?://[-a-zA-Z0-9+&@/%~_|!:,.;]*[-a-zA-Z0-9+&@/%=~_|]".toRegex()
             regex.matches(uri)
         } catch (e: Exception) {
             false
         }
     }
 
-    fun onRemoteUsernameChanged(remoteUsername: String) {
-        val error = if (remoteUsername.isBlank()) Res.string.remote_login_error_username_empty else null
-        loginState.value = loginState.value.copy(data = loginState.value.data?.copy(remoteUsername = remoteUsername, remoteUsernameError = error))
+    fun setIsCreatingNew(isCreating: Boolean) {
+        updateState { it.copy(isCreatingNew = isCreating) }
     }
 
-    fun onRemotePasswordChanged(remotePassword: String) {
-        val error = if (remotePassword.isBlank()) Res.string.remote_login_error_password_empty else null
-        loginState.value = loginState.value.copy(data = loginState.value.data?.copy(remotePassword = remotePassword, remotePasswordError = error))
-    }
-
-    fun login(onSuccess: () -> Unit) {
+    fun submit(onSuccess: () -> Unit) {
         viewModelScope.launch {
             val uiState = loginState.value
             val data = uiState.data ?: return@launch
-            
+            if (!data.canSubmit) return@launch
+
             val localProfileId = preferencesRepository.authenticationPreferencesFlow.map { it.localProfileId }.firstOrNull() ?: ""
             if (localProfileId.isBlank()) return@launch
             val existingProfile = profileRepository.getProfileById(Uuid.parse(localProfileId)).firstOrNull() ?: return@launch
 
-            val serverUrl = if (data.loginRemotely) data.serverUrl else existingProfile.serverUrl ?: ""
-
-            if (serverUrl.isBlank()) {
-                loginState.emit(uiState.copy(error = Res.string.remote_login_error_server_url_empty))
-                return@launch
-            }
-
-            val remoteUsername = if (data.useSameCredentials) data.username else data.remoteUsername
-            val remotePassword = if (data.useSameCredentials) data.password else data.remotePassword
-
             try {
                 loginState.emit(UiState.loading())
 
-                val authResult = authenticationService.login(remoteUsername, remotePassword, serverUrl)
+                if (data.isCreatingNew) {
+                    val result = authenticationService.registerUser(data.username, data.email, data.password, data.serverUrl)
+                    if (result.isSuccess) {
+                        val response = result.getOrNull()
+                        if (response != null) {
+                            val serverIdFromToken = JwtUtils.getUserIdFromToken(response.tokenResponse.accessToken)
+                            val serverUuid = serverIdFromToken?.let { Uuid.parse(it) } ?: Uuid.parse(response.user.id)
 
-                if (authResult.isSuccess) {
-                    val loginResponse = authResult.getOrNull()
-                    if (loginResponse != null) {
-                        val serverIdFromToken = JwtUtils.getUserIdFromToken(loginResponse.tokenResponse.accessToken)
-                        val serverUuid = serverIdFromToken?.let { Uuid.parse(it) } ?: Uuid.parse(loginResponse.user.id)
+                            val profile = existingProfile.copy(
+                                serverId = serverUuid,
+                                username = response.user.username,
+                                email = response.user.email,
+                                serverUrl = data.serverUrl,
+                                isLocalOnly = false,
+                                lastSyncedAt = Clock.System.now()
+                            )
+                            profileRepository.upsert(profile)
 
-                        val profile = existingProfile.copy(
-                            serverId = serverUuid,
-                            username = loginResponse.user.username,
-                            email = loginResponse.user.email,
-                            serverUrl = serverUrl,
-                            isLocalOnly = false
-                        )
-                        profileRepository.upsert(profile)
-
-                        preferencesRepository.updateAccessPreferences(
-                            accessToken = loginResponse.tokenResponse.accessToken,
-                            refreshToken = loginResponse.tokenResponse.refreshToken,
-                            expiresIn = loginResponse.tokenResponse.expiresIn,
-                            refreshExpiresIn = loginResponse.tokenResponse.refreshExpiresIn,
-                            localProfileId = profile.id.toString(),
-                            isLoggedInRemotely = true,
-                            serverUrl = profile.serverUrl ?: ""
-                        )
+                            preferencesRepository.updateAccessPreferences(
+                                accessToken = response.tokenResponse.accessToken,
+                                refreshToken = response.tokenResponse.refreshToken,
+                                expiresIn = response.tokenResponse.expiresIn,
+                                refreshExpiresIn = response.tokenResponse.refreshExpiresIn,
+                                localProfileId = profile.id.toString(),
+                                isLoggedInRemotely = true,
+                                serverUrl = profile.serverUrl ?: ""
+                            )
+                        }
+                        loginState.emit(UiState.success(data))
+                        onSuccess()
+                    } else {
+                        handleError(result.exceptionOrNull(), uiState)
                     }
-                    loginState.emit(UiState.success(data))
-                    onSuccess()
                 } else {
-                    val errorRes = when (authResult.exceptionOrNull()) {
-                        is InvalidCredentialsException -> Res.string.remote_login_error_credentials
-                        is ProfileNotFoundException -> Res.string.remote_login_error_profile_not_found
-                        is ServerUnreachableException -> Res.string.remote_login_error_unreachable
-                        else -> Res.string.remote_login_error_generic
+                    val result = authenticationService.login(data.username, data.password, data.serverUrl)
+                    if (result.isSuccess) {
+                        val response = result.getOrNull()
+                        if (response != null) {
+                            val serverIdFromToken = JwtUtils.getUserIdFromToken(response.tokenResponse.accessToken)
+                            val serverUuid = serverIdFromToken?.let { Uuid.parse(it) } ?: Uuid.parse(response.user.id)
+
+                            val profile = existingProfile.copy(
+                                serverId = serverUuid,
+                                username = response.user.username,
+                                email = response.user.email,
+                                serverUrl = data.serverUrl,
+                                isLocalOnly = false,
+                                lastSyncedAt = Clock.System.now()
+                            )
+                            profileRepository.upsert(profile)
+
+                            preferencesRepository.updateAccessPreferences(
+                                accessToken = response.tokenResponse.accessToken,
+                                refreshToken = response.tokenResponse.refreshToken,
+                                expiresIn = response.tokenResponse.expiresIn,
+                                refreshExpiresIn = response.tokenResponse.refreshExpiresIn,
+                                localProfileId = profile.id.toString(),
+                                isLoggedInRemotely = true,
+                                serverUrl = profile.serverUrl ?: ""
+                            )
+                        }
+                        loginState.emit(UiState.success(data))
+                        onSuccess()
+                    } else {
+                        handleError(result.exceptionOrNull(), uiState)
                     }
-                    loginState.emit(uiState.copy(error = errorRes))
                 }
             } catch (exception: Exception) {
-                Logger.withTag(loginTag).e(exception) { "Error remote login user: ${data.username}" }
+                Logger.withTag(loginTag).e(exception) { "Error submitting remote auth for: ${data.username}" }
                 loginState.emit(uiState.copy(error = Res.string.remote_login_error_generic))
             }
         }
     }
 
+    private suspend fun handleError(exception: Throwable?, uiState: UiState<RemoteLogin>) {
+        val errorRes = when (exception) {
+            is InvalidCredentialsException -> Res.string.remote_login_error_credentials
+            is ProfileNotFoundException -> Res.string.remote_login_error_profile_not_found
+            is ServerUnreachableException -> Res.string.remote_login_error_unreachable
+            else -> Res.string.remote_login_error_generic
+        }
+        loginState.emit(uiState.copy(error = errorRes))
+    }
 }
