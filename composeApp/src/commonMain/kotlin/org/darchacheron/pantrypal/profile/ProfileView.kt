@@ -193,25 +193,23 @@ fun ProfileView(
                             }
                         )
 
-                        if (!profile.isLocalOnly) {
-                            OutlinedTextField(
-                                value = profile.serverUrl ?: "",
-                                onValueChange = { viewModel.updateServerUrl(it) },
-                                label = { Text(stringResource(Res.string.profile_server_url_label)) },
-                                keyboardOptions = KeyboardOptions(
-                                    keyboardType = KeyboardType.Uri,
-                                    imeAction = ImeAction.Next
-                                ),
-                                singleLine = true,
-                                modifier = Modifier.fillMaxWidth(),
-                                isError = profileValidationState.serverUrlError != null,
-                                supportingText = {
-                                    profileValidationState.serverUrlError?.let {
-                                        Text(stringResource(it))
-                                    }
+                        OutlinedTextField(
+                            value = profile.serverUrl ?: "",
+                            onValueChange = { viewModel.updateServerUrl(it) },
+                            label = { Text(stringResource(Res.string.profile_server_url_label)) },
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Uri,
+                                imeAction = ImeAction.Next
+                            ),
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
+                            isError = profileValidationState.serverUrlError != null,
+                            supportingText = {
+                                profileValidationState.serverUrlError?.let {
+                                    Text(stringResource(it))
                                 }
-                            )
-                        }
+                            }
+                        )
 
                         Text(
                             text = stringResource(Res.string.profile_change_password_title),

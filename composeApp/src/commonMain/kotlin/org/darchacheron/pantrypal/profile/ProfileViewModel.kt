@@ -141,10 +141,7 @@ class ProfileViewModel(
             }
 
             val serverUrl = profile.serverUrl
-            if (!profile.isLocalOnly && serverUrl.isNullOrBlank()) {
-                validationState = validationState.copy(serverUrlError = Res.string.profile_error_server_url_empty)
-                hasValidationError = true
-            } else if (!serverUrl.isNullOrBlank() && !isValidUri(serverUrl)) {
+            if (!serverUrl.isNullOrBlank() && !isValidUri(serverUrl)) {
                 validationState = validationState.copy(serverUrlError = Res.string.profile_error_server_url_invalid)
                 hasValidationError = true
             }
@@ -158,12 +155,17 @@ class ProfileViewModel(
                 _uiState.value = UiState.loading()
                 _profileValidationState.value = ProfileValidationState()
 
-                val serverUrl = profile.serverUrl
-                if (!serverUrl.isNullOrBlank() && profile.serverId != null) {
+                val profileToSave = if (profile.serverUrl?.isBlank() == true) {
+                    profile.copy(serverUrl = null)
+                } else {
+                    profile
+                }
+
+                if (!profileToSave.serverUrl.isNullOrBlank() && profileToSave.serverId != null) {
                     val result = authenticationService.updateUser(
-                        serverUrl = serverUrl,
-                        username = profile.username,
-                        email = profile.email
+                        serverUrl = profileToSave.serverUrl,
+                        username = profileToSave.username,
+                        email = profileToSave.email
                     )
                     if (result.isFailure) {
                         val exception = result.exceptionOrNull()
@@ -183,8 +185,8 @@ class ProfileViewModel(
                     }
                 }
 
-                profileRepository.upsert(profile)
-                _uiState.value = UiState.success(profile)
+                profileRepository.upsert(profileToSave)
+                _uiState.value = UiState.success(profileToSave)
             } catch (e: Exception) {
                 _uiState.value = capturedState.copy(error = Res.string.profile_error_update)
             }
@@ -357,7 +359,7 @@ class ProfileViewModel(
 
     private fun isValidUri(uri: String): Boolean {
         return try {
-            val regex = "^(https?|ftp|file)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]".toRegex()
+            val regex = "^https?://[-a-zA-Z0-9+&@/%~_|!:,.;]*[-a-zA-Z0-9+&@/%=~_|]".toRegex()
             regex.matches(uri)
         } catch (e: Exception) {
             false
@@ -366,9 +368,7 @@ class ProfileViewModel(
 
     fun updateServerUrl(url: String) {
         _uiState.value = _uiState.value.copy(data = _uiState.value.data?.copy(serverUrl = url), error = null)
-        val error = if (url.isBlank()) {
-            Res.string.profile_error_server_url_empty
-        } else if (!isValidUri(url)) {
+        val error = if (url.isNotEmpty() && !isValidUri(url)) {
             Res.string.profile_error_server_url_invalid
         } else {
             null
