@@ -53,6 +53,9 @@ class ProfileViewModel(
     private val _isLoggedInRemotely = MutableStateFlow(false)
     val isLoggedInRemotely: StateFlow<Boolean> = _isLoggedInRemotely
 
+    private val _persistedServerUrl = MutableStateFlow<String?>(null)
+    val persistedServerUrl: StateFlow<String?> = _persistedServerUrl
+
     init {
         loadProfile()
     }
@@ -65,6 +68,7 @@ class ProfileViewModel(
                 if (profileId.isNotEmpty()) {
                     profileRepository.getProfileById(Uuid.parse(profileId)).collect { profile ->
                         if (profile != null) {
+                            _persistedServerUrl.value = profile.serverUrl
                             _uiState.value = UiState.success(profile)
                         }
                     }
@@ -256,7 +260,7 @@ class ProfileViewModel(
         return emailRegex.matches(email)
     }
 
-    private fun isValidUri(uri: String): Boolean {
+    fun isValidUri(uri: String): Boolean {
         return try {
             val regex = "^https?://[-a-zA-Z0-9+&@/%~_|!:,.;]*[-a-zA-Z0-9+&@/%=~_|]".toRegex()
             regex.matches(uri)

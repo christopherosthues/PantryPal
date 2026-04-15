@@ -62,6 +62,7 @@ fun ProfileView(
     val passwordChangeState by viewModel.passwordChangeState.collectAsState()
     val passwordValidationState by viewModel.passwordValidationState.collectAsState()
     val isLoggedInRemotely by viewModel.isLoggedInRemotely.collectAsState()
+    val persistedServerUrl by viewModel.persistedServerUrl.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     var showEnableSyncDialog by remember { mutableStateOf(false) }
 
@@ -236,9 +237,14 @@ fun ProfileView(
                                 color = MaterialTheme.colorScheme.primary
                             )
 
+                            val isServerUrlPersisted = !profile.serverUrl.isNullOrBlank() &&
+                                    profile.serverUrl == persistedServerUrl &&
+                                    profileValidationState.serverUrlError == null
+
                             Button(
                                 onClick = { showEnableSyncDialog = true },
-                                modifier = Modifier.fillMaxWidth()
+                                modifier = Modifier.fillMaxWidth(),
+                                enabled = isServerUrlPersisted
                             ) {
                                 Text(stringResource(Res.string.profile_enable_sync_button))
                             }
