@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import org.darchacheron.pantrypal.authentication.AuthenticationPreferencesRepository
 import org.darchacheron.pantrypal.authentication.AuthenticationService
+import org.darchacheron.pantrypal.authentication.InvalidCredentialsException
 import org.darchacheron.pantrypal.authentication.JwtUtils
 import org.darchacheron.pantrypal.authentication.UserAlreadyExistsException
 import org.darchacheron.pantrypal.authentication.hashPassword
@@ -165,30 +166,6 @@ class ProfileViewModel(
                     profile
                 }
 
-                if (!profileToSave.serverUrl.isNullOrBlank() && profileToSave.serverId != null) {
-                    val result = authenticationService.updateUser(
-                        serverUrl = profileToSave.serverUrl,
-                        username = profileToSave.username,
-                        email = profileToSave.email
-                    )
-                    if (result.isFailure) {
-                        val exception = result.exceptionOrNull()
-                        
-                        if (exception is UserAlreadyExistsException) {
-                             // For now we assume username exists if we get a conflict, 
-                             // but we could also check email or both if the backend provides info.
-                             _profileValidationState.value = ProfileValidationState(
-                                 usernameError = Res.string.profile_error_username_exists
-                             )
-                             _uiState.value = capturedState
-                             return@launch
-                        }
-
-                        _uiState.value = capturedState.copy(error = Res.string.profile_error_update)
-                        return@launch
-                    }
-                }
-
                 profileRepository.upsert(profileToSave)
                 _uiState.value = UiState.success(profileToSave)
             } catch (e: Exception) {
@@ -237,16 +214,6 @@ class ProfileViewModel(
                 val updatedProfile = profile.copy(passwordHash = hashPassword(changeData.new))
                 profileRepository.upsert(updatedProfile)
                 
-                val serverUrl = updatedProfile.serverUrl
-                if (!serverUrl.isNullOrBlank() && updatedProfile.serverId != null) {
-                    authenticationService.updateUser(
-                        serverUrl = serverUrl,
-                        username = updatedProfile.username,
-                        email = updatedProfile.email,
-                        password = changeData.new
-                    )
-                }
-                
                 _uiState.value = UiState.success(updatedProfile)
                 _passwordChangeState.value = UiState.success(PasswordChange())
             } catch (e: Exception) {
@@ -277,6 +244,79 @@ class ProfileViewModel(
             null
         }
         _profileValidationState.value = _profileValidationState.value.copy(serverUrlError = error)
+    }
+
+    private val _remoteProfileEditState = MutableStateFlow<UiState<Boolean>>(UiState.success(false))
+    val remoteProfileEditState: StateFlow<UiState<Boolean>> = _remoteProfileEditState
+
+    private val _showRemoteProfileDialog = MutableStateFlow(false)
+    val showRemoteProfileDialog: StateFlow<Boolean> = _showRemoteProfileDialog
+
+    fun showRemoteProfileDialog() {
+        _showRemoteProfileDialog.value = true
+        _remoteProfileEditState.value = UiState.success(false)
+    }
+
+    fun dismissRemoteProfileDialog() {
+        _showRemoteProfileDialog.value = false
+    }
+
+    fun updateRemoteProfile(username: String, email: String, newPassword: String?, currentPassword: String) {
+        viewModelScope.launch {
+            val profile = _uiState.value.data ?: return@launch
+            val serverUrl = profile.serverUrl ?: return@launch
+
+            _remoteProfileEditState.value = UiState.loading()
+            try {
+                // We need to verify current password first or the backend needs it for sensitive changes
+                // If backend requires current password for any update, we include it.
+                // Based on AuthenticationService.updateUser, it doesn't take current password yet.
+                // Let's assume we might need to re-authenticate or the backend handles it via token.
+                // However, the requirement said "password with repeat password and old password".
+                // I should check if updateUser in AuthenticationService should be updated to include current password if needed.
+                
+                val result = authenticationService.updateUser(
+                    serverUrl = serverUrl,
+                    username = if (username != profile.username) username else null,
+                    email = if (email != profile.email) email else null,
+                    password = newPassword,
+                    currentPassword = currentPassword
+                )
+
+                if (result.isSuccess) {
+                    _remoteProfileEditState.value = UiState.success(true)
+                    // We don't update the local profile username/email here 
+                    // because they can be different from the remote ones.
+                    _showRemoteProfileDialog.value = false
+                } else {
+                    val exception = result.exceptionOrNull()
+                    val errorRes = when (exception) {
+                        is UserAlreadyExistsException -> Res.string.profile_error_username_exists
+                        is InvalidCredentialsException -> Res.string.profile_error_wrong_password
+                        else -> Res.string.profile_error_update
+                    }
+                    _remoteProfileEditState.value = UiState.error(errorRes)
+                }
+            } catch (e: Exception) {
+                _remoteProfileEditState.value = UiState.error(Res.string.profile_error_update)
+            }
+        }
+    }
+
+    fun logoutRemote() {
+        viewModelScope.launch {
+            authenticationService.logout()
+            authenticationPreferencesRepository.updateAccessPreferences(
+                accessToken = "",
+                refreshToken = "",
+                expiresIn = 0,
+                refreshExpiresIn = 0,
+                localProfileId = _uiState.value.data?.id.toString(),
+                isLoggedInRemotely = false,
+                serverUrl = _uiState.value.data?.serverUrl ?: ""
+            )
+            _isLoggedInRemotely.value = false
+        }
     }
 
     fun logout() {

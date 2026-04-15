@@ -200,7 +200,8 @@ class AuthenticationService(
         serverUrl: String,
         username: String? = null,
         email: String? = null,
-        password: String? = null
+        password: String? = null,
+        currentPassword: String? = null
     ): Result<Boolean> {
         val updateUrl = "$serverUrl/users/me"
 
@@ -210,12 +211,13 @@ class AuthenticationService(
                 it.patch(updateUrl) {
                     header(HttpHeaders.Authorization, "Bearer ${prefs.accessToken}")
                     contentType(ContentType.Application.Json)
-                    setBody(UpdateUserDto(username, email, password))
+                    setBody(UpdateUserDto(username, email, password, currentPassword))
                 }
             }
             return when (response.status) {
                 HttpStatusCode.OK -> Result.success(true)
                 HttpStatusCode.Conflict -> Result.failure(UserAlreadyExistsException("Username or email already exists"))
+                HttpStatusCode.Unauthorized -> Result.failure(InvalidCredentialsException("Invalid current password"))
                 else -> Result.failure(Exception("Update failed with status ${response.status}"))
             }
         } catch (e: Exception) {

@@ -143,8 +143,6 @@ class RemoteLoginViewModel(
 
                             val profile = existingProfile.copy(
                                 serverId = serverUuid,
-                                username = response.user.username,
-                                email = response.user.email,
                                 serverUrl = data.serverUrl,
                                 isLocalOnly = false,
                                 lastSyncedAt = Clock.System.now()
@@ -176,8 +174,6 @@ class RemoteLoginViewModel(
 
                             val profile = existingProfile.copy(
                                 serverId = serverUuid,
-                                username = response.user.username,
-                                email = response.user.email,
                                 serverUrl = data.serverUrl,
                                 isLocalOnly = false,
                                 lastSyncedAt = Clock.System.now()

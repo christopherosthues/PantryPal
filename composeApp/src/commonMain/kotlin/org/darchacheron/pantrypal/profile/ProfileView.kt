@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -15,6 +16,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -219,11 +221,26 @@ fun ProfileView(
                         )
 
                         if (isLoggedInRemotely) {
-                            Text(
-                                text = stringResource(Res.string.profile_remote_logged_in),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.primary
-                            )
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = stringResource(Res.string.profile_remote_logged_in),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                TextButton(onClick = { viewModel.logoutRemote() }) {
+                                    Text(stringResource(Res.string.profile_remote_logout_button))
+                                }
+                            }
+                            TextButton(
+                                onClick = { viewModel.showRemoteProfileDialog() },
+                                modifier = Modifier.padding(top = 4.dp)
+                            ) {
+                                Text(stringResource(Res.string.profile_edit_remote_button))
+                            }
                         } else if (profile.serverId != null) {
                             Text(
                                 text = stringResource(Res.string.profile_local_login_only),
@@ -376,5 +393,110 @@ fun ProfileView(
                 viewModel.loadProfile()
             }
         )
+    }
+
+    val showRemoteProfileDialog by viewModel.showRemoteProfileDialog.collectAsState()
+    if (showRemoteProfileDialog) {
+        val remoteProfileEditState by viewModel.remoteProfileEditState.collectAsState()
+        val profile = uiState.data
+        if (profile != null) {
+            var username by remember { mutableStateOf(profile.username) }
+            var email by remember { mutableStateOf(profile.email) }
+            var oldPassword by remember { mutableStateOf("") }
+            var newPassword by remember { mutableStateOf("") }
+            var repeatNewPassword by remember { mutableStateOf("") }
+
+            AlertDialog(
+                onDismissRequest = { viewModel.dismissRemoteProfileDialog() },
+                title = { Text(stringResource(Res.string.profile_edit_remote_dialog_title)) },
+                text = {
+                    Column(
+                        modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = username,
+                            onValueChange = { username = it },
+                            label = { Text(stringResource(Res.string.profile_username_label)) },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true
+                        )
+                        OutlinedTextField(
+                            value = email,
+                            onValueChange = { email = it },
+                            label = { Text(stringResource(Res.string.profile_email_label)) },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true
+                        )
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                        OutlinedTextField(
+                            value = oldPassword,
+                            onValueChange = { oldPassword = it },
+                            label = { Text(stringResource(Res.string.profile_remote_old_password_label)) },
+                            modifier = Modifier.fillMaxWidth(),
+                            visualTransformation = PasswordVisualTransformation(),
+                            singleLine = true
+                        )
+                        OutlinedTextField(
+                            value = newPassword,
+                            onValueChange = { newPassword = it },
+                            label = { Text(stringResource(Res.string.profile_remote_new_password_label)) },
+                            modifier = Modifier.fillMaxWidth(),
+                            visualTransformation = PasswordVisualTransformation(),
+                            singleLine = true
+                        )
+                        OutlinedTextField(
+                            value = repeatNewPassword,
+                            onValueChange = { repeatNewPassword = it },
+                            label = { Text(stringResource(Res.string.profile_remote_repeat_new_password_label)) },
+                            modifier = Modifier.fillMaxWidth(),
+                            visualTransformation = PasswordVisualTransformation(),
+                            singleLine = true,
+                            isError = newPassword != repeatNewPassword && repeatNewPassword.isNotEmpty()
+                        )
+                        
+                        if (remoteProfileEditState.error != null) {
+                            Text(
+                                text = stringResource(remoteProfileEditState.error!!),
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            viewModel.updateRemoteProfile(
+                                username = username,
+                                email = email,
+                                newPassword = newPassword.takeIf { it.isNotBlank() },
+                                currentPassword = oldPassword
+                            )
+                        },
+                        enabled = !remoteProfileEditState.isLoading && 
+                                 username.isNotBlank() && 
+                                 email.isNotBlank() && 
+                                 oldPassword.isNotBlank() &&
+                                 (newPassword.isEmpty() || newPassword == repeatNewPassword)
+                    ) {
+                        if (remoteProfileEditState.isLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.onPrimary
+                            )
+                        } else {
+                            Text(stringResource(Res.string.profile_save_button))
+                        }
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { viewModel.dismissRemoteProfileDialog() }) {
+                        Text(stringResource(Res.string.profile_delete_cancel))
+                    }
+                }
+            )
+        }
     }
 }
