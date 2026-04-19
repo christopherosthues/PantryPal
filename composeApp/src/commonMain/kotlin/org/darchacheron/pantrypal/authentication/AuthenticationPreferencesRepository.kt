@@ -28,38 +28,63 @@ class AuthenticationPreferencesRepository(private val dataStore: DataStore<Prefe
             AuthenticationPreferences(accessToken, refreshToken, expiresIn, refreshExpiresIn, localProfileId, isLoggedInRemotely, serverUrl)
         }
 
-    suspend fun updateAccessPreferences(
+    suspend fun loginLocally(localProfileId: String, serverUrl: String?) {
+        dataStore.edit {
+            it[AuthenticationPreferencesKeys.LOCAL_PROFILE_ID] = localProfileId
+            it[AuthenticationPreferencesKeys.IS_LOGGED_IN_REMOTELY] = false
+            it[AuthenticationPreferencesKeys.SERVER_URL] = serverUrl ?: ""
+        }
+    }
+
+    suspend fun loginRemotely(
         accessToken: String,
         refreshToken: String,
         expiresIn: Int,
         refreshExpiresIn: Int,
-        localProfileId: String? = null,
-        isLoggedInRemotely: Boolean? = null,
-        serverUrl: String? = null
+        serverUrl: String
     ) {
         dataStore.edit {
             it[AuthenticationPreferencesKeys.ACCESS_TOKEN] = accessToken
             it[AuthenticationPreferencesKeys.REFRESH_TOKEN] = refreshToken
             it[AuthenticationPreferencesKeys.EXPIRES_IN] = expiresIn
             it[AuthenticationPreferencesKeys.REFRESH_EXPIRES_IN] = refreshExpiresIn
-            if (isLoggedInRemotely != null) {
-                it[AuthenticationPreferencesKeys.IS_LOGGED_IN_REMOTELY] = isLoggedInRemotely
-            }
-            if (serverUrl != null) {
-                it[AuthenticationPreferencesKeys.SERVER_URL] = serverUrl
-            }
-            if (localProfileId != null) {
-                if (localProfileId.isNotBlank()) {
-                    it[AuthenticationPreferencesKeys.LOCAL_PROFILE_ID] = localProfileId
-                } else {
-                    it.remove(AuthenticationPreferencesKeys.LOCAL_PROFILE_ID)
-                }
-            }
+            it[AuthenticationPreferencesKeys.IS_LOGGED_IN_REMOTELY] = true
+            it[AuthenticationPreferencesKeys.SERVER_URL] = serverUrl
         }
     }
 
-    suspend fun clearProfile() {
+    suspend fun updateAccessToken(
+        accessToken: String,
+        refreshToken: String,
+        expiresIn: Int,
+        refreshExpiresIn: Int,
+    ) {
         dataStore.edit {
+            it[AuthenticationPreferencesKeys.ACCESS_TOKEN] = accessToken
+            it[AuthenticationPreferencesKeys.REFRESH_TOKEN] = refreshToken
+            it[AuthenticationPreferencesKeys.EXPIRES_IN] = expiresIn
+            it[AuthenticationPreferencesKeys.REFRESH_EXPIRES_IN] = refreshExpiresIn
+        }
+    }
+
+    suspend fun logoutRemotely() {
+        dataStore.edit {
+            it[AuthenticationPreferencesKeys.ACCESS_TOKEN] = ""
+            it[AuthenticationPreferencesKeys.REFRESH_TOKEN] = ""
+            it[AuthenticationPreferencesKeys.EXPIRES_IN] = 0
+            it[AuthenticationPreferencesKeys.REFRESH_EXPIRES_IN] = 0
+            it[AuthenticationPreferencesKeys.IS_LOGGED_IN_REMOTELY] = false
+        }
+    }
+
+    suspend fun logout() {
+        dataStore.edit {
+            it[AuthenticationPreferencesKeys.ACCESS_TOKEN] = ""
+            it[AuthenticationPreferencesKeys.REFRESH_TOKEN] = ""
+            it[AuthenticationPreferencesKeys.EXPIRES_IN] = 0
+            it[AuthenticationPreferencesKeys.REFRESH_EXPIRES_IN] = 0
+            it[AuthenticationPreferencesKeys.IS_LOGGED_IN_REMOTELY] = false
+            it[AuthenticationPreferencesKeys.SERVER_URL] = ""
             it.remove(AuthenticationPreferencesKeys.LOCAL_PROFILE_ID)
         }
     }

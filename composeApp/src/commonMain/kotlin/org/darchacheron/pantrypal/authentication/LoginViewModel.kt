@@ -21,7 +21,7 @@ import kotlin.uuid.ExperimentalUuidApi
 @OptIn(ExperimentalUuidApi::class)
 class LoginViewModel(
     private val profileRepository: ProfileRepository,
-    private val preferencesRepository: AuthenticationPreferencesRepository,
+    private val authenticationService: AuthenticationService,
     private val navigator: Navigator,
 ) : ViewModel() {
     private val loginTag = "Login"
@@ -91,16 +91,7 @@ class LoginViewModel(
     }
 
     private suspend fun loginLocally(profile: Profile, username: String, password: String) {
-        // Mark this profile as current
-        preferencesRepository.updateAccessPreferences(
-            accessToken = "",
-            refreshToken = "",
-            expiresIn = 0,
-            refreshExpiresIn = 0,
-            localProfileId = profile.id.toString(),
-            isLoggedInRemotely = false,
-            serverUrl = profile.serverUrl ?: ""
-        )
+        authenticationService.loginLocally(profile.id, profile.serverUrl)
         loginState.emit(UiState.success(Login(username, password)))
         navigator.goToMain()
     }

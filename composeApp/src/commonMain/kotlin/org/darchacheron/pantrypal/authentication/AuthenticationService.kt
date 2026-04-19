@@ -19,10 +19,8 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.serialization.json.Json
-import org.darchacheron.pantrypal.settings.SettingsRepository
 import org.darthacheron.pantrypal.shared.auth.LoginDto
 import org.darthacheron.pantrypal.shared.auth.LoginResponse
 import org.darthacheron.pantrypal.shared.auth.ProblemDetails
@@ -32,6 +30,7 @@ import org.darthacheron.pantrypal.shared.auth.RegistrationResponse
 import org.darthacheron.pantrypal.shared.auth.TokenResponse
 import org.darthacheron.pantrypal.shared.auth.UpdateUserDto
 import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
 class InvalidCredentialsException(message: String) : Exception(message)
 class ProfileNotFoundException(message: String) : Exception(message)
@@ -41,20 +40,15 @@ class ServerErrorException(message: String) : Exception(message)
 
 @OptIn(ExperimentalUuidApi::class)
 class AuthenticationService(
-    private val preferencesRepository: AuthenticationPreferencesRepository,
-    private val settingsRepository: SettingsRepository
+    private val authenticationPreferencesRepository: AuthenticationPreferencesRepository,
 ) {
     private val authenticationTag = "Authentication"
 
-    suspend fun isRemoteEnabled(): Boolean {
-        return preferencesRepository.authenticationPreferencesFlow.first().isLoggedInRemotely
+    suspend fun loginLocally(profileId: Uuid, serverUrl: String?) {
+        authenticationPreferencesRepository.loginLocally(profileId.toString(), serverUrl)
     }
 
-    suspend fun getServerUrl(): String {
-        return preferencesRepository.authenticationPreferencesFlow.first().serverUrl
-    }
-
-    suspend fun login(username: String, password: String, serverUrl: String): Result<LoginResponse?> {
+    suspend fun loginRemotely(username: String, password: String, serverUrl: String): Result<LoginResponse?> {
         val loginUrl = "$serverUrl/login"
 
         try {
@@ -69,11 +63,12 @@ class AuthenticationService(
 
             if (response.status == HttpStatusCode.OK) {
                 val loginResponse = response.body<LoginResponse>()
-                preferencesRepository.updateAccessPreferences(
+                authenticationPreferencesRepository.loginRemotely(
                     loginResponse.tokenResponse.accessToken,
                     loginResponse.tokenResponse.refreshToken,
                     loginResponse.tokenResponse.expiresIn,
-                    loginResponse.tokenResponse.refreshExpiresIn
+                    loginResponse.tokenResponse.refreshExpiresIn,
+                    serverUrl
                 )
                 Logger.withTag(authenticationTag).d("Login successful")
 
@@ -108,13 +103,22 @@ class AuthenticationService(
         expectSuccess = false
     }
 
-    suspend fun logout(): Result<Boolean> {
+    suspend fun logoutRemotely(): Result<Boolean> {
         try {
-            // Passing null for localProfileId to preserve it in updateAccessPreferences
-            // Setting isLoggedInRemotely to false on logout
-            preferencesRepository.updateAccessPreferences("", "", 0, 0, null, isLoggedInRemotely = false, serverUrl = "")
+            authenticationPreferencesRepository.logoutRemotely()
             return Result.success(true)
         } catch (exception: Exception) {
+            Logger.withTag(authenticationTag).e(exception) { "Error logging out remote user" }
+            return Result.failure(exception)
+        }
+    }
+
+    suspend fun logout(): Result<Boolean> {
+        try {
+            authenticationPreferencesRepository.logout()
+            return Result.success(true)
+        } catch (exception: Exception) {
+            Logger.withTag(authenticationTag).e(exception) { "Error logging out user" }
             return Result.failure(exception)
         }
     }
@@ -124,7 +128,7 @@ class AuthenticationService(
 
         try {
             val authenticationPreferences =
-                preferencesRepository.authenticationPreferencesFlow.firstOrNull()
+                authenticationPreferencesRepository.authenticationPreferencesFlow.firstOrNull()
                     ?: return Result.success(false)
 
             val response: HttpResponse = createHttpClient().use {
@@ -138,7 +142,7 @@ class AuthenticationService(
 
             if (response.status == HttpStatusCode.OK) {
                 val tokenResponse = response.body<TokenResponse>()
-                preferencesRepository.updateAccessPreferences(
+                authenticationPreferencesRepository.updateAccessToken(
                     tokenResponse.accessToken,
                     tokenResponse.refreshToken,
                     tokenResponse.expiresIn,
@@ -174,11 +178,12 @@ class AuthenticationService(
 
             if (response.status == HttpStatusCode.OK) {
                 val registrationResponse = response.body<RegistrationResponse>()
-                preferencesRepository.updateAccessPreferences(
+                authenticationPreferencesRepository.loginRemotely(
                     registrationResponse.tokenResponse.accessToken,
                     registrationResponse.tokenResponse.refreshToken,
                     registrationResponse.tokenResponse.expiresIn,
-                    registrationResponse.tokenResponse.refreshExpiresIn
+                    registrationResponse.tokenResponse.refreshExpiresIn,
+                    serverUrl
                 )
                 return Result.success(registrationResponse)
             } else {
@@ -206,7 +211,7 @@ class AuthenticationService(
         val updateUrl = "$serverUrl/users/me"
 
         try {
-            val prefs = preferencesRepository.authenticationPreferencesFlow.firstOrNull() ?: return Result.failure(Exception("Not authenticated"))
+            val prefs = authenticationPreferencesRepository.authenticationPreferencesFlow.firstOrNull() ?: return Result.failure(Exception("Not authenticated"))
             val response: HttpResponse = createHttpClient().use {
                 it.patch(updateUrl) {
                     header(HttpHeaders.Authorization, "Bearer ${prefs.accessToken}")
@@ -229,7 +234,7 @@ class AuthenticationService(
         val deleteUrl = "$serverUrl/users/me"
 
         try {
-            val prefs = preferencesRepository.authenticationPreferencesFlow.firstOrNull() ?: return Result.failure(Exception("Not authenticated"))
+            val prefs = authenticationPreferencesRepository.authenticationPreferencesFlow.firstOrNull() ?: return Result.failure(Exception("Not authenticated"))
             val response: HttpResponse = createHttpClient().use {
                 it.delete(deleteUrl) {
                     header(HttpHeaders.Authorization, "Bearer ${prefs.accessToken}")

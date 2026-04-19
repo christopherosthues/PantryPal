@@ -148,16 +148,6 @@ class RemoteLoginViewModel(
                                 lastSyncedAt = Clock.System.now()
                             )
                             profileRepository.upsert(profile)
-
-                            preferencesRepository.updateAccessPreferences(
-                                accessToken = response.tokenResponse.accessToken,
-                                refreshToken = response.tokenResponse.refreshToken,
-                                expiresIn = response.tokenResponse.expiresIn,
-                                refreshExpiresIn = response.tokenResponse.refreshExpiresIn,
-                                localProfileId = profile.id.toString(),
-                                isLoggedInRemotely = true,
-                                serverUrl = profile.serverUrl ?: ""
-                            )
                         }
                         loginState.emit(UiState.success(data))
                         onSuccess()
@@ -165,7 +155,7 @@ class RemoteLoginViewModel(
                         handleError(result.exceptionOrNull(), uiState)
                     }
                 } else {
-                    val result = authenticationService.login(data.username, data.password, data.serverUrl)
+                    val result = authenticationService.loginRemotely(data.username, data.password, data.serverUrl)
                     if (result.isSuccess) {
                         val response = result.getOrNull()
                         if (response != null) {
@@ -179,16 +169,6 @@ class RemoteLoginViewModel(
                                 lastSyncedAt = Clock.System.now()
                             )
                             profileRepository.upsert(profile)
-
-                            preferencesRepository.updateAccessPreferences(
-                                accessToken = response.tokenResponse.accessToken,
-                                refreshToken = response.tokenResponse.refreshToken,
-                                expiresIn = response.tokenResponse.expiresIn,
-                                refreshExpiresIn = response.tokenResponse.refreshExpiresIn,
-                                localProfileId = profile.id.toString(),
-                                isLoggedInRemotely = true,
-                                serverUrl = profile.serverUrl ?: ""
-                            )
                         }
                         loginState.emit(UiState.success(data))
                         onSuccess()
@@ -198,6 +178,11 @@ class RemoteLoginViewModel(
                 }
             } catch (exception: Exception) {
                 Logger.withTag(loginTag).e(exception) { "Error submitting remote auth for: ${data.username}" }
+                try {
+                    authenticationService.logoutRemotely()
+                } catch (e: Exception) {
+                    Logger.withTag(loginTag).w(e) { "Error logging out user ${data.username}" }
+                }
                 loginState.emit(uiState.copy(error = Res.string.remote_login_error_generic))
             }
         }

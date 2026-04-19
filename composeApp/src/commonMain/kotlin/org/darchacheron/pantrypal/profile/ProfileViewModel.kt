@@ -304,25 +304,17 @@ class ProfileViewModel(
     }
 
     fun logoutRemote() {
+        // TODO: error handling
         viewModelScope.launch {
-            authenticationService.logout()
-            authenticationPreferencesRepository.updateAccessPreferences(
-                accessToken = "",
-                refreshToken = "",
-                expiresIn = 0,
-                refreshExpiresIn = 0,
-                localProfileId = _uiState.value.data?.id.toString(),
-                isLoggedInRemotely = false,
-                serverUrl = _uiState.value.data?.serverUrl ?: ""
-            )
+            authenticationService.logoutRemotely()
             _isLoggedInRemotely.value = false
         }
     }
 
     fun logout() {
+        // TODO: error handling
         viewModelScope.launch {
             authenticationService.logout()
-            authenticationPreferencesRepository.clearProfile()
             navigator.goToLogin()
         }
     }
@@ -353,7 +345,6 @@ class ProfileViewModel(
                 }
                 profileRepository.delete(deleteRemote)
                 authenticationService.logout()
-                authenticationPreferencesRepository.clearProfile()
                 navigator.goToLogin()
             } catch (e: Exception) {
                 // Log error or show message

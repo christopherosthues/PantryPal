@@ -27,7 +27,7 @@ import kotlin.uuid.Uuid
 @OptIn(ExperimentalUuidApi::class)
 class RegistrationViewModel(
     private val profileRepository: ProfileRepository,
-    private val preferencesRepository: AuthenticationPreferencesRepository,
+    private val authenticationService: AuthenticationService,
     private val navigator: Navigator
 ): ViewModel() {
     private val registrationTag = "Registration"
@@ -135,20 +135,13 @@ class RegistrationViewModel(
 
                 // Local only mode
                 val localProfile = createLocalProfile(userName, email, password)
-                preferencesRepository.updateAccessPreferences(
-                    accessToken = "",
-                    refreshToken = "",
-                    expiresIn = 0,
-                    refreshExpiresIn = 0,
-                    localProfileId = localProfile.id.toString(),
-                    isLoggedInRemotely = false,
-                    serverUrl = ""
-                )
+                authenticationService.loginLocally(localProfile.id, localProfile.serverUrl)
 
                 registrationState.emit(UiState.success(registrationData.copy(userName = userName, email = email, password = password)))
                 navigator.goToMain()
             } catch (exception: Exception) {
                 Logger.withTag(registrationTag).e(exception) { "Error registration of user: $userName with email: $email" }
+                // TODO Error handling for loginLocally failure
                 registrationState.emit(uiState.copy(error = Res.string.registration_error))
             }
         }
