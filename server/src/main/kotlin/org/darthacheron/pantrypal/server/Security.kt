@@ -17,7 +17,10 @@ import io.ktor.server.plugins.csrf.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import org.darthacheron.pantrypal.server.food.foodRoutes
+import org.darthacheron.pantrypal.server.inventory.inventoryItemRoutes
 import org.darthacheron.pantrypal.server.profile.ProfileRepository
+import org.darthacheron.pantrypal.server.profile.profileRoutes
 import org.darthacheron.pantrypal.shared.auth.*
 import org.darthacheron.pantrypal.shared.profile.ProfileDto
 import org.koin.ktor.ext.inject
@@ -28,7 +31,7 @@ import kotlin.uuid.Uuid
 
 @OptIn(ExperimentalUuidApi::class)
 fun Application.configureSecurity() {
-    val profileService by inject<ProfileRepository>()
+    val profileRepository by inject<ProfileRepository>()
     val keycloakBaseUrl = environment.config.property("keycloak.baseUrl").getString()
     val keycloakClientId = environment.config.property("keycloak.clientId").getString()
     val keycloakRealm = environment.config.property("keycloak.realm").getString()
@@ -99,7 +102,7 @@ fun Application.configureSecurity() {
                 if (response.status == HttpStatusCode.OK) {
                     val tokenResponse = response.body<TokenResponse>()
                     
-                    val profile = profileService.getProfileByUsernameOrEmail(loginDto.username)
+                    val profile = profileRepository.getProfileByUsernameOrEmail(loginDto.username)
                     
                     if (profile == null) {
                         call.respond(HttpStatusCode.NotFound, ProblemDetails(
@@ -189,7 +192,7 @@ fun Application.configureSecurity() {
 
                         // 4. Create local profile
                         try {
-                            val profile = profileService.createProfile(
+                            val profile = profileRepository.createProfile(
                                 ProfileDto(
                                     serverId = null,
                                     clientId = Uuid.random(), // This should ideally come from the client or be mapped
@@ -273,122 +276,9 @@ fun Application.configureSecurity() {
         }
 
         authenticate("auth-jwt") {
-            get("/users/me") {
-                val principal = call.principal<JWTPrincipal>() ?: return@get call.respond(HttpStatusCode.Unauthorized)
-                val userIdStr = principal.payload.getClaim("sub").asString() ?: return@get call.respond(HttpStatusCode.BadRequest, "Missing sub claim")
-                val userId = Uuid.parse(userIdStr)
-
-                val profile = profileService.getProfile(userId)
-                if (profile == null) {
-                    call.respond(HttpStatusCode.NotFound, ProblemDetails(
-                        title = "Profile not found",
-                        status = HttpStatusCode.NotFound.value,
-                        detail = "The profile associated with this account has been deleted or does not exist."
-                    ))
-                } else {
-                    call.respond(profile)
-                }
-            }
-
-            put("/users/me") {
-                val principal = call.principal<JWTPrincipal>() ?: return@put call.respond(HttpStatusCode.Unauthorized)
-                val userIdStr = principal.payload.getClaim("sub").asString() ?: return@put call.respond(HttpStatusCode.BadRequest, "Missing sub claim")
-                val userId = Uuid.parse(userIdStr)
-
-                val updateDto = call.receive<UpdateUserDto>()
-
-                try {
-                    // 1. Get Admin Token
-                    val adminTokenResponse: HttpResponse = httpClient.submitForm(
-                        url = "$keycloakBaseUrl/protocol/openid-connect/token",
-                        formParameters = parameters {
-                            append("grant_type", "password")
-                            append("client_id", "admin-cli")
-                            append("username", keycloakAdminUser)
-                            append("password", keycloakAdminPassword)
-                        }
-                    )
-
-                    if (adminTokenResponse.status != HttpStatusCode.OK) {
-                        return@put call.respond(HttpStatusCode.InternalServerError, "Failed to get admin token")
-                    }
-                    val adminToken = adminTokenResponse.body<TokenResponse>().accessToken
-
-                    // 2. Update Keycloak
-                    val updateKeycloakResponse = httpClient.put("$keycloakBaseUrl/admin/realms/$keycloakRealm/users/$userId") {
-                        header(HttpHeaders.Authorization, "Bearer $adminToken")
-                        contentType(ContentType.Application.Json)
-                        val body = mutableMapOf<String, Any>()
-                        updateDto.username?.let { body["username"] = it }
-                        updateDto.email?.let { body["email"] = it }
-                        updateDto.password?.let {
-                            body["credentials"] = listOf(mapOf(
-                                "type" to "password",
-                                "value" to it,
-                                "temporary" to false
-                            ))
-                        }
-                        setBody(body)
-                    }
-
-                    if (updateKeycloakResponse.status != HttpStatusCode.NoContent && updateKeycloakResponse.status != HttpStatusCode.OK) {
-                        return@put call.respond(updateKeycloakResponse.status, updateKeycloakResponse.bodyAsText())
-                    }
-
-                    // 3. Update Database
-                    val existingProfile = profileService.getProfile(userId) ?: return@put call.respond(HttpStatusCode.NotFound)
-                    val updatedProfile = existingProfile.copy(
-                        username = updateDto.username ?: existingProfile.username,
-                        email = updateDto.email ?: existingProfile.email,
-                        lastModifiedAt = Clock.System.now(),
-                        lastSyncedAt = Clock.System.now()
-                    )
-                    profileService.updateProfile(updatedProfile)
-
-                    call.respond(HttpStatusCode.OK, updatedProfile)
-                } catch (e: Exception) {
-                    call.respond(HttpStatusCode.InternalServerError, e.message ?: "Update failed")
-                }
-            }
-
-            delete("/users/me") {
-                val principal = call.principal<JWTPrincipal>() ?: return@delete call.respond(HttpStatusCode.Unauthorized)
-                val userIdStr = principal.payload.getClaim("sub").asString() ?: return@delete call.respond(HttpStatusCode.BadRequest, "Missing sub claim")
-                val userId = Uuid.parse(userIdStr)
-                val deleteRemote = call.request.queryParameters["remote"]?.toBoolean() ?: true
-
-                try {
-                    if (deleteRemote) {
-                        // 1. Get Admin Token
-                        val adminTokenResponse: HttpResponse = httpClient.submitForm(
-                            url = "$keycloakBaseUrl/protocol/openid-connect/token",
-                            formParameters = parameters {
-                                append("grant_type", "password")
-                                append("client_id", "admin-cli")
-                                append("username", keycloakAdminUser)
-                                append("password", keycloakAdminPassword)
-                            }
-                        )
-                        if (adminTokenResponse.status != HttpStatusCode.OK) return@delete call.respond(HttpStatusCode.InternalServerError)
-                        val adminToken = adminTokenResponse.body<TokenResponse>().accessToken
-
-                        // 2. Delete from Keycloak
-                        val deleteKeycloakResponse = httpClient.delete("$keycloakBaseUrl/admin/realms/$keycloakRealm/users/$userId") {
-                            header(HttpHeaders.Authorization, "Bearer $adminToken")
-                        }
-
-                        if (deleteKeycloakResponse.status != HttpStatusCode.NoContent && deleteKeycloakResponse.status != HttpStatusCode.OK) {
-                            return@delete call.respond(deleteKeycloakResponse.status)
-                        }
-                    }
-
-                    // 3. Soft Delete from Database
-                    profileService.deleteProfile(userId)
-                    call.respond(HttpStatusCode.NoContent)
-                } catch (e: Exception) {
-                    call.respond(HttpStatusCode.InternalServerError)
-                }
-            }
+            profileRoutes()
+            foodRoutes()
+            inventoryItemRoutes()
         }
     }
 }
