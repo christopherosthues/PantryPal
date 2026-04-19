@@ -246,61 +246,15 @@ class ProfileViewModel(
         _profileValidationState.value = _profileValidationState.value.copy(serverUrlError = error)
     }
 
-    private val _remoteProfileEditState = MutableStateFlow<UiState<Boolean>>(UiState.success(false))
-    val remoteProfileEditState: StateFlow<UiState<Boolean>> = _remoteProfileEditState
-
     private val _showRemoteProfileDialog = MutableStateFlow(false)
     val showRemoteProfileDialog: StateFlow<Boolean> = _showRemoteProfileDialog
 
     fun showRemoteProfileDialog() {
         _showRemoteProfileDialog.value = true
-        _remoteProfileEditState.value = UiState.success(false)
     }
 
     fun dismissRemoteProfileDialog() {
         _showRemoteProfileDialog.value = false
-    }
-
-    fun updateRemoteProfile(username: String, email: String, newPassword: String?, currentPassword: String) {
-        viewModelScope.launch {
-            val profile = _uiState.value.data ?: return@launch
-            val serverUrl = profile.serverUrl ?: return@launch
-
-            _remoteProfileEditState.value = UiState.loading()
-            try {
-                // We need to verify current password first or the backend needs it for sensitive changes
-                // If backend requires current password for any update, we include it.
-                // Based on AuthenticationService.updateUser, it doesn't take current password yet.
-                // Let's assume we might need to re-authenticate or the backend handles it via token.
-                // However, the requirement said "password with repeat password and old password".
-                // I should check if updateUser in AuthenticationService should be updated to include current password if needed.
-                
-                val result = authenticationService.updateUser(
-                    serverUrl = serverUrl,
-                    username = if (username != profile.username) username else null,
-                    email = if (email != profile.email) email else null,
-                    password = newPassword,
-                    currentPassword = currentPassword
-                )
-
-                if (result.isSuccess) {
-                    _remoteProfileEditState.value = UiState.success(true)
-                    // We don't update the local profile username/email here 
-                    // because they can be different from the remote ones.
-                    _showRemoteProfileDialog.value = false
-                } else {
-                    val exception = result.exceptionOrNull()
-                    val errorRes = when (exception) {
-                        is UserAlreadyExistsException -> Res.string.profile_error_username_exists
-                        is InvalidCredentialsException -> Res.string.profile_error_wrong_password
-                        else -> Res.string.profile_error_update
-                    }
-                    _remoteProfileEditState.value = UiState.error(errorRes)
-                }
-            } catch (e: Exception) {
-                _remoteProfileEditState.value = UiState.error(Res.string.profile_error_update)
-            }
-        }
     }
 
     fun logoutRemote() {

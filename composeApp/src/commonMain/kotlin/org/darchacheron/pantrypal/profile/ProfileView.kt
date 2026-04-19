@@ -244,105 +244,11 @@ fun ProfileView(
 
     val showRemoteProfileDialog by profileViewModel.showRemoteProfileDialog.collectAsState()
     if (showRemoteProfileDialog) {
-        val remoteProfileEditState by profileViewModel.remoteProfileEditState.collectAsState()
         val profile = uiState.data
         if (profile != null) {
-            var username by remember { mutableStateOf(profile.username) }
-            var email by remember { mutableStateOf(profile.email) }
-            var oldPassword by remember { mutableStateOf("") }
-            var newPassword by remember { mutableStateOf("") }
-            var repeatNewPassword by remember { mutableStateOf("") }
-
-            AlertDialog(
-                onDismissRequest = { profileViewModel.dismissRemoteProfileDialog() },
-                title = { Text(stringResource(Res.string.profile_edit_remote_dialog_title)) },
-                text = {
-                    Column(
-                        modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        OutlinedTextField(
-                            value = username,
-                            onValueChange = { username = it },
-                            label = { Text(stringResource(Res.string.profile_username_label)) },
-                            modifier = Modifier.fillMaxWidth(),
-                            singleLine = true
-                        )
-                        OutlinedTextField(
-                            value = email,
-                            onValueChange = { email = it },
-                            label = { Text(stringResource(Res.string.profile_email_label)) },
-                            modifier = Modifier.fillMaxWidth(),
-                            singleLine = true
-                        )
-                        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-                        OutlinedTextField(
-                            value = oldPassword,
-                            onValueChange = { oldPassword = it },
-                            label = { Text(stringResource(Res.string.profile_remote_old_password_label)) },
-                            modifier = Modifier.fillMaxWidth(),
-                            visualTransformation = PasswordVisualTransformation(),
-                            singleLine = true
-                        )
-                        OutlinedTextField(
-                            value = newPassword,
-                            onValueChange = { newPassword = it },
-                            label = { Text(stringResource(Res.string.profile_remote_new_password_label)) },
-                            modifier = Modifier.fillMaxWidth(),
-                            visualTransformation = PasswordVisualTransformation(),
-                            singleLine = true
-                        )
-                        OutlinedTextField(
-                            value = repeatNewPassword,
-                            onValueChange = { repeatNewPassword = it },
-                            label = { Text(stringResource(Res.string.profile_remote_repeat_new_password_label)) },
-                            modifier = Modifier.fillMaxWidth(),
-                            visualTransformation = PasswordVisualTransformation(),
-                            singleLine = true,
-                            isError = newPassword != repeatNewPassword && repeatNewPassword.isNotEmpty()
-                        )
-                        
-                        if (remoteProfileEditState.error != null) {
-                            Text(
-                                text = stringResource(remoteProfileEditState.error!!),
-                                color = MaterialTheme.colorScheme.error,
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                        }
-                    }
-                },
-                confirmButton = {
-                    Button(
-                        onClick = {
-                            profileViewModel.updateRemoteProfile(
-                                username = username,
-                                email = email,
-                                newPassword = newPassword.takeIf { it.isNotBlank() },
-                                currentPassword = oldPassword
-                            )
-                        },
-                        enabled = !remoteProfileEditState.isLoading && 
-                                 username.isNotBlank() && 
-                                 email.isNotBlank() && 
-                                 oldPassword.isNotBlank() &&
-                                 (newPassword.isEmpty() || newPassword == repeatNewPassword)
-                    ) {
-                        if (remoteProfileEditState.isLoading) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(20.dp),
-                                strokeWidth = 2.dp,
-                                color = MaterialTheme.colorScheme.onPrimary
-                            )
-                        } else {
-                            Text(stringResource(Res.string.profile_save_button))
-                        }
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { profileViewModel.dismissRemoteProfileDialog() }) {
-                        Text(stringResource(Res.string.profile_delete_cancel))
-                    }
-                }
+            EditRemoteProfileDialog(
+                profile = profile,
+                onDismiss = { profileViewModel.dismissRemoteProfileDialog() }
             )
         }
     }

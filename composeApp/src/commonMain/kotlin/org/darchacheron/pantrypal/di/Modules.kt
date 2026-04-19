@@ -52,6 +52,7 @@ import org.darchacheron.pantrypal.navigation.FoodNavRoute
 import org.darchacheron.pantrypal.navigation.InventoryNavRoute
 import org.darchacheron.pantrypal.navigation.NavRoute
 import org.darchacheron.pantrypal.navigation.Navigator
+import org.darchacheron.pantrypal.profile.EditRemoteProfileViewModel
 import org.darchacheron.pantrypal.profile.ProfileNetworkService
 import org.darchacheron.pantrypal.profile.ProfileRepository
 import org.darchacheron.pantrypal.profile.ProfileView
@@ -243,6 +244,7 @@ val sharedModule =
         viewModelOf(::RemoteLoginViewModel)
         viewModelOf(::RegistrationViewModel)
         viewModelOf(::ProfileViewModel)
+        viewModelOf(::EditRemoteProfileViewModel)
         viewModelOf(::InventoryListViewModel)
         viewModelOf(::InventoryDetailViewModel)
         viewModelOf(::MainViewModel)
