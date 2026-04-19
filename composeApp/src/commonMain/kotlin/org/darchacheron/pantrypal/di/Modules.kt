@@ -126,7 +126,7 @@ val navigationModule = module {
     navigation<BottomNavRoute.Profile> {
         val navigator = get<Navigator>()
         ProfileView(
-            viewModel = koinViewModel(),
+            profileViewModel = koinViewModel(),
             onGoToSettings = { navigator.goToSettings() }
         )
     }

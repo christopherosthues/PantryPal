@@ -42,7 +42,6 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import org.darchacheron.pantrypal.authentication.LoginViewModel
 import org.darchacheron.pantrypal.authentication.RemoteLoginDialog
 import org.darchacheron.pantrypal.authentication.RemoteLoginViewModel
 import org.jetbrains.compose.resources.getString
@@ -55,18 +54,14 @@ import kotlin.uuid.ExperimentalUuidApi
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalUuidApi::class)
 @Composable
 fun ProfileView(
-    viewModel: ProfileViewModel = koinInject(),
+    profileViewModel: ProfileViewModel = koinInject(),
     remoteLoginViewModel: RemoteLoginViewModel = koinInject(),
     onGoToSettings: () -> Unit = {}
 ) {
-    val uiState by viewModel.uiState.collectAsState()
-    val profileValidationState by viewModel.profileValidationState.collectAsState()
-    val passwordChangeState by viewModel.passwordChangeState.collectAsState()
-    val passwordValidationState by viewModel.passwordValidationState.collectAsState()
-    val isLoggedInRemotely by viewModel.isLoggedInRemotely.collectAsState()
-    val persistedServerUrl by viewModel.persistedServerUrl.collectAsState()
+    val uiState by profileViewModel.uiState.collectAsState()
+    val profileValidationState by profileViewModel.profileValidationState.collectAsState()
+    val passwordChangeState by profileViewModel.passwordChangeState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
-    var showEnableSyncDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(uiState.error) {
         uiState.error?.let { errorResource ->
@@ -106,7 +101,7 @@ fun ProfileView(
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 FloatingActionButton(
-                    onClick = { viewModel.showDeleteDialog() },
+                    onClick = { profileViewModel.showDeleteDialog() },
                     containerColor = MaterialTheme.colorScheme.errorContainer,
                     contentColor = MaterialTheme.colorScheme.onErrorContainer
                 ) {
@@ -119,7 +114,7 @@ fun ProfileView(
                 Spacer(modifier = Modifier.weight(1f))
 
                 FloatingActionButton(
-                    onClick = { viewModel.logout() },
+                    onClick = { profileViewModel.logout() },
                     containerColor = MaterialTheme.colorScheme.secondaryContainer,
                     contentColor = MaterialTheme.colorScheme.onSecondaryContainer
                 ) {
@@ -130,7 +125,7 @@ fun ProfileView(
                 }
 
                 FloatingActionButton(
-                    onClick = { viewModel.saveProfile() },
+                    onClick = { profileViewModel.saveProfile() },
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     contentColor = MaterialTheme.colorScheme.onPrimaryContainer
                 ) {
@@ -162,7 +157,7 @@ fun ProfileView(
                     ) {
                         OutlinedTextField(
                             value = profile.username,
-                            onValueChange = { viewModel.updateUsername(it) },
+                            onValueChange = { profileViewModel.updateUsername(it) },
                             label = { Text(stringResource(Res.string.profile_username_label)) },
                             keyboardOptions = KeyboardOptions(
                                 keyboardType = KeyboardType.Text,
@@ -180,7 +175,7 @@ fun ProfileView(
 
                         OutlinedTextField(
                             value = profile.email,
-                            onValueChange = { viewModel.updateEmail(it) },
+                            onValueChange = { profileViewModel.updateEmail(it) },
                             label = { Text(stringResource(Res.string.profile_email_label)) },
                             keyboardOptions = KeyboardOptions(
                                 keyboardType = KeyboardType.Email,
@@ -196,137 +191,9 @@ fun ProfileView(
                             }
                         )
 
-                        Text(
-                            text = stringResource(Res.string.profile_synchronization_title),
-                            style = MaterialTheme.typography.titleMedium,
-                            modifier = Modifier.padding(top = 8.dp)
-                        )
+                        RemoteProfileSection(profileViewModel, remoteLoginViewModel, profile)
 
-                        OutlinedTextField(
-                            value = profile.serverUrl ?: "",
-                            onValueChange = { viewModel.updateServerUrl(it) },
-                            label = { Text(stringResource(Res.string.profile_server_url_label)) },
-                            keyboardOptions = KeyboardOptions(
-                                keyboardType = KeyboardType.Uri,
-                                imeAction = ImeAction.Next
-                            ),
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth(),
-                            isError = profileValidationState.serverUrlError != null,
-                            supportingText = {
-                                profileValidationState.serverUrlError?.let {
-                                    Text(stringResource(it))
-                                }
-                            }
-                        )
-
-                        if (isLoggedInRemotely) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = stringResource(Res.string.profile_remote_logged_in),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                                TextButton(onClick = { viewModel.logoutRemote() }) {
-                                    Text(stringResource(Res.string.profile_remote_logout_button))
-                                }
-                            }
-                            TextButton(
-                                onClick = { viewModel.showRemoteProfileDialog() },
-                                modifier = Modifier.padding(top = 4.dp)
-                            ) {
-                                Text(stringResource(Res.string.profile_edit_remote_button))
-                            }
-                        } else if (profile.serverId != null) {
-                            Text(
-                                text = stringResource(Res.string.profile_local_login_only),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.secondary
-                            )
-                        } else {
-                            Text(
-                                text = stringResource(Res.string.profile_local_only_no_server),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-
-                            val isServerUrlPersisted = !profile.serverUrl.isNullOrBlank() &&
-                                    profile.serverUrl == persistedServerUrl &&
-                                    profileValidationState.serverUrlError == null
-
-                            Button(
-                                onClick = { showEnableSyncDialog = true },
-                                modifier = Modifier.fillMaxWidth(),
-                                enabled = isServerUrlPersisted
-                            ) {
-                                Text(stringResource(Res.string.profile_enable_sync_button))
-                            }
-                        }
-
-                        Text(
-                            text = stringResource(Res.string.profile_change_password_title),
-                            style = MaterialTheme.typography.titleMedium,
-                            modifier = Modifier.padding(top = 8.dp)
-                        )
-
-                        OutlinedTextField(
-                            value = passwordChangeState.data?.current ?: "",
-                            onValueChange = { viewModel.onCurrentPasswordChanged(it) },
-                            label = { Text(stringResource(Res.string.profile_current_password_label)) },
-                            visualTransformation = PasswordVisualTransformation(),
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Next),
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth(),
-                            isError = passwordValidationState.currentPasswordError != null,
-                            supportingText = {
-                                passwordValidationState.currentPasswordError?.let {
-                                    Text(stringResource(it))
-                                }
-                            }
-                        )
-                        OutlinedTextField(
-                            value = passwordChangeState.data?.new ?: "",
-                            onValueChange = { viewModel.onNewPasswordChanged(it) },
-                            label = { Text(stringResource(Res.string.profile_new_password_label)) },
-                            visualTransformation = PasswordVisualTransformation(),
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Next),
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth(),
-                            isError = passwordValidationState.newPasswordError != null,
-                            supportingText = {
-                                passwordValidationState.newPasswordError?.let {
-                                    Text(stringResource(it))
-                                }
-                            }
-                        )
-                        OutlinedTextField(
-                            value = passwordChangeState.data?.repeat ?: "",
-                            onValueChange = { viewModel.onRepeatPasswordChanged(it) },
-                            label = { Text(stringResource(Res.string.profile_repeat_new_password_label)) },
-                            visualTransformation = PasswordVisualTransformation(),
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth(),
-                            isError = passwordValidationState.repeatPasswordError != null,
-                            supportingText = {
-                                passwordValidationState.repeatPasswordError?.let {
-                                    Text(stringResource(it))
-                                }
-                            }
-                        )
-
-                        Button(
-                            onClick = {
-                                viewModel.changePassword()
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(stringResource(Res.string.profile_change_password_title))
-                        }
+                        ChangeLocalPasswordSection(profileViewModel)
 
                         if (profile.serverId != null && (profile.lastSyncedAt == null || (profile.lastModifiedAt > profile.lastSyncedAt))) {
                             Text(
@@ -341,12 +208,12 @@ fun ProfileView(
         }
     }
 
-    val showDeleteDialog by viewModel.showDeleteDialog.collectAsState()
+    val showDeleteDialog by profileViewModel.showDeleteDialog.collectAsState()
     if (showDeleteDialog) {
-        val canDeleteRemote = viewModel.canDeleteRemote()
+        val canDeleteRemote = profileViewModel.canDeleteRemote()
         var deleteRemote by remember { mutableStateOf(canDeleteRemote) }
         AlertDialog(
-            onDismissRequest = { viewModel.dismissDeleteDialog() },
+            onDismissRequest = { profileViewModel.dismissDeleteDialog() },
             title = { Text(stringResource(Res.string.profile_delete_dialog_title)) },
             text = {
                 Column {
@@ -363,41 +230,21 @@ fun ProfileView(
                 }
             },
             confirmButton = {
-                TextButton(onClick = { viewModel.deleteProfile(deleteRemote) }) {
+                TextButton(onClick = { profileViewModel.deleteProfile(deleteRemote) }) {
                     Text(stringResource(Res.string.profile_delete_confirm))
                 }
             },
             dismissButton = {
-                TextButton(onClick = { viewModel.dismissDeleteDialog() }) {
+                TextButton(onClick = { profileViewModel.dismissDeleteDialog() }) {
                     Text(stringResource(Res.string.profile_delete_cancel))
                 }
             }
         )
     }
 
-    if (showEnableSyncDialog) {
-        val currentProfile = uiState.data
-        LaunchedEffect(showEnableSyncDialog) {
-            if (currentProfile != null) {
-                remoteLoginViewModel.onUsernameChanged(currentProfile.username)
-                remoteLoginViewModel.onEmailChanged(currentProfile.email)
-                currentProfile.serverUrl?.let { remoteLoginViewModel.onServerUrlChanged(it) }
-            }
-        }
-
-        RemoteLoginDialog(
-            viewModel = remoteLoginViewModel,
-            onDismiss = { showEnableSyncDialog = false },
-            onLoginSuccess = {
-                showEnableSyncDialog = false
-                viewModel.loadProfile()
-            }
-        )
-    }
-
-    val showRemoteProfileDialog by viewModel.showRemoteProfileDialog.collectAsState()
+    val showRemoteProfileDialog by profileViewModel.showRemoteProfileDialog.collectAsState()
     if (showRemoteProfileDialog) {
-        val remoteProfileEditState by viewModel.remoteProfileEditState.collectAsState()
+        val remoteProfileEditState by profileViewModel.remoteProfileEditState.collectAsState()
         val profile = uiState.data
         if (profile != null) {
             var username by remember { mutableStateOf(profile.username) }
@@ -407,7 +254,7 @@ fun ProfileView(
             var repeatNewPassword by remember { mutableStateOf("") }
 
             AlertDialog(
-                onDismissRequest = { viewModel.dismissRemoteProfileDialog() },
+                onDismissRequest = { profileViewModel.dismissRemoteProfileDialog() },
                 title = { Text(stringResource(Res.string.profile_edit_remote_dialog_title)) },
                 text = {
                     Column(
@@ -467,7 +314,7 @@ fun ProfileView(
                 confirmButton = {
                     Button(
                         onClick = {
-                            viewModel.updateRemoteProfile(
+                            profileViewModel.updateRemoteProfile(
                                 username = username,
                                 email = email,
                                 newPassword = newPassword.takeIf { it.isNotBlank() },
@@ -492,11 +339,179 @@ fun ProfileView(
                     }
                 },
                 dismissButton = {
-                    TextButton(onClick = { viewModel.dismissRemoteProfileDialog() }) {
+                    TextButton(onClick = { profileViewModel.dismissRemoteProfileDialog() }) {
                         Text(stringResource(Res.string.profile_delete_cancel))
                     }
                 }
             )
         }
+    }
+}
+
+@OptIn(ExperimentalUuidApi::class)
+@Composable
+private fun RemoteProfileSection(
+    profileViewModel: ProfileViewModel,
+    remoteLoginViewModel: RemoteLoginViewModel,
+    profile: Profile) {
+    val isLoggedInRemotely by profileViewModel.isLoggedInRemotely.collectAsState()
+    val persistedServerUrl by profileViewModel.persistedServerUrl.collectAsState()
+    val profileValidationState by profileViewModel.profileValidationState.collectAsState()
+    var showEnableSyncDialog by remember { mutableStateOf(false) }
+
+    Text(
+        text = stringResource(Res.string.profile_synchronization_title),
+        style = MaterialTheme.typography.titleMedium,
+        modifier = Modifier.padding(top = 8.dp)
+    )
+
+    OutlinedTextField(
+        value = profile.serverUrl ?: "",
+        onValueChange = { profileViewModel.updateServerUrl(it) },
+        label = { Text(stringResource(Res.string.profile_server_url_label)) },
+        keyboardOptions = KeyboardOptions(
+            keyboardType = KeyboardType.Uri,
+            imeAction = ImeAction.Next
+        ),
+        singleLine = true,
+        modifier = Modifier.fillMaxWidth(),
+        isError = profileValidationState.serverUrlError != null,
+        supportingText = {
+            profileValidationState.serverUrlError?.let {
+                Text(stringResource(it))
+            }
+        }
+    )
+
+    if (isLoggedInRemotely) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = stringResource(Res.string.profile_remote_logged_in),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.primary
+            )
+            TextButton(onClick = { profileViewModel.logoutRemote() }) {
+                Text(stringResource(Res.string.profile_remote_logout_button))
+            }
+        }
+        TextButton(
+            onClick = { profileViewModel.showRemoteProfileDialog() },
+            modifier = Modifier.padding(top = 4.dp)
+        ) {
+            Text(stringResource(Res.string.profile_edit_remote_button))
+        }
+    } else if (profile.serverId != null) {
+        Text(
+            text = stringResource(Res.string.profile_local_login_only),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.secondary
+        )
+    } else {
+        Text(
+            text = stringResource(Res.string.profile_local_only_no_server),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.primary
+        )
+
+        val isServerUrlPersisted = !profile.serverUrl.isNullOrBlank() &&
+                profile.serverUrl == persistedServerUrl &&
+                profileValidationState.serverUrlError == null
+
+        Button(
+            onClick = { showEnableSyncDialog = true },
+            modifier = Modifier.fillMaxWidth(),
+            enabled = isServerUrlPersisted
+        ) {
+            Text(stringResource(Res.string.profile_enable_sync_button))
+        }
+    }
+
+    if (showEnableSyncDialog) {
+        LaunchedEffect(showEnableSyncDialog) {
+            remoteLoginViewModel.onUsernameChanged(profile.username)
+            remoteLoginViewModel.onEmailChanged(profile.email)
+            profile.serverUrl?.let { remoteLoginViewModel.onServerUrlChanged(it) }
+        }
+
+        RemoteLoginDialog(
+            viewModel = remoteLoginViewModel,
+            onDismiss = { showEnableSyncDialog = false },
+            onLoginSuccess = {
+                showEnableSyncDialog = false
+                profileViewModel.loadProfile()
+            }
+        )
+    }
+}
+
+
+@Composable
+private fun ChangeLocalPasswordSection(profileViewModel: ProfileViewModel) {
+    val passwordValidationState by profileViewModel.passwordValidationState.collectAsState()
+    val passwordChangeState by profileViewModel.passwordChangeState.collectAsState()
+
+    Text(
+        text = stringResource(Res.string.profile_change_password_title),
+        style = MaterialTheme.typography.titleMedium,
+        modifier = Modifier.padding(top = 8.dp)
+    )
+
+    OutlinedTextField(
+        value = passwordChangeState.data?.current ?: "",
+        onValueChange = { profileViewModel.onCurrentPasswordChanged(it) },
+        label = { Text(stringResource(Res.string.profile_current_password_label)) },
+        visualTransformation = PasswordVisualTransformation(),
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Next),
+        singleLine = true,
+        modifier = Modifier.fillMaxWidth(),
+        isError = passwordValidationState.currentPasswordError != null,
+        supportingText = {
+            passwordValidationState.currentPasswordError?.let {
+                Text(stringResource(it))
+            }
+        }
+    )
+    OutlinedTextField(
+        value = passwordChangeState.data?.new ?: "",
+        onValueChange = { profileViewModel.onNewPasswordChanged(it) },
+        label = { Text(stringResource(Res.string.profile_new_password_label)) },
+        visualTransformation = PasswordVisualTransformation(),
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Next),
+        singleLine = true,
+        modifier = Modifier.fillMaxWidth(),
+        isError = passwordValidationState.newPasswordError != null,
+        supportingText = {
+            passwordValidationState.newPasswordError?.let {
+                Text(stringResource(it))
+            }
+        }
+    )
+    OutlinedTextField(
+        value = passwordChangeState.data?.repeat ?: "",
+        onValueChange = { profileViewModel.onRepeatPasswordChanged(it) },
+        label = { Text(stringResource(Res.string.profile_repeat_new_password_label)) },
+        visualTransformation = PasswordVisualTransformation(),
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
+        singleLine = true,
+        modifier = Modifier.fillMaxWidth(),
+        isError = passwordValidationState.repeatPasswordError != null,
+        supportingText = {
+            passwordValidationState.repeatPasswordError?.let {
+                Text(stringResource(it))
+            }
+        }
+    )
+
+    Button(
+        onClick = {
+            profileViewModel.changePassword()
+        },
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Text(stringResource(Res.string.profile_change_password_title))
     }
 }
