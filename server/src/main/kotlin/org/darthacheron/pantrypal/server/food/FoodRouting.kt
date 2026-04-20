@@ -24,7 +24,7 @@ import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 @OptIn(ExperimentalUuidApi::class)
-fun Route.foodRouting() {
+fun Route.foodRoutes() {
     route("/food") {
         getAllFood()
         getFoodById()
@@ -61,7 +61,7 @@ fun Route.getFoodById() {
         val idStr = call.parameters["id"] ?: return@get call.respond(HttpStatusCode.BadRequest)
         val id = Uuid.parse(idStr)
 
-        foodService.getFoodById(id, profileId).onSuccess { food ->
+        foodService.getFoodById(id).onSuccess { food ->
             if (food == null) {
                 call.respond(HttpStatusCode.NotFound, ProblemDetails(
                     title = "Food not found",
@@ -117,7 +117,7 @@ fun Route.updateFood() {
 
         val id = foodDto.serverId ?: return@put call.respond(HttpStatusCode.BadRequest, "Missing serverId")
         
-        foodService.getFoodById(id, profileId).onSuccess { existing ->
+        foodService.getFoodById(id).onSuccess { existing ->
             if (existing == null) {
                 call.respond(HttpStatusCode.NotFound, ProblemDetails(
                     title = "Food not found",
@@ -159,7 +159,7 @@ fun Route.deleteFood() {
         val idStr = call.parameters["id"] ?: return@delete call.respond(HttpStatusCode.BadRequest)
         val id = Uuid.parse(idStr)
 
-        foodService.getFoodById(id, profileId).onSuccess { existing ->
+        foodService.getFoodById(id).onSuccess { existing ->
             if (existing == null) {
                 call.respond(HttpStatusCode.NotFound, ProblemDetails(
                     title = "Food not found",
@@ -202,7 +202,7 @@ fun Route.foodImageRoutes() {
             val idStr = call.parameters["id"] ?: return@get call.respond(HttpStatusCode.BadRequest)
             val id = Uuid.parse(idStr)
 
-            foodService.getFoodById(id, profileId).onSuccess { food ->
+            foodService.getFoodById(id).onSuccess { food ->
                 if (food == null) {
                     call.respond(HttpStatusCode.NotFound)
                 } else if (food.profileId != profileId) {
