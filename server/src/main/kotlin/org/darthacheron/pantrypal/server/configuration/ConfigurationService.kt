@@ -11,4 +11,5 @@ class ConfigurationService(environment: ApplicationEnvironment) {
     val jwtAudience = environment.config.property("jwt.audience").getString()
     val jwtDomain = environment.config.property("jwt.domain").getString()
     val foodImagesPath = System.getenv("FOOD_IMAGES_PATH") ?: "food-images"
+    val inventoryImagesPath = System.getenv("INVENTORY_IMAGES_PATH") ?: "inventory-images"
 }
