@@ -44,7 +44,7 @@ fun Route.getAllFood() {
         val profileId = Uuid.parse(profileIdStr)
 
         foodService.getAllFoodByProfileId(profileId).onSuccess {
-            call.respond(it)
+            call.respond(HttpStatusCode.OK, it)
         }.onFailure {
             call.respondProblem(it)
         }
@@ -81,7 +81,7 @@ fun Route.getFoodById() {
                     detail = "The requested food item has been deleted."
                 ))
             } else {
-                call.respond(food)
+                call.respond(HttpStatusCode.OK, food)
             }
         }.onFailure {
             call.respondProblem(it)
@@ -139,7 +139,7 @@ fun Route.updateFood() {
             } else {
                 foodService.updateFood(foodDto, profileId).onSuccess { updated ->
                     if (updated != null) {
-                        call.respond(updated)
+                        call.respond(HttpStatusCode.OK, updated)
                     } else {
                         call.respond(HttpStatusCode.InternalServerError, "Failed to update food item.")
                     }
@@ -220,7 +220,7 @@ fun Route.foodImageRoutes() {
                 } else {
                     foodService.getFoodImage(id, profileId).onSuccess { bytes ->
                         if (bytes != null) {
-                            call.respondBytes(bytes, ContentType.Image.JPEG)
+                            call.respondBytes(bytes, ContentType.Image.JPEG, HttpStatusCode.OK)
                         } else {
                             call.respond(HttpStatusCode.NotFound)
                         }

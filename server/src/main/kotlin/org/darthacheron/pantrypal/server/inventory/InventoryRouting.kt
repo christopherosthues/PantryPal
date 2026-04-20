@@ -44,7 +44,7 @@ fun Route.getAllInventoryItems() {
         val profileId = Uuid.parse(profileIdStr)
 
         inventoryItemService.getAllInventoryItemsByProfileId(profileId).onSuccess {
-            call.respond(it)
+            call.respond(HttpStatusCode.OK, it)
         }.onFailure {
             call.respondProblem(it)
         }
@@ -81,7 +81,7 @@ fun Route.getInventoryItemById() {
                     detail = "The requested inventory item has been deleted."
                 ))
             } else {
-                call.respond(item)
+                call.respond(HttpStatusCode.OK, item)
             }
         }.onFailure {
             call.respondProblem(it)
@@ -139,7 +139,7 @@ fun Route.updateInventoryItem() {
             } else {
                 inventoryItemService.updateInventoryItem(inventoryItemDto, profileId).onSuccess { updated ->
                     if (updated != null) {
-                        call.respond(updated)
+                        call.respond(HttpStatusCode.OK, updated)
                     } else {
                         call.respond(HttpStatusCode.InternalServerError, "Failed to update inventory item.")
                     }
@@ -220,7 +220,7 @@ fun Route.inventoryImageRoutes() {
                 } else {
                     inventoryItemService.getInventoryImage(id, profileId).onSuccess { bytes ->
                         if (bytes != null) {
-                            call.respondBytes(bytes, ContentType.Image.JPEG)
+                            call.respondBytes(bytes, ContentType.Image.JPEG, HttpStatusCode.OK)
                         } else {
                             call.respond(HttpStatusCode.NotFound)
                         }
