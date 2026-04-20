@@ -6,21 +6,23 @@ import kotlin.uuid.ExperimentalUuidApi
 @OptIn(ExperimentalUuidApi::class)
 fun InventoryItemDAO.toDto() : InventoryItemDto {
     return InventoryItemDto(
-        this.id.value,
-        this.clientId,
-        this.name,
-        this.kiloCalories,
-        this.kiloJoule,
-        this.fatInGrams,
-        this.saturatedFattyAcidsInGrams,
-        this.carbsInGrams,
-        this.sugarInGrams,
-        this.dietaryFiberInGrams,
-        this.proteinInGrams,
-        this.saltInGrams,
-        this.fillingQuantity,
-        this.isLiquid,
-        this.createdAt,
-        this.lastModifiedAt
+        serverId = this.id.value,
+        profileId = this.profileId,
+        clientId = this.clientId,
+        name = this.name,
+        kiloCalories = this.kiloCalories,
+        kiloJoule = this.kiloJoule,
+        fatInGrams = this.fatInGrams,
+        saturatedFattyAcidsInGrams = this.saturatedFattyAcidsInGrams,
+        carbsInGrams = this.carbsInGrams,
+        sugarInGrams = this.sugarInGrams,
+        dietaryFiberInGrams = this.dietaryFiberInGrams,
+        proteinInGrams = this.proteinInGrams,
+        saltInGrams = this.saltInGrams,
+        fillingQuantity = this.fillingQuantity,
+        isLiquid = this.isLiquid,
+        createdAt = this.createdAt,
+        lastModifiedAt = this.lastModifiedAt,
+        deletedAt = this.deletedAt
     )
 }

@@ -22,6 +22,8 @@ data class InventoryItemDto(
     val saltInGrams: Float?,
     val fillingQuantity: Float?,
     val isLiquid: Boolean = false,
+    val profileId: Uuid,
     val createdAt: Instant,
     val lastModifiedAt: Instant,
+    val deletedAt: Instant? = null
 )

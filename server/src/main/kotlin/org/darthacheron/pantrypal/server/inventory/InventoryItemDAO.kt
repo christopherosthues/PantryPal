@@ -10,20 +10,22 @@ import kotlin.uuid.Uuid
 class InventoryItemDAO(id: EntityID<Uuid>) : UuidEntity(id) {
     companion object : UuidEntityClass<InventoryItemDAO>(InventoryItemsTable)
 
-    val clientId by InventoryItemsTable.clientId
-    val name by InventoryItemsTable.name
-    val kiloCalories by InventoryItemsTable.kiloCalories
-    val kiloJoule by InventoryItemsTable.kiloJoule
-    val fatInGrams by InventoryItemsTable.fatInGrams
-    val saturatedFattyAcidsInGrams by InventoryItemsTable.saturatedFattyAcidsInGrams
-    val carbsInGrams by InventoryItemsTable.carbsInGrams
-    val sugarInGrams by InventoryItemsTable.sugarInGrams
-    val dietaryFiberInGrams by InventoryItemsTable.dietaryFiberInGrams
-    val proteinInGrams by InventoryItemsTable.proteinInGrams
-    val saltInGrams by InventoryItemsTable.saltInGrams
-    val fillingQuantity by InventoryItemsTable.fillingQuantity
-    val isLiquid by InventoryItemsTable.isLiquid
-    val createdAt by InventoryItemsTable.createdAt
-    val lastModifiedAt by InventoryItemsTable.lastModifiedAt
+    var clientId by InventoryItemsTable.clientId
+    var name by InventoryItemsTable.name
+    var kiloCalories by InventoryItemsTable.kiloCalories
+    var kiloJoule by InventoryItemsTable.kiloJoule
+    var fatInGrams by InventoryItemsTable.fatInGrams
+    var saturatedFattyAcidsInGrams by InventoryItemsTable.saturatedFattyAcidsInGrams
+    var carbsInGrams by InventoryItemsTable.carbsInGrams
+    var sugarInGrams by InventoryItemsTable.sugarInGrams
+    var dietaryFiberInGrams by InventoryItemsTable.dietaryFiberInGrams
+    var proteinInGrams by InventoryItemsTable.proteinInGrams
+    var saltInGrams by InventoryItemsTable.saltInGrams
+    var fillingQuantity by InventoryItemsTable.fillingQuantity
+    var isLiquid by InventoryItemsTable.isLiquid
+    var profileId by InventoryItemsTable.profileId
+    var createdAt by InventoryItemsTable.createdAt
+    var lastModifiedAt by InventoryItemsTable.lastModifiedAt
+    var deletedAt by InventoryItemsTable.deletedAt
 }
 

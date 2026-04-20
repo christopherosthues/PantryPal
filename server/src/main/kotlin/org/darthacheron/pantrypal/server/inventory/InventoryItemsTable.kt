@@ -19,6 +19,8 @@ object InventoryItemsTable : UuidTable("inventory_items") {
     val saltInGrams = float("salt_in_grams").nullable()
     val fillingQuantity = float("filling_quantity").nullable()
     val isLiquid = bool("is_liquid").default(false)
+    val profileId = uuid("profile_id")
     val createdAt = timestamp("created_at")
     val lastModifiedAt = timestamp("last_modified_at")
+    val deletedAt = timestamp("deleted_at").nullable()
 }
