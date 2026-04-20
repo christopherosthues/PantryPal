@@ -20,6 +20,7 @@ class ProfileRepository {
                 createdAt = profileDto.createdAt
                 lastModifiedAt = profileDto.lastModifiedAt
                 lastSyncedAt = profileDto.lastSyncedAt
+                deletedAt = profileDto.deletedAt
             }
 
             // Return DTO with the original clientId for mapping
@@ -36,6 +37,7 @@ class ProfileRepository {
             profile.createdAt = profileDto.createdAt
             profile.lastModifiedAt = profileDto.lastModifiedAt
             profile.lastSyncedAt = profileDto.lastSyncedAt
+            profile.deletedAt = profileDto.deletedAt
             profile.username = profileDto.username
             profile.email = profileDto.email
             profile.toDto(clientId = profileDto.clientId)
