@@ -29,4 +29,5 @@ data class FoodDto(
     val openedAt: LocalDate?,
     val createdAt: Instant,
     val lastModifiedAt: Instant,
+    val deletedAt: Instant? = null
 )

@@ -26,4 +26,5 @@ object FoodsTable : UuidTable("foods") {
     val openedAt = date("opened_at").nullable()
     val createdAt = timestamp("created_at")
     val lastModifiedAt = timestamp("last_modified_at")
+    val deletedAt = timestamp("deleted_at").nullable()
 }

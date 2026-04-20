@@ -1,7 +1,10 @@
 package org.darthacheron.pantrypal.server.food
 
+import kotlin.time.Clock
 import org.darthacheron.pantrypal.shared.food.FoodDto
+import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.core.isNull
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -13,7 +16,7 @@ class FoodRepository {
     }
 
     fun getAllFoodByProfileId(profileId: Uuid): List<FoodDto> = transaction {
-        FoodDAO.find { FoodsTable.profileId eq profileId }.map { it.toDto() }
+        FoodDAO.find { (FoodsTable.profileId eq profileId) and (FoodsTable.deletedAt.isNull()) }.map { it.toDto() }
     }
 
     fun createFood(foodDto: FoodDto, profileId: Uuid): FoodDto = transaction {
@@ -42,7 +45,7 @@ class FoodRepository {
 
     fun updateFood(foodDto: FoodDto, profileId: Uuid): FoodDto? = transaction {
         val id = foodDto.serverId ?: return@transaction null
-        val existing = FoodDAO.findById(id) ?: return@transaction null
+        val existing = FoodDAO.find { (FoodsTable.id eq id) and (FoodsTable.deletedAt.isNull()) }.singleOrNull() ?: return@transaction null
         
         if (existing.profileId != profileId) return@transaction null
 
@@ -68,8 +71,8 @@ class FoodRepository {
 
     fun deleteFood(id: Uuid, profileId: Uuid): Boolean = transaction {
         val existing = FoodDAO.findById(id) ?: return@transaction false
-        if (existing.profileId != profileId) return@transaction false
-        existing.delete()
+        if (existing.profileId != profileId || existing.deletedAt != null) return@transaction false
+        existing.deletedAt = Clock.System.now()
         true
     }
 }

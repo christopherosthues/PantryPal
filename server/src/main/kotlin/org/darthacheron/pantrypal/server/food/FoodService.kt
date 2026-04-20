@@ -11,8 +11,8 @@ class FoodService(
     private val foodRepository: FoodRepository,
     private val configurationService: ConfigurationService
 ) {
-    fun getFoodById(id: Uuid, profileId: Uuid): Result<FoodDto?> = runCatching {
-        foodRepository.getFoodById(id, profileId)
+    fun getFoodById(id: Uuid): Result<FoodDto?> = runCatching {
+        foodRepository.getFoodById(id)
     }
 
     fun getAllFoodByProfileId(profileId: Uuid): Result<List<FoodDto>> = runCatching {

@@ -74,6 +74,12 @@ fun Route.getFoodById() {
                     status = HttpStatusCode.Forbidden.value,
                     detail = "You do not have permission to access this food item."
                 ))
+            } else if (food.deletedAt != null) {
+                call.respond(HttpStatusCode.Gone, ProblemDetails(
+                    title = "Food deleted",
+                    status = HttpStatusCode.Gone.value,
+                    detail = "The requested food item has been deleted."
+                ))
             } else {
                 call.respond(food)
             }
@@ -124,6 +130,12 @@ fun Route.updateFood() {
                     status = HttpStatusCode.Forbidden.value,
                     detail = "You do not have permission to update this food item."
                 ))
+            } else if (existing.deletedAt != null) {
+                call.respond(HttpStatusCode.Gone, ProblemDetails(
+                    title = "Food deleted",
+                    status = HttpStatusCode.Gone.value,
+                    detail = "Cannot update a deleted food item."
+                ))
             } else {
                 foodService.updateFood(foodDto, profileId).onSuccess { updated ->
                     if (updated != null) {
@@ -160,6 +172,12 @@ fun Route.deleteFood() {
                     status = HttpStatusCode.Forbidden.value,
                     detail = "You do not have permission to delete this food item."
                 ))
+            } else if (existing.deletedAt != null) {
+                call.respond(HttpStatusCode.Gone, ProblemDetails(
+                    title = "Food already deleted",
+                    status = HttpStatusCode.Gone.value,
+                    detail = "This food item has already been deleted."
+                ))
             } else {
                 foodService.deleteFood(id, profileId).onSuccess { deleted ->
                     if (deleted) {
@@ -193,6 +211,12 @@ fun Route.foodImageRoutes() {
                         status = HttpStatusCode.Forbidden.value,
                         detail = "You do not have permission to access this food image."
                     ))
+                } else if (food.deletedAt != null) {
+                    call.respond(HttpStatusCode.Gone, ProblemDetails(
+                        title = "Food deleted",
+                        status = HttpStatusCode.Gone.value,
+                        detail = "Cannot access image of a deleted food item."
+                    ))
                 } else {
                     foodService.getFoodImage(id, profileId).onSuccess { bytes ->
                         if (bytes != null) {
@@ -213,7 +237,7 @@ fun Route.foodImageRoutes() {
             val idStr = call.parameters["id"] ?: return@post call.respond(HttpStatusCode.BadRequest)
             val id = Uuid.parse(idStr)
             
-            foodService.getFoodById(id, profileId).onSuccess { food ->
+            foodService.getFoodById(id).onSuccess { food ->
                 if (food == null) {
                     call.respond(HttpStatusCode.NotFound)
                 } else if (food.profileId != profileId) {
@@ -221,6 +245,12 @@ fun Route.foodImageRoutes() {
                         title = "Forbidden",
                         status = HttpStatusCode.Forbidden.value,
                         detail = "You do not have permission to upload an image for this food item."
+                    ))
+                } else if (food.deletedAt != null) {
+                    call.respond(HttpStatusCode.Gone, ProblemDetails(
+                        title = "Food deleted",
+                        status = HttpStatusCode.Gone.value,
+                        detail = "Cannot upload image for a deleted food item."
                     ))
                 } else {
                     val imageData = call.receiveChannel().readRemaining().readByteArray()

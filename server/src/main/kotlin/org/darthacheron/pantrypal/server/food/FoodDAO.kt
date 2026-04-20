@@ -29,5 +29,6 @@ class FoodDAO(id: EntityID<Uuid>) : UuidEntity(id) {
     var openedAt by FoodsTable.openedAt
     var createdAt by FoodsTable.createdAt
     var lastModifiedAt by FoodsTable.lastModifiedAt
+    var deletedAt by FoodsTable.deletedAt
 }
 
