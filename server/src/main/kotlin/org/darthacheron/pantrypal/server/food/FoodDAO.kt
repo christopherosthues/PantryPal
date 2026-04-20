@@ -10,23 +10,24 @@ import kotlin.uuid.Uuid
 class FoodDAO(id: EntityID<Uuid>) : UuidEntity(id) {
     companion object : UuidEntityClass<FoodDAO>(FoodsTable)
 
-    val clientId by FoodsTable.clientId
-    val name by FoodsTable.name
-    val kiloCalories by FoodsTable.kiloCalories
-    val kiloJoule by FoodsTable.kiloJoule
-    val fatInGrams by FoodsTable.fatInGrams
-    val saturatedFattyAcidsInGrams by FoodsTable.saturatedFattyAcidsInGrams
-    val carbsInGrams by FoodsTable.carbsInGrams
-    val sugarInGrams by FoodsTable.sugarInGrams
-    val dietaryFiberInGrams by FoodsTable.dietaryFiberInGrams
-    val proteinInGrams by FoodsTable.proteinInGrams
-    val saltInGrams by FoodsTable.saltInGrams
-    val fillingQuantity by FoodsTable.fillingQuantity
-    val isLiquid by FoodsTable.isLiquid
-    val bestBeforeUsedByDate by FoodsTable.bestBeforeUsedByDate
-    val isUseBy by FoodsTable.isUseBy
-    val openedAt by FoodsTable.openedAt
-    val createdAt by FoodsTable.createdAt
-    val lastModifiedAt by FoodsTable.lastModifiedAt
+    var profileId by FoodsTable.profileId
+    var clientId by FoodsTable.clientId
+    var name by FoodsTable.name
+    var kiloCalories by FoodsTable.kiloCalories
+    var kiloJoule by FoodsTable.kiloJoule
+    var fatInGrams by FoodsTable.fatInGrams
+    var saturatedFattyAcidsInGrams by FoodsTable.saturatedFattyAcidsInGrams
+    var carbsInGrams by FoodsTable.carbsInGrams
+    var sugarInGrams by FoodsTable.sugarInGrams
+    var dietaryFiberInGrams by FoodsTable.dietaryFiberInGrams
+    var proteinInGrams by FoodsTable.proteinInGrams
+    var saltInGrams by FoodsTable.saltInGrams
+    var fillingQuantity by FoodsTable.fillingQuantity
+    var isLiquid by FoodsTable.isLiquid
+    var bestBeforeUsedByDate by FoodsTable.bestBeforeUsedByDate
+    var isUseBy by FoodsTable.isUseBy
+    var openedAt by FoodsTable.openedAt
+    var createdAt by FoodsTable.createdAt
+    var lastModifiedAt by FoodsTable.lastModifiedAt
 }
 

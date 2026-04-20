@@ -10,6 +10,7 @@ import kotlin.uuid.Uuid
 @Serializable
 data class FoodDto(
     val serverId: Uuid?,
+    val profileId: Uuid?,
     val clientId: Uuid,
     val name: String,
     val kiloCalories: Int?,

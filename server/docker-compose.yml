@@ -95,6 +95,9 @@ services:
       - KEYCLOAK_AUDIENCE=${KEYCLOAK_AUDIENCE}
       - KEYCLOAK_ADMIN=${KEYCLOAK_ADMIN}
       - KEYCLOAK_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD}
+      - FOOD_IMAGES_PATH=/app/food-images
+    volumes:
+      - food-images-data:/app/food-images
     restart: unless-stopped
     depends_on:
       postgres:
@@ -109,6 +112,8 @@ volumes:
   pantrypal-pgdata:
   pantrypal-pgadmin-data:
   pantrypal-keycloak-data:
+    driver: local
+  food-images-data:
     driver: local
 
 networks:

@@ -6,24 +6,24 @@ import kotlin.uuid.ExperimentalUuidApi
 @OptIn(ExperimentalUuidApi::class)
 fun FoodDAO.toDto() : FoodDto {
     return FoodDto(
-        this.id.value,
-        this.clientId,
-        this.name,
-        this.kiloCalories,
-        this.kiloJoule,
-        this.fatInGrams,
-        this.saturatedFattyAcidsInGrams,
-        this.carbsInGrams,
-        this.sugarInGrams,
-        this.dietaryFiberInGrams,
-        this.proteinInGrams,
-        this.saltInGrams,
-        this.fillingQuantity,
-        this.isLiquid,
-        this.bestBeforeUsedByDate,
-        this.isUseBy,
-        this.openedAt,
-        this.createdAt,
-        this.lastModifiedAt
+        serverId = id.value,
+        clientId = clientId,
+        name = name,
+        kiloCalories = kiloCalories,
+        kiloJoule = kiloJoule,
+        fatInGrams = fatInGrams,
+        saturatedFattyAcidsInGrams = saturatedFattyAcidsInGrams,
+        carbsInGrams = carbsInGrams,
+        sugarInGrams = sugarInGrams,
+        dietaryFiberInGrams = dietaryFiberInGrams,
+        proteinInGrams = proteinInGrams,
+        saltInGrams = saltInGrams,
+        fillingQuantity = fillingQuantity,
+        isLiquid = isLiquid,
+        bestBeforeUsedByDate = bestBeforeUsedByDate,
+        isUseBy = isUseBy,
+        openedAt = openedAt,
+        createdAt = createdAt,
+        lastModifiedAt = lastModifiedAt
     )
 }

@@ -7,6 +7,7 @@ import kotlin.uuid.ExperimentalUuidApi
 
 @OptIn(ExperimentalUuidApi::class)
 object FoodsTable : UuidTable("foods") {
+    val profileId = uuid("profile_id")
     val clientId = uuid("client_id")
     val name = varchar("name", 255)
     val kiloCalories = integer("kilo_calories").nullable()
