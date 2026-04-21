@@ -81,91 +81,89 @@ fun Route.updateProfile() {
 
         val updateDto = call.receive<UpdateUserDto>()
 
-        try {
-            // Check existence and deleted status first
-            val checkResult = profileService.getProfileById(userId)
-            if (checkResult.isFailure) {
-                return@put call.respond(HttpStatusCode.InternalServerError, ProblemDetails(
-                    title = "Update failed",
-                    status = HttpStatusCode.InternalServerError.value,
-                    detail = checkResult.exceptionOrNull()?.message ?: "Failed to retrieve profile."
-                ))
-            }
-
-            val existingProfile = checkResult.getOrNull()
-
+        profileService.getProfileById(userId).onSuccess { existingProfile ->
             if (existingProfile == null) {
-                return@put call.respondNotFound(
+                call.respondNotFound(
                     title = "Profile not found",
                     detail = "Cannot update a profile that does not exist."
                 )
             } else if (existingProfile.deletedAt != null) {
-                return@put call.respondGone(
+                call.respondGone(
                     title = "Profile deleted",
                     detail = "Cannot update a deleted profile."
                 )
-            }
-
-            // 1. Get Admin Token
-            val adminTokenResponse: HttpResponse = httpClient.submitForm(
-                url = "${configurationService.keycloakBaseUrl}/protocol/openid-connect/token",
-                formParameters = parameters {
-                    append("grant_type", "password")
-                    append("client_id", "admin-cli")
-                    append("username", configurationService.keycloakAdminUser)
-                    append("password", configurationService.keycloakAdminPassword)
-                }
-            )
-
-            if (adminTokenResponse.status != HttpStatusCode.OK) {
-                return@put call.respond(HttpStatusCode.InternalServerError, "Failed to get admin token")
-            }
-            val adminToken = adminTokenResponse.body<TokenResponse>().accessToken
-
-            // 2. Update Keycloak
-            val updateKeycloakResponse = httpClient.put("${configurationService.keycloakBaseUrl}/admin/realms/${configurationService.keycloakRealm}/users/$userId") {
-                header(HttpHeaders.Authorization, "Bearer $adminToken")
-                contentType(ContentType.Application.Json)
-                val body = mutableMapOf<String, Any>()
-                updateDto.username?.let { body["username"] = it }
-                updateDto.email?.let { body["email"] = it }
-                updateDto.password?.let {
-                    body["credentials"] = listOf(
-                        mapOf(
-                            "type" to "password",
-                            "value" to it,
-                            "temporary" to false
-                        )
+            } else {
+                try {
+                    // 1. Get Admin Token
+                    val adminTokenResponse: HttpResponse = httpClient.submitForm(
+                        url = "${configurationService.keycloakBaseUrl}/protocol/openid-connect/token",
+                        formParameters = parameters {
+                            append("grant_type", "password")
+                            append("client_id", "admin-cli")
+                            append("username", configurationService.keycloakAdminUser)
+                            append("password", configurationService.keycloakAdminPassword)
+                        }
                     )
+
+                    if (adminTokenResponse.status != HttpStatusCode.OK) {
+                        call.respond(HttpStatusCode.InternalServerError, "Failed to get admin token")
+                        return@onSuccess
+                    }
+                    val adminToken = adminTokenResponse.body<TokenResponse>().accessToken
+
+                    // 2. Update Keycloak
+                    val updateKeycloakResponse = httpClient.put("${configurationService.keycloakBaseUrl}/admin/realms/${configurationService.keycloakRealm}/users/$userId") {
+                        header(HttpHeaders.Authorization, "Bearer $adminToken")
+                        contentType(ContentType.Application.Json)
+                        val body = mutableMapOf<String, Any>()
+                        updateDto.username?.let { body["username"] = it }
+                        updateDto.email?.let { body["email"] = it }
+                        updateDto.password?.let {
+                            body["credentials"] = listOf(
+                                mapOf(
+                                    "type" to "password",
+                                    "value" to it,
+                                    "temporary" to false
+                                )
+                            )
+                        }
+                        setBody(body)
+                    }
+
+                    if (updateKeycloakResponse.status != HttpStatusCode.NoContent && updateKeycloakResponse.status != HttpStatusCode.OK) {
+                        call.respond(updateKeycloakResponse.status, updateKeycloakResponse.bodyAsText())
+                        return@onSuccess
+                    }
+
+                    // 3. Update Database
+                    val updatedProfile = existingProfile.copy(
+                        username = updateDto.username ?: existingProfile.username,
+                        email = updateDto.email ?: existingProfile.email,
+                        lastModifiedAt = Clock.System.now(),
+                        lastSyncedAt = Clock.System.now()
+                    )
+                    profileService.updateProfile(updatedProfile).onSuccess {
+                        call.respond(HttpStatusCode.OK, it)
+                    }.onFailure { e ->
+                        call.respond(HttpStatusCode.InternalServerError, ProblemDetails(
+                            title = "Update failed",
+                            status = HttpStatusCode.InternalServerError.value,
+                            detail = e.message ?: "Failed to update profile in database."
+                        ))
+                    }
+                } catch (e: Exception) {
+                    call.respond(HttpStatusCode.InternalServerError, ProblemDetails(
+                        title = "Update failed",
+                        status = HttpStatusCode.InternalServerError.value,
+                        detail = e.message ?: "An unexpected error occurred during profile update."
+                    ))
                 }
-                setBody(body)
             }
-
-            if (updateKeycloakResponse.status != HttpStatusCode.NoContent && updateKeycloakResponse.status != HttpStatusCode.OK) {
-                return@put call.respond(updateKeycloakResponse.status, updateKeycloakResponse.bodyAsText())
-            }
-
-            // 3. Update Database
-            val updatedProfile = existingProfile.copy(
-                username = updateDto.username ?: existingProfile.username,
-                email = updateDto.email ?: existingProfile.email,
-                lastModifiedAt = Clock.System.now(),
-                lastSyncedAt = Clock.System.now()
-            )
-            profileService.updateProfile(updatedProfile).onSuccess {
-                call.respond(HttpStatusCode.OK, it)
-            }.onFailure { e ->
-                call.respond(HttpStatusCode.InternalServerError, ProblemDetails(
-                    title = "Update failed",
-                    status = HttpStatusCode.InternalServerError.value,
-                    detail = e.message ?: "Failed to update profile in database."
-                ))
-            }
-        } catch (e: Exception) {
+        }.onFailure { e ->
             call.respond(HttpStatusCode.InternalServerError, ProblemDetails(
                 title = "Update failed",
                 status = HttpStatusCode.InternalServerError.value,
-                detail = e.message ?: "An unexpected error occurred during profile update."
+                detail = e.message ?: "Failed to retrieve profile."
             ))
         }
     }
@@ -181,61 +179,67 @@ fun Route.deleteProfile() {
         val userId = call.extractProfileId() ?: return@delete
         val deleteRemote = call.request.queryParameters["remote"]?.toBoolean() ?: true
 
-        try {
-            // Check if profile exists and if it's already deleted
-            val profileResult = profileService.getProfileById(userId)
-            val profile = profileResult.getOrNull()
-            
+        profileService.getProfileById(userId).onSuccess { profile ->
             if (profile == null) {
-                return@delete call.respondNotFound(
+                call.respondNotFound(
                     title = "Profile not found",
                     detail = "Cannot delete a profile that does not exist."
                 )
             } else if (profile.deletedAt != null) {
-                // If it's already deleted, we can return Gone or just success if we want idempotency.
-                // The prompt says "Return NotFound ... and gone for requests where the profile is deleted".
-                return@delete call.respondGone(
+                call.respondGone(
                     title = "Profile already deleted",
                     detail = "This profile has already been deleted."
                 )
-            }
+            } else {
+                try {
+                    if (deleteRemote) {
+                        // 1. Get Admin Token
+                        val adminTokenResponse: HttpResponse = httpClient.submitForm(
+                            url = "${configurationService.keycloakBaseUrl}/protocol/openid-connect/token",
+                            formParameters = parameters {
+                                append("grant_type", "password")
+                                append("client_id", "admin-cli")
+                                append("username", configurationService.keycloakAdminUser)
+                                append("password", configurationService.keycloakAdminPassword)
+                            }
+                        )
+                        if (adminTokenResponse.status != HttpStatusCode.OK) {
+                            call.respond(HttpStatusCode.InternalServerError)
+                            return@onSuccess
+                        }
+                        val adminToken = adminTokenResponse.body<TokenResponse>().accessToken
 
-            if (deleteRemote) {
-                // 1. Get Admin Token
-                val adminTokenResponse: HttpResponse = httpClient.submitForm(
-                    url = "${configurationService.keycloakBaseUrl}/protocol/openid-connect/token",
-                    formParameters = parameters {
-                        append("grant_type", "password")
-                        append("client_id", "admin-cli")
-                        append("username", configurationService.keycloakAdminUser)
-                        append("password", configurationService.keycloakAdminPassword)
+                        // 2. Delete from Keycloak
+                        val deleteKeycloakResponse =
+                            httpClient.delete("${configurationService.keycloakBaseUrl}/admin/realms/${configurationService.keycloakRealm}/users/$userId") {
+                                header(HttpHeaders.Authorization, "Bearer $adminToken")
+                            }
+
+                        if (deleteKeycloakResponse.status != HttpStatusCode.NoContent && deleteKeycloakResponse.status != HttpStatusCode.OK) {
+                            call.respond(deleteKeycloakResponse.status)
+                            return@onSuccess
+                        }
                     }
-                )
-                if (adminTokenResponse.status != HttpStatusCode.OK) return@delete call.respond(HttpStatusCode.InternalServerError)
-                val adminToken = adminTokenResponse.body<TokenResponse>().accessToken
 
-                // 2. Delete from Keycloak
-                val deleteKeycloakResponse =
-                    httpClient.delete("${configurationService.keycloakBaseUrl}/admin/realms/${configurationService.keycloakRealm}/users/$userId") {
-                        header(HttpHeaders.Authorization, "Bearer $adminToken")
+                    // 3. Soft Delete from Database
+                    profileService.deleteProfile(userId).onSuccess {
+                        call.respond(HttpStatusCode.NoContent)
+                    }.onFailure { e ->
+                        call.respond(HttpStatusCode.InternalServerError, ProblemDetails(
+                            title = "Delete failed",
+                            status = HttpStatusCode.InternalServerError.value,
+                            detail = e.message ?: "Failed to delete profile from database."
+                        ))
                     }
-
-                if (deleteKeycloakResponse.status != HttpStatusCode.NoContent && deleteKeycloakResponse.status != HttpStatusCode.OK) {
-                    return@delete call.respond(deleteKeycloakResponse.status)
+                } catch (e: Exception) {
+                    call.respond(HttpStatusCode.InternalServerError, ProblemDetails(
+                        title = "Delete failed",
+                        status = HttpStatusCode.InternalServerError.value,
+                        detail = e.message ?: "An unexpected error occurred during profile deletion."
+                    ))
                 }
             }
-
-            // 3. Soft Delete from Database
-            profileService.deleteProfile(userId).onSuccess {
-                call.respond(HttpStatusCode.NoContent)
-            }.onFailure { e ->
-                call.respond(HttpStatusCode.InternalServerError, ProblemDetails(
-                    title = "Delete failed",
-                    status = HttpStatusCode.InternalServerError.value,
-                    detail = e.message ?: "Failed to delete profile from database."
-                ))
-            }
-        } catch (e: Exception) {
+        }.onFailure { e ->
             call.respond(HttpStatusCode.InternalServerError, ProblemDetails(
                 title = "Delete failed",
                 status = HttpStatusCode.InternalServerError.value,
