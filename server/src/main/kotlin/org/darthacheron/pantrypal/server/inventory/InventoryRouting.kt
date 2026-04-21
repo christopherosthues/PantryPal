@@ -2,7 +2,6 @@ package org.darthacheron.pantrypal.server.inventory
 
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
-import io.ktor.server.application.ApplicationCall
 import io.ktor.server.auth.jwt.JWTPrincipal
 import io.ktor.server.auth.principal
 import io.ktor.server.request.receive
@@ -17,7 +16,13 @@ import io.ktor.server.routing.put
 import io.ktor.server.routing.route
 import io.ktor.utils.io.readRemaining
 import kotlinx.io.readByteArray
-import org.darthacheron.pantrypal.shared.auth.ProblemDetails
+import org.darthacheron.pantrypal.server.networking.respondBadRequest
+import org.darthacheron.pantrypal.server.networking.respondBadRequestUserId
+import org.darthacheron.pantrypal.server.networking.respondForbidden
+import org.darthacheron.pantrypal.server.networking.respondGone
+import org.darthacheron.pantrypal.server.networking.respondNotFound
+import org.darthacheron.pantrypal.server.networking.respondProblem
+import org.darthacheron.pantrypal.server.networking.respondUnauthorized
 import org.darthacheron.pantrypal.shared.inventory.InventoryItemDto
 import org.koin.ktor.ext.inject
 import kotlin.uuid.ExperimentalUuidApi
@@ -39,8 +44,8 @@ fun Route.inventoryItemRoutes() {
 fun Route.getAllInventoryItems() {
     get {
         val inventoryItemService by inject<InventoryItemService>()
-        val principal = call.principal<JWTPrincipal>() ?: return@get call.respond(HttpStatusCode.Unauthorized)
-        val profileIdStr = principal.payload.getClaim("sub").asString() ?: return@get call.respond(HttpStatusCode.BadRequest, "Missing sub claim")
+        val principal = call.principal<JWTPrincipal>() ?: return@get call.respondUnauthorized()
+        val profileIdStr = principal.payload.getClaim("sub").asString() ?: return@get call.respondBadRequestUserId()
         val profileId = Uuid.parse(profileIdStr)
 
         inventoryItemService.getAllInventoryItemsByProfileId(profileId).onSuccess {
@@ -55,31 +60,25 @@ fun Route.getAllInventoryItems() {
 fun Route.getInventoryItemById() {
     get("/{id}") {
         val inventoryItemService by inject<InventoryItemService>()
-        val principal = call.principal<JWTPrincipal>() ?: return@get call.respond(HttpStatusCode.Unauthorized)
-        val profileIdStr = principal.payload.getClaim("sub").asString() ?: return@get call.respond(HttpStatusCode.BadRequest, "Missing sub claim")
+        val principal = call.principal<JWTPrincipal>() ?: return@get call.respondUnauthorized()
+        val profileIdStr = principal.payload.getClaim("sub").asString() ?: return@get call.respondBadRequestUserId()
         val profileId = Uuid.parse(profileIdStr)
-        val idStr = call.parameters["id"] ?: return@get call.respond(HttpStatusCode.BadRequest)
+        val idStr = call.parameters["id"] ?: return@get call.respondBadRequest("Missing inventory item ID")
         val id = Uuid.parse(idStr)
 
         inventoryItemService.getInventoryItemById(id).onSuccess { item ->
             if (item == null) {
-                call.respond(HttpStatusCode.NotFound, ProblemDetails(
+                call.respondNotFound(
                     title = "Inventory item not found",
-                    status = HttpStatusCode.NotFound.value,
                     detail = "The requested inventory item does not exist."
-                ))
+                )
             } else if (item.profileId != profileId) {
-                call.respond(HttpStatusCode.Forbidden, ProblemDetails(
-                    title = "Forbidden",
-                    status = HttpStatusCode.Forbidden.value,
-                    detail = "You do not have permission to access this inventory item."
-                ))
+                call.respondForbidden(detail = "You do not have permission to access this inventory item.")
             } else if (item.deletedAt != null) {
-                call.respond(HttpStatusCode.Gone, ProblemDetails(
+                call.respondGone(
                     title = "Inventory item deleted",
-                    status = HttpStatusCode.Gone.value,
                     detail = "The requested inventory item has been deleted."
-                ))
+                )
             } else {
                 call.respond(HttpStatusCode.OK, item)
             }
@@ -93,8 +92,8 @@ fun Route.getInventoryItemById() {
 fun Route.createInventoryItem() {
     post {
         val inventoryItemService by inject<InventoryItemService>()
-        val principal = call.principal<JWTPrincipal>() ?: return@post call.respond(HttpStatusCode.Unauthorized)
-        val profileIdStr = principal.payload.getClaim("sub").asString() ?: return@post call.respond(HttpStatusCode.BadRequest, "Missing sub claim")
+        val principal = call.principal<JWTPrincipal>() ?: return@post call.respondUnauthorized()
+        val profileIdStr = principal.payload.getClaim("sub").asString() ?: return@post call.respondBadRequestUserId()
         val profileId = Uuid.parse(profileIdStr)
         val inventoryItemDto = call.receive<InventoryItemDto>()
 
@@ -110,32 +109,26 @@ fun Route.createInventoryItem() {
 fun Route.updateInventoryItem() {
     put {
         val inventoryItemService by inject<InventoryItemService>()
-        val principal = call.principal<JWTPrincipal>() ?: return@put call.respond(HttpStatusCode.Unauthorized)
-        val profileIdStr = principal.payload.getClaim("sub").asString() ?: return@put call.respond(HttpStatusCode.BadRequest, "Missing sub claim")
+        val principal = call.principal<JWTPrincipal>() ?: return@put call.respondUnauthorized()
+        val profileIdStr = principal.payload.getClaim("sub").asString() ?: return@put call.respondBadRequestUserId()
         val profileId = Uuid.parse(profileIdStr)
         val inventoryItemDto = call.receive<InventoryItemDto>()
 
-        val id = inventoryItemDto.serverId ?: return@put call.respond(HttpStatusCode.BadRequest, "Missing serverId")
+        val id = inventoryItemDto.serverId ?: return@put call.respondBadRequest("Missing inventory item server ID")
         
         inventoryItemService.getInventoryItemById(id).onSuccess { existing ->
             if (existing == null) {
-                call.respond(HttpStatusCode.NotFound, ProblemDetails(
+                call.respondNotFound(
                     title = "Inventory item not found",
-                    status = HttpStatusCode.NotFound.value,
                     detail = "Cannot update non-existent inventory item."
-                ))
+                )
             } else if (existing.profileId != profileId) {
-                call.respond(HttpStatusCode.Forbidden, ProblemDetails(
-                    title = "Forbidden",
-                    status = HttpStatusCode.Forbidden.value,
-                    detail = "You do not have permission to update this inventory item."
-                ))
+                call.respondForbidden(detail = "You do not have permission to update this inventory item.")
             } else if (existing.deletedAt != null) {
-                call.respond(HttpStatusCode.Gone, ProblemDetails(
+                call.respondGone(
                     title = "Inventory item deleted",
-                    status = HttpStatusCode.Gone.value,
                     detail = "Cannot update a deleted inventory item."
-                ))
+                )
             } else {
                 inventoryItemService.updateInventoryItem(inventoryItemDto, profileId).onSuccess { updated ->
                     if (updated != null) {
@@ -153,31 +146,25 @@ fun Route.updateInventoryItem() {
 fun Route.deleteInventoryItem() {
     delete("/{id}") {
         val inventoryItemService by inject<InventoryItemService>()
-        val principal = call.principal<JWTPrincipal>() ?: return@delete call.respond(HttpStatusCode.Unauthorized)
-        val profileIdStr = principal.payload.getClaim("sub").asString() ?: return@delete call.respond(HttpStatusCode.BadRequest, "Missing sub claim")
+        val principal = call.principal<JWTPrincipal>() ?: return@delete call.respondUnauthorized()
+        val profileIdStr = principal.payload.getClaim("sub").asString() ?: return@delete call.respondBadRequestUserId()
         val profileId = Uuid.parse(profileIdStr)
-        val idStr = call.parameters["id"] ?: return@delete call.respond(HttpStatusCode.BadRequest)
+        val idStr = call.parameters["id"] ?: return@delete call.respondBadRequest("Missing inventory item ID")
         val id = Uuid.parse(idStr)
 
         inventoryItemService.getInventoryItemById(id).onSuccess { existing ->
             if (existing == null) {
-                call.respond(HttpStatusCode.NotFound, ProblemDetails(
+                call.respondNotFound(
                     title = "Inventory item not found",
-                    status = HttpStatusCode.NotFound.value,
                     detail = "Cannot delete non-existent inventory item."
-                ))
+                )
             } else if (existing.profileId != profileId) {
-                call.respond(HttpStatusCode.Forbidden, ProblemDetails(
-                    title = "Forbidden",
-                    status = HttpStatusCode.Forbidden.value,
-                    detail = "You do not have permission to delete this inventory item."
-                ))
+                call.respondForbidden(detail = "You do not have permission to delete this inventory item.")
             } else if (existing.deletedAt != null) {
-                call.respond(HttpStatusCode.Gone, ProblemDetails(
+                call.respondGone(
                     title = "Inventory item already deleted",
-                    status = HttpStatusCode.Gone.value,
                     detail = "This inventory item has already been deleted."
-                ))
+                )
             } else {
                 inventoryItemService.deleteInventoryItem(id, profileId).onSuccess { deleted ->
                     if (deleted) {
@@ -196,33 +183,34 @@ fun Route.inventoryImageRoutes() {
     route("/{id}/image") {
         get {
             val inventoryItemService by inject<InventoryItemService>()
-            val principal = call.principal<JWTPrincipal>() ?: return@get call.respond(HttpStatusCode.Unauthorized)
-            val profileIdStr = principal.payload.getClaim("sub").asString() ?: return@get call.respond(HttpStatusCode.BadRequest, "Missing sub claim")
+            val principal = call.principal<JWTPrincipal>() ?: return@get call.respondUnauthorized()
+            val profileIdStr = principal.payload.getClaim("sub").asString() ?: return@get call.respondBadRequestUserId()
             val profileId = Uuid.parse(profileIdStr)
-            val idStr = call.parameters["id"] ?: return@get call.respond(HttpStatusCode.BadRequest)
+            val idStr = call.parameters["id"] ?: return@get call.respondBadRequest("Missing inventory item ID")
             val id = Uuid.parse(idStr)
 
             inventoryItemService.getInventoryItemById(id).onSuccess { item ->
                 if (item == null) {
-                    call.respond(HttpStatusCode.NotFound)
+                    call.respondNotFound(
+                        title = "Inventory item not found",
+                        detail = "The requested inventory item does not exist."
+                    )
                 } else if (item.profileId != profileId) {
-                    call.respond(HttpStatusCode.Forbidden, ProblemDetails(
-                        title = "Forbidden",
-                        status = HttpStatusCode.Forbidden.value,
-                        detail = "You do not have permission to access this inventory image."
-                    ))
+                    call.respondForbidden(detail = "You do not have permission to access this inventory image.")
                 } else if (item.deletedAt != null) {
-                    call.respond(HttpStatusCode.Gone, ProblemDetails(
+                    call.respondGone(
                         title = "Inventory item deleted",
-                        status = HttpStatusCode.Gone.value,
                         detail = "Cannot access image of a deleted inventory item."
-                    ))
+                    )
                 } else {
                     inventoryItemService.getInventoryImage(id, profileId).onSuccess { bytes ->
                         if (bytes != null) {
                             call.respondBytes(bytes, ContentType.Image.JPEG, HttpStatusCode.OK)
                         } else {
-                            call.respond(HttpStatusCode.NotFound)
+                            call.respondNotFound(
+                                title = "Inventory item image not found",
+                                detail = "The requested inventory item image does not exist."
+                            )
                         }
                     }.onFailure { call.respondProblem(it) }
                 }
@@ -231,27 +219,25 @@ fun Route.inventoryImageRoutes() {
 
         post {
             val inventoryItemService by inject<InventoryItemService>()
-            val principal = call.principal<JWTPrincipal>() ?: return@post call.respond(HttpStatusCode.Unauthorized)
-            val profileIdStr = principal.payload.getClaim("sub").asString() ?: return@post call.respond(HttpStatusCode.BadRequest, "Missing sub claim")
+            val principal = call.principal<JWTPrincipal>() ?: return@post call.respondUnauthorized()
+            val profileIdStr = principal.payload.getClaim("sub").asString() ?: return@post call.respondBadRequestUserId()
             val profileId = Uuid.parse(profileIdStr)
-            val idStr = call.parameters["id"] ?: return@post call.respond(HttpStatusCode.BadRequest)
+            val idStr = call.parameters["id"] ?: return@post call.respondBadRequest("Missing inventory item ID")
             val id = Uuid.parse(idStr)
             
             inventoryItemService.getInventoryItemById(id).onSuccess { item ->
                 if (item == null) {
-                    call.respond(HttpStatusCode.NotFound)
+                    call.respondNotFound(
+                        title = "Inventory item not found",
+                        detail = "The requested inventory item does not exist."
+                    )
                 } else if (item.profileId != profileId) {
-                    call.respond(HttpStatusCode.Forbidden, ProblemDetails(
-                        title = "Forbidden",
-                        status = HttpStatusCode.Forbidden.value,
-                        detail = "You do not have permission to upload an image for this inventory item."
-                    ))
+                    call.respondForbidden(detail = "You do not have permission to upload an image for this inventory item.")
                 } else if (item.deletedAt != null) {
-                    call.respond(HttpStatusCode.Gone, ProblemDetails(
+                    call.respondGone(
                         title = "Inventory item deleted",
-                        status = HttpStatusCode.Gone.value,
                         detail = "Cannot upload image for a deleted inventory item."
-                    ))
+                    )
                 } else {
                     val imageData = call.receiveChannel().readRemaining().readByteArray()
                     inventoryItemService.saveInventoryImage(id, profileId, imageData).onSuccess {
@@ -261,12 +247,4 @@ fun Route.inventoryImageRoutes() {
             }.onFailure { call.respondProblem(it) }
         }
     }
-}
-
-private suspend fun ApplicationCall.respondProblem(e: Throwable) {
-    respond(HttpStatusCode.InternalServerError, ProblemDetails(
-        title = "Internal Server Error",
-        status = HttpStatusCode.InternalServerError.value,
-        detail = e.message ?: "An unexpected error occurred."
-    ))
 }

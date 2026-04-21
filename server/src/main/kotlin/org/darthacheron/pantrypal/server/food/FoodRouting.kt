@@ -17,6 +17,13 @@ import io.ktor.server.routing.put
 import io.ktor.server.routing.route
 import io.ktor.utils.io.readRemaining
 import kotlinx.io.readByteArray
+import org.darthacheron.pantrypal.server.networking.respondBadRequest
+import org.darthacheron.pantrypal.server.networking.respondBadRequestUserId
+import org.darthacheron.pantrypal.server.networking.respondForbidden
+import org.darthacheron.pantrypal.server.networking.respondGone
+import org.darthacheron.pantrypal.server.networking.respondNotFound
+import org.darthacheron.pantrypal.server.networking.respondProblem
+import org.darthacheron.pantrypal.server.networking.respondUnauthorized
 import org.darthacheron.pantrypal.shared.auth.ProblemDetails
 import org.darthacheron.pantrypal.shared.food.FoodDto
 import org.koin.ktor.ext.inject
@@ -39,8 +46,8 @@ fun Route.foodRoutes() {
 fun Route.getAllFood() {
     get {
         val foodService by inject<FoodService>()
-        val principal = call.principal<JWTPrincipal>() ?: return@get call.respond(HttpStatusCode.Unauthorized)
-        val profileIdStr = principal.payload.getClaim("sub").asString() ?: return@get call.respond(HttpStatusCode.BadRequest, "Missing sub claim")
+        val principal = call.principal<JWTPrincipal>() ?: return@get call.respondUnauthorized()
+        val profileIdStr = principal.payload.getClaim("sub").asString() ?: return@get call.respondBadRequestUserId()
         val profileId = Uuid.parse(profileIdStr)
 
         foodService.getAllFoodByProfileId(profileId).onSuccess {
@@ -55,31 +62,25 @@ fun Route.getAllFood() {
 fun Route.getFoodById() {
     get("/{id}") {
         val foodService by inject<FoodService>()
-        val principal = call.principal<JWTPrincipal>() ?: return@get call.respond(HttpStatusCode.Unauthorized)
-        val profileIdStr = principal.payload.getClaim("sub").asString() ?: return@get call.respond(HttpStatusCode.BadRequest, "Missing sub claim")
+        val principal = call.principal<JWTPrincipal>() ?: return@get call.respondUnauthorized()
+        val profileIdStr = principal.payload.getClaim("sub").asString() ?: return@get call.respondBadRequestUserId()
         val profileId = Uuid.parse(profileIdStr)
-        val idStr = call.parameters["id"] ?: return@get call.respond(HttpStatusCode.BadRequest)
+        val idStr = call.parameters["id"] ?: return@get call.respondBadRequest("Missing food item ID")
         val id = Uuid.parse(idStr)
 
         foodService.getFoodById(id).onSuccess { food ->
             if (food == null) {
-                call.respond(HttpStatusCode.NotFound, ProblemDetails(
+                call.respondNotFound(
                     title = "Food not found",
-                    status = HttpStatusCode.NotFound.value,
                     detail = "The requested food item does not exist."
-                ))
+                )
             } else if (food.profileId != profileId) {
-                call.respond(HttpStatusCode.Forbidden, ProblemDetails(
-                    title = "Forbidden",
-                    status = HttpStatusCode.Forbidden.value,
-                    detail = "You do not have permission to access this food item."
-                ))
+                call.respondForbidden(detail = "You do not have permission to access this food item.")
             } else if (food.deletedAt != null) {
-                call.respond(HttpStatusCode.Gone, ProblemDetails(
+                call.respondGone(
                     title = "Food deleted",
-                    status = HttpStatusCode.Gone.value,
                     detail = "The requested food item has been deleted."
-                ))
+                )
             } else {
                 call.respond(HttpStatusCode.OK, food)
             }
@@ -93,8 +94,8 @@ fun Route.getFoodById() {
 fun Route.createFood() {
     post {
         val foodService by inject<FoodService>()
-        val principal = call.principal<JWTPrincipal>() ?: return@post call.respond(HttpStatusCode.Unauthorized)
-        val profileIdStr = principal.payload.getClaim("sub").asString() ?: return@post call.respond(HttpStatusCode.BadRequest, "Missing sub claim")
+        val principal = call.principal<JWTPrincipal>() ?: return@post call.respondUnauthorized()
+        val profileIdStr = principal.payload.getClaim("sub").asString() ?: return@post call.respondBadRequestUserId()
         val profileId = Uuid.parse(profileIdStr)
         val foodDto = call.receive<FoodDto>()
 
@@ -110,32 +111,26 @@ fun Route.createFood() {
 fun Route.updateFood() {
     put {
         val foodService by inject<FoodService>()
-        val principal = call.principal<JWTPrincipal>() ?: return@put call.respond(HttpStatusCode.Unauthorized)
-        val profileIdStr = principal.payload.getClaim("sub").asString() ?: return@put call.respond(HttpStatusCode.BadRequest, "Missing sub claim")
+        val principal = call.principal<JWTPrincipal>() ?: return@put call.respondUnauthorized()
+        val profileIdStr = principal.payload.getClaim("sub").asString() ?: return@put call.respondBadRequestUserId()
         val profileId = Uuid.parse(profileIdStr)
         val foodDto = call.receive<FoodDto>()
 
-        val id = foodDto.serverId ?: return@put call.respond(HttpStatusCode.BadRequest, "Missing serverId")
+        val id = foodDto.serverId ?: return@put call.respondBadRequest("Missing food item server ID")
         
         foodService.getFoodById(id).onSuccess { existing ->
             if (existing == null) {
-                call.respond(HttpStatusCode.NotFound, ProblemDetails(
+                call.respondNotFound(
                     title = "Food not found",
-                    status = HttpStatusCode.NotFound.value,
                     detail = "Cannot update non-existent food item."
-                ))
+                )
             } else if (existing.profileId != profileId) {
-                call.respond(HttpStatusCode.Forbidden, ProblemDetails(
-                    title = "Forbidden",
-                    status = HttpStatusCode.Forbidden.value,
-                    detail = "You do not have permission to update this food item."
-                ))
+                call.respondForbidden(detail = "You do not have permission to update this food item.")
             } else if (existing.deletedAt != null) {
-                call.respond(HttpStatusCode.Gone, ProblemDetails(
+                call.respondGone(
                     title = "Food deleted",
-                    status = HttpStatusCode.Gone.value,
                     detail = "Cannot update a deleted food item."
-                ))
+                )
             } else {
                 foodService.updateFood(foodDto, profileId).onSuccess { updated ->
                     if (updated != null) {
@@ -153,31 +148,25 @@ fun Route.updateFood() {
 fun Route.deleteFood() {
     delete("/{id}") {
         val foodService by inject<FoodService>()
-        val principal = call.principal<JWTPrincipal>() ?: return@delete call.respond(HttpStatusCode.Unauthorized)
-        val profileIdStr = principal.payload.getClaim("sub").asString() ?: return@delete call.respond(HttpStatusCode.BadRequest, "Missing sub claim")
+        val principal = call.principal<JWTPrincipal>() ?: return@delete call.respondUnauthorized()
+        val profileIdStr = principal.payload.getClaim("sub").asString() ?: return@delete call.respondBadRequestUserId()
         val profileId = Uuid.parse(profileIdStr)
-        val idStr = call.parameters["id"] ?: return@delete call.respond(HttpStatusCode.BadRequest)
+        val idStr = call.parameters["id"] ?: return@delete call.respondBadRequest("Missing food item ID")
         val id = Uuid.parse(idStr)
 
         foodService.getFoodById(id).onSuccess { existing ->
             if (existing == null) {
-                call.respond(HttpStatusCode.NotFound, ProblemDetails(
+                call.respondNotFound(
                     title = "Food not found",
-                    status = HttpStatusCode.NotFound.value,
                     detail = "Cannot delete non-existent food item."
-                ))
+                )
             } else if (existing.profileId != profileId) {
-                call.respond(HttpStatusCode.Forbidden, ProblemDetails(
-                    title = "Forbidden",
-                    status = HttpStatusCode.Forbidden.value,
-                    detail = "You do not have permission to delete this food item."
-                ))
+                call.respondForbidden(detail = "You do not have permission to delete this food item.")
             } else if (existing.deletedAt != null) {
-                call.respond(HttpStatusCode.Gone, ProblemDetails(
+                call.respondGone(
                     title = "Food already deleted",
-                    status = HttpStatusCode.Gone.value,
                     detail = "This food item has already been deleted."
-                ))
+                )
             } else {
                 foodService.deleteFood(id, profileId).onSuccess { deleted ->
                     if (deleted) {
@@ -196,33 +185,34 @@ fun Route.foodImageRoutes() {
     route("/{id}/image") {
         get {
             val foodService by inject<FoodService>()
-            val principal = call.principal<JWTPrincipal>() ?: return@get call.respond(HttpStatusCode.Unauthorized)
-            val profileIdStr = principal.payload.getClaim("sub").asString() ?: return@get call.respond(HttpStatusCode.BadRequest, "Missing sub claim")
+            val principal = call.principal<JWTPrincipal>() ?: return@get call.respondUnauthorized()
+            val profileIdStr = principal.payload.getClaim("sub").asString() ?: return@get call.respondBadRequestUserId()
             val profileId = Uuid.parse(profileIdStr)
-            val idStr = call.parameters["id"] ?: return@get call.respond(HttpStatusCode.BadRequest)
+            val idStr = call.parameters["id"] ?: return@get call.respondBadRequest("Missing food item ID")
             val id = Uuid.parse(idStr)
 
             foodService.getFoodById(id).onSuccess { food ->
                 if (food == null) {
-                    call.respond(HttpStatusCode.NotFound)
+                    call.respondNotFound(
+                        title = "Food not found",
+                        detail = "The requested food item does not exist."
+                    )
                 } else if (food.profileId != profileId) {
-                    call.respond(HttpStatusCode.Forbidden, ProblemDetails(
-                        title = "Forbidden",
-                        status = HttpStatusCode.Forbidden.value,
-                        detail = "You do not have permission to access this food image."
-                    ))
+                    call.respondForbidden(detail = "You do not have permission to access this food image.")
                 } else if (food.deletedAt != null) {
-                    call.respond(HttpStatusCode.Gone, ProblemDetails(
+                    call.respondGone(
                         title = "Food deleted",
-                        status = HttpStatusCode.Gone.value,
                         detail = "Cannot access image of a deleted food item."
-                    ))
+                    )
                 } else {
                     foodService.getFoodImage(id, profileId).onSuccess { bytes ->
                         if (bytes != null) {
                             call.respondBytes(bytes, ContentType.Image.JPEG, HttpStatusCode.OK)
                         } else {
-                            call.respond(HttpStatusCode.NotFound)
+                            call.respondNotFound(
+                                title = "Food image not found",
+                                detail = "The requested food image does not exist."
+                            )
                         }
                     }.onFailure { call.respondProblem(it) }
                 }
@@ -231,27 +221,25 @@ fun Route.foodImageRoutes() {
 
         post {
             val foodService by inject<FoodService>()
-            val principal = call.principal<JWTPrincipal>() ?: return@post call.respond(HttpStatusCode.Unauthorized)
-            val profileIdStr = principal.payload.getClaim("sub").asString() ?: return@post call.respond(HttpStatusCode.BadRequest, "Missing sub claim")
+            val principal = call.principal<JWTPrincipal>() ?: return@post call.respondUnauthorized()
+            val profileIdStr = principal.payload.getClaim("sub").asString() ?: return@post call.respondBadRequestUserId()
             val profileId = Uuid.parse(profileIdStr)
-            val idStr = call.parameters["id"] ?: return@post call.respond(HttpStatusCode.BadRequest)
+            val idStr = call.parameters["id"] ?: return@post call.respondBadRequest("Missing food item ID")
             val id = Uuid.parse(idStr)
             
             foodService.getFoodById(id).onSuccess { food ->
                 if (food == null) {
-                    call.respond(HttpStatusCode.NotFound)
+                    call.respondNotFound(
+                        title = "Food not found",
+                        detail = "The requested food item does not exist."
+                    )
                 } else if (food.profileId != profileId) {
-                    call.respond(HttpStatusCode.Forbidden, ProblemDetails(
-                        title = "Forbidden",
-                        status = HttpStatusCode.Forbidden.value,
-                        detail = "You do not have permission to upload an image for this food item."
-                    ))
+                    call.respondForbidden(detail = "You do not have permission to upload an image for this food item.")
                 } else if (food.deletedAt != null) {
-                    call.respond(HttpStatusCode.Gone, ProblemDetails(
+                    call.respondGone(
                         title = "Food deleted",
-                        status = HttpStatusCode.Gone.value,
                         detail = "Cannot upload image for a deleted food item."
-                    ))
+                    )
                 } else {
                     val imageData = call.receiveChannel().readRemaining().readByteArray()
                     foodService.saveFoodImage(id, profileId, imageData).onSuccess {
@@ -261,12 +249,4 @@ fun Route.foodImageRoutes() {
             }.onFailure { call.respondProblem(it) }
         }
     }
-}
-
-private suspend fun ApplicationCall.respondProblem(e: Throwable) {
-    respond(HttpStatusCode.InternalServerError, ProblemDetails(
-        title = "Internal Server Error",
-        status = HttpStatusCode.InternalServerError.value,
-        detail = e.message ?: "An unexpected error occurred."
-    ))
 }
