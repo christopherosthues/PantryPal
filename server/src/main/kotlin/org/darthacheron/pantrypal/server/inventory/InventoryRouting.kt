@@ -218,7 +218,10 @@ fun Route.inventoryImageRoutes() {
 
             inventoryItemService.getImageMetadata(imageId, profileId).onSuccess { image ->
                 if (image == null) {
-                    call.respondNotFound(title = "Image not found")
+                    call.respondNotFound(
+                        title = "Image not found",
+                        detail = "The requested inventory image does not exist."
+                    )
                 } else if (image.deletedAt != null) {
                     call.respondGone(
                         title = "Image deleted",
@@ -229,7 +232,10 @@ fun Route.inventoryImageRoutes() {
                         if (bytes != null) {
                             call.respondBytes(bytes, ContentType.Image.JPEG, HttpStatusCode.OK)
                         } else {
-                            call.respondNotFound(title = "Image not found")
+                            call.respondNotFound(
+                                title = "Image not found",
+                                detail = "The image file could not be found on the server."
+                            )
                         }
                     }.onFailure { call.respondProblem(it) }
                 }
@@ -247,7 +253,10 @@ fun Route.inventoryImageRoutes() {
 
             inventoryItemService.getInventoryItemById(id).onSuccess { item ->
                 if (item == null) {
-                    call.respondNotFound(title = "Inventory item not found")
+                    call.respondNotFound(
+                        title = "Inventory item not found",
+                        detail = "Cannot add images to a non-existent inventory item."
+                    )
                 } else if (item.deletedAt != null) {
                     call.respondGone(
                         title = "Inventory item deleted",
@@ -272,7 +281,10 @@ fun Route.inventoryImageRoutes() {
 
             inventoryItemService.getImageMetadata(imageId, profileId).onSuccess { image ->
                 if (image == null) {
-                    call.respondNotFound(title = "Image not found")
+                    call.respondNotFound(
+                        title = "Image not found",
+                        detail = "Cannot delete a non-existent inventory image."
+                    )
                 } else if (image.deletedAt != null) {
                     call.respondGone(
                         title = "Image already deleted",
@@ -281,7 +293,10 @@ fun Route.inventoryImageRoutes() {
                 } else {
                     inventoryItemService.deleteImage(imageId, profileId).onSuccess { deleted ->
                         if (deleted) call.respond(HttpStatusCode.NoContent)
-                        else call.respondNotFound(title = "Image not found")
+                        else call.respondNotFound(
+                            title = "Image not found",
+                            detail = "Failed to delete the inventory image."
+                        )
                     }.onFailure { call.respondProblem(it) }
                 }
             }.onFailure { call.respondProblem(it) }

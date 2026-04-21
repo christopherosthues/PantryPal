@@ -218,7 +218,10 @@ fun Route.foodImageRoutes() {
 
             foodService.getImageMetadata(imageId, profileId).onSuccess { image ->
                 if (image == null) {
-                    call.respondNotFound(title = "Image not found")
+                    call.respondNotFound(
+                        title = "Image not found",
+                        detail = "The requested food image does not exist."
+                    )
                 } else if (image.deletedAt != null) {
                     call.respondGone(
                         title = "Image deleted",
@@ -229,7 +232,10 @@ fun Route.foodImageRoutes() {
                         if (bytes != null) {
                             call.respondBytes(bytes, ContentType.Image.JPEG, HttpStatusCode.OK)
                         } else {
-                            call.respondNotFound(title = "Image not found")
+                            call.respondNotFound(
+                                title = "Image not found",
+                                detail = "The image file could not be found on the server."
+                            )
                         }
                     }.onFailure { call.respondProblem(it) }
                 }
@@ -247,7 +253,10 @@ fun Route.foodImageRoutes() {
 
             foodService.getFoodById(id).onSuccess { food ->
                 if (food == null) {
-                    call.respondNotFound(title = "Food not found")
+                    call.respondNotFound(
+                        title = "Food not found",
+                        detail = "Cannot add images to a non-existent food item."
+                    )
                 } else if (food.deletedAt != null) {
                     call.respondGone(
                         title = "Food deleted",
@@ -272,7 +281,10 @@ fun Route.foodImageRoutes() {
 
             foodService.getImageMetadata(imageId, profileId).onSuccess { image ->
                 if (image == null) {
-                    call.respondNotFound(title = "Image not found")
+                    call.respondNotFound(
+                        title = "Image not found",
+                        detail = "Cannot delete a non-existent food image."
+                    )
                 } else if (image.deletedAt != null) {
                     call.respondGone(
                         title = "Image already deleted",
@@ -281,7 +293,10 @@ fun Route.foodImageRoutes() {
                 } else {
                     foodService.deleteImage(imageId, profileId).onSuccess { deleted ->
                         if (deleted) call.respond(HttpStatusCode.NoContent)
-                        else call.respondNotFound(title = "Image not found")
+                        else call.respondNotFound(
+                            title = "Image not found",
+                            detail = "Failed to delete the food image."
+                        )
                     }.onFailure { call.respondProblem(it) }
                 }
             }.onFailure { call.respondProblem(it) }
