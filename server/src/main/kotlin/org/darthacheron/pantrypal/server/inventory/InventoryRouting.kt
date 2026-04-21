@@ -216,14 +216,22 @@ fun Route.inventoryImageRoutes() {
             val imageIdStr = call.parameters["imageId"] ?: return@get call.respondBadRequest("Missing image ID")
             val imageId = Uuid.parse(imageIdStr)
 
-            inventoryItemService.getImage(imageId, profileId).onSuccess { bytes ->
-                if (bytes != null) {
-                    call.respondBytes(bytes, ContentType.Image.JPEG, HttpStatusCode.OK)
-                } else {
-                    call.respondNotFound(
-                        title = "Image not found",
-                        detail = "The requested inventory item does not exist."
+            inventoryItemService.getImageMetadata(imageId, profileId).onSuccess { image ->
+                if (image == null) {
+                    call.respondNotFound(title = "Image not found")
+                } else if (image.deletedAt != null) {
+                    call.respondGone(
+                        title = "Image deleted",
+                        detail = "The requested image has been deleted."
                     )
+                } else {
+                    inventoryItemService.getImage(imageId, profileId).onSuccess { bytes ->
+                        if (bytes != null) {
+                            call.respondBytes(bytes, ContentType.Image.JPEG, HttpStatusCode.OK)
+                        } else {
+                            call.respondNotFound(title = "Image not found")
+                        }
+                    }.onFailure { call.respondProblem(it) }
                 }
             }.onFailure { call.respondProblem(it) }
         }
@@ -237,9 +245,20 @@ fun Route.inventoryImageRoutes() {
             val id = Uuid.parse(idStr)
             val isPrimary = call.request.queryParameters["isPrimary"]?.toBoolean() ?: false
 
-            val imageData = call.receiveChannel().readRemaining().readByteArray()
-            inventoryItemService.saveImage(id, profileId, isPrimary, imageData).onSuccess {
-                call.respond(HttpStatusCode.Created, it)
+            inventoryItemService.getInventoryItemById(id).onSuccess { item ->
+                if (item == null) {
+                    call.respondNotFound(title = "Inventory item not found")
+                } else if (item.deletedAt != null) {
+                    call.respondGone(
+                        title = "Inventory item deleted",
+                        detail = "Cannot add images to a deleted inventory item."
+                    )
+                } else {
+                    val imageData = call.receiveChannel().readRemaining().readByteArray()
+                    inventoryItemService.saveImage(id, profileId, isPrimary, imageData).onSuccess {
+                        call.respond(HttpStatusCode.Created, it)
+                    }.onFailure { call.respondProblem(it) }
+                }
             }.onFailure { call.respondProblem(it) }
         }
 
@@ -251,9 +270,20 @@ fun Route.inventoryImageRoutes() {
             val imageIdStr = call.parameters["imageId"] ?: return@delete call.respondBadRequest("Missing image ID")
             val imageId = Uuid.parse(imageIdStr)
 
-            inventoryItemService.deleteImage(imageId, profileId).onSuccess { deleted ->
-                if (deleted) call.respond(HttpStatusCode.NoContent)
-                else call.respondNotFound(title = "Image not found")
+            inventoryItemService.getImageMetadata(imageId, profileId).onSuccess { image ->
+                if (image == null) {
+                    call.respondNotFound(title = "Image not found")
+                } else if (image.deletedAt != null) {
+                    call.respondGone(
+                        title = "Image already deleted",
+                        detail = "This image has already been deleted."
+                    )
+                } else {
+                    inventoryItemService.deleteImage(imageId, profileId).onSuccess { deleted ->
+                        if (deleted) call.respond(HttpStatusCode.NoContent)
+                        else call.respondNotFound(title = "Image not found")
+                    }.onFailure { call.respondProblem(it) }
+                }
             }.onFailure { call.respondProblem(it) }
         }
     }

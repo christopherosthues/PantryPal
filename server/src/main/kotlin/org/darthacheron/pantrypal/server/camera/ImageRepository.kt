@@ -4,6 +4,7 @@ import kotlin.time.Clock
 import org.darthacheron.pantrypal.shared.camera.ImageDto
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.core.isNull
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -15,11 +16,15 @@ class ImageRepository {
     }
 
     fun getImagesForFood(foodId: Uuid, profileId: Uuid): List<ImageDto> = transaction {
-        ImageDAO.find { (ImagesTable.foodId eq foodId) and (ImagesTable.profileId eq profileId) }.map { it.toDto() }
+        ImageDAO.find {
+            (ImagesTable.foodId eq foodId) and (ImagesTable.profileId eq profileId) and (ImagesTable.deletedAt.isNull())
+        }.map { it.toDto() }
     }
 
     fun getImagesForInventoryItem(inventoryItemId: Uuid, profileId: Uuid): List<ImageDto> = transaction {
-        ImageDAO.find { (ImagesTable.inventoryItemId eq inventoryItemId) and (ImagesTable.profileId eq profileId) }.map { it.toDto() }
+        ImageDAO.find {
+            (ImagesTable.inventoryItemId eq inventoryItemId) and (ImagesTable.profileId eq profileId) and (ImagesTable.deletedAt.isNull())
+        }.map { it.toDto() }
     }
 
     fun createImage(
@@ -30,11 +35,13 @@ class ImageRepository {
     ): ImageDto = transaction {
         if (isPrimary) {
             if (foodId != null) {
-                ImageDAO.find { (ImagesTable.foodId eq foodId) and (ImagesTable.isPrimary eq true) }
-                    .forEach { it.isPrimary = false }
+                ImageDAO.find {
+                    (ImagesTable.foodId eq foodId) and (ImagesTable.isPrimary eq true) and (ImagesTable.deletedAt.isNull())
+                }.forEach { it.isPrimary = false }
             } else if (inventoryItemId != null) {
-                ImageDAO.find { (ImagesTable.inventoryItemId eq inventoryItemId) and (ImagesTable.isPrimary eq true) }
-                    .forEach { it.isPrimary = false }
+                ImageDAO.find {
+                    (ImagesTable.inventoryItemId eq inventoryItemId) and (ImagesTable.isPrimary eq true) and (ImagesTable.deletedAt.isNull())
+                }.forEach { it.isPrimary = false }
             }
         }
 
@@ -51,7 +58,10 @@ class ImageRepository {
     fun deleteImage(id: Uuid, profileId: Uuid): Boolean = transaction {
         val existing = ImageDAO.findById(id) ?: return@transaction false
         if (existing.profileId != profileId) return@transaction false
-        existing.delete()
+        if (existing.deletedAt != null) return@transaction false
+        
+        existing.deletedAt = Clock.System.now()
+        existing.lastModifiedAt = Clock.System.now()
         true
     }
 }

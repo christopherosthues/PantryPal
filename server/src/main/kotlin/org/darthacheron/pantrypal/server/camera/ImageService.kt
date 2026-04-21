@@ -38,6 +38,11 @@ class ImageService(
         if (imageFile.exists()) imageFile.readBytes() else null
     }
 
+    fun getImage(imageId: Uuid, profileId: Uuid): Result<ImageDto?> = runCatching {
+        val imageDto = imageRepository.getImageById(imageId)
+        if (imageDto?.profileId != profileId) null else imageDto
+    }
+
     fun deleteImage(imageId: Uuid, profileId: Uuid): Result<Boolean> = runCatching {
         val imageDto = imageRepository.getImageById(imageId) ?: return@runCatching false
         if (imageDto.profileId != profileId) return@runCatching false

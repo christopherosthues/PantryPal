@@ -6,6 +6,7 @@ import org.darthacheron.pantrypal.shared.inventory.InventoryItemDto
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.core.isNull
 import org.jetbrains.exposed.v1.dao.UuidEntity
 import org.jetbrains.exposed.v1.dao.UuidEntityClass
 import kotlin.uuid.ExperimentalUuidApi
@@ -33,9 +34,11 @@ class InventoryItemDAO(id: EntityID<Uuid>) : UuidEntity(id) {
     var lastModifiedAt by InventoryItemsTable.lastModifiedAt
     var deletedAt by InventoryItemsTable.deletedAt
 
-    // TODO: Use toDto in the Extensions!
+    // TODO: Move toDto in the Extensions!
     fun toDto(): InventoryItemDto {
-        val images = ImageDAO.find { (ImagesTable.inventoryItemId eq id.value) and (ImagesTable.profileId eq profileId) }.map { it.toDto() }
+        val images = ImageDAO.find {
+            (ImagesTable.inventoryItemId eq id.value) and (ImagesTable.profileId eq profileId) and (ImagesTable.deletedAt.isNull())
+        }.map { it.toDto() }
         val primaryImage = images.find { it.isPrimary }
         val additionalImages = images.filter { !it.isPrimary }
 

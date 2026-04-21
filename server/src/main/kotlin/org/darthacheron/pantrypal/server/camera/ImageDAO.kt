@@ -17,6 +17,7 @@ class ImageDAO(id: EntityID<Uuid>) : UuidEntity(id) {
     var isPrimary by ImagesTable.isPrimary
     var createdAt by ImagesTable.createdAt
     var lastModifiedAt by ImagesTable.lastModifiedAt
+    var deletedAt by ImagesTable.deletedAt
 
     fun toDto(): ImageDto = ImageDto(
         serverId = id.value,
@@ -25,6 +26,7 @@ class ImageDAO(id: EntityID<Uuid>) : UuidEntity(id) {
         inventoryItemId = inventoryItemId,
         isPrimary = isPrimary,
         createdAt = createdAt,
-        lastModifiedAt = lastModifiedAt
+        lastModifiedAt = lastModifiedAt,
+        deletedAt = deletedAt
     )
 }

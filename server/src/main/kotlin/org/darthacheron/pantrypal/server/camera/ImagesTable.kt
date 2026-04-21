@@ -12,4 +12,5 @@ object ImagesTable : UuidTable("images") {
     val isPrimary = bool("is_primary").default(false)
     val createdAt = timestamp("created_at")
     val lastModifiedAt = timestamp("last_modified_at")
+    val deletedAt = timestamp("deleted_at").nullable()
 }

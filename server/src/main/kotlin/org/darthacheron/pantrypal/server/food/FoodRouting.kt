@@ -216,11 +216,22 @@ fun Route.foodImageRoutes() {
             val imageIdStr = call.parameters["imageId"] ?: return@get call.respondBadRequest("Missing image ID")
             val imageId = Uuid.parse(imageIdStr)
 
-            foodService.getImage(imageId, profileId).onSuccess { bytes ->
-                if (bytes != null) {
-                    call.respondBytes(bytes, ContentType.Image.JPEG, HttpStatusCode.OK)
-                } else {
+            foodService.getImageMetadata(imageId, profileId).onSuccess { image ->
+                if (image == null) {
                     call.respondNotFound(title = "Image not found")
+                } else if (image.deletedAt != null) {
+                    call.respondGone(
+                        title = "Image deleted",
+                        detail = "The requested image has been deleted."
+                    )
+                } else {
+                    foodService.getImage(imageId, profileId).onSuccess { bytes ->
+                        if (bytes != null) {
+                            call.respondBytes(bytes, ContentType.Image.JPEG, HttpStatusCode.OK)
+                        } else {
+                            call.respondNotFound(title = "Image not found")
+                        }
+                    }.onFailure { call.respondProblem(it) }
                 }
             }.onFailure { call.respondProblem(it) }
         }
@@ -234,9 +245,20 @@ fun Route.foodImageRoutes() {
             val id = Uuid.parse(idStr)
             val isPrimary = call.request.queryParameters["isPrimary"]?.toBoolean() ?: false
 
-            val imageData = call.receiveChannel().readRemaining().readByteArray()
-            foodService.saveImage(id, profileId, isPrimary, imageData).onSuccess {
-                call.respond(HttpStatusCode.Created, it)
+            foodService.getFoodById(id).onSuccess { food ->
+                if (food == null) {
+                    call.respondNotFound(title = "Food not found")
+                } else if (food.deletedAt != null) {
+                    call.respondGone(
+                        title = "Food deleted",
+                        detail = "Cannot add images to a deleted food item."
+                    )
+                } else {
+                    val imageData = call.receiveChannel().readRemaining().readByteArray()
+                    foodService.saveImage(id, profileId, isPrimary, imageData).onSuccess {
+                        call.respond(HttpStatusCode.Created, it)
+                    }.onFailure { call.respondProblem(it) }
+                }
             }.onFailure { call.respondProblem(it) }
         }
 
@@ -248,9 +270,20 @@ fun Route.foodImageRoutes() {
             val imageIdStr = call.parameters["imageId"] ?: return@delete call.respondBadRequest("Missing image ID")
             val imageId = Uuid.parse(imageIdStr)
 
-            foodService.deleteImage(imageId, profileId).onSuccess { deleted ->
-                if (deleted) call.respond(HttpStatusCode.NoContent)
-                else call.respondNotFound(title = "Image not found")
+            foodService.getImageMetadata(imageId, profileId).onSuccess { image ->
+                if (image == null) {
+                    call.respondNotFound(title = "Image not found")
+                } else if (image.deletedAt != null) {
+                    call.respondGone(
+                        title = "Image already deleted",
+                        detail = "This image has already been deleted."
+                    )
+                } else {
+                    foodService.deleteImage(imageId, profileId).onSuccess { deleted ->
+                        if (deleted) call.respond(HttpStatusCode.NoContent)
+                        else call.respondNotFound(title = "Image not found")
+                    }.onFailure { call.respondProblem(it) }
+                }
             }.onFailure { call.respondProblem(it) }
         }
     }

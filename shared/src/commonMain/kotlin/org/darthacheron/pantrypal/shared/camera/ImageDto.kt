@@ -14,5 +14,6 @@ data class ImageDto(
     val inventoryItemId: Uuid? = null,
     val isPrimary: Boolean = false,
     val createdAt: Instant,
-    val lastModifiedAt: Instant
+    val lastModifiedAt: Instant,
+    val deletedAt: Instant? = null
 )

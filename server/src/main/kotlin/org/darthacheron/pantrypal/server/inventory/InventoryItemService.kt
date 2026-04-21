@@ -41,6 +41,10 @@ class InventoryItemService(
         return imageService.getImageBytes(imageId, profileId)
     }
 
+    fun getImageMetadata(imageId: Uuid, profileId: Uuid): Result<ImageDto?> {
+        return imageService.getImage(imageId, profileId)
+    }
+
     fun deleteImage(imageId: Uuid, profileId: Uuid): Result<Boolean> {
         return imageService.deleteImage(imageId, profileId)
     }
