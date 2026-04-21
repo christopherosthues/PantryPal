@@ -2,6 +2,8 @@ package org.darthacheron.pantrypal.server
 
 import io.ktor.http.parametersOf
 import io.ktor.server.application.*
+import org.darthacheron.pantrypal.server.camera.ImageRepository
+import org.darthacheron.pantrypal.server.camera.ImageService
 import org.darthacheron.pantrypal.server.configuration.ConfigurationService
 import org.darthacheron.pantrypal.server.food.FoodRepository
 import org.darthacheron.pantrypal.server.food.FoodService
@@ -29,6 +31,8 @@ fun Application.configureFrameworks() {
             factoryOf(::FoodService)
             factoryOf(::InventoryItemRepository)
             factoryOf(::InventoryItemService)
+            factoryOf(::ImageRepository)
+            factoryOf(::ImageService)
             single<ConfigurationService> { ConfigurationService(environment) }
         })
     }

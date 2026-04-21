@@ -1,6 +1,8 @@
 package org.darthacheron.pantrypal.server.inventory
 
+import org.darthacheron.pantrypal.server.camera.ImageService
 import org.darthacheron.pantrypal.server.configuration.ConfigurationService
+import org.darthacheron.pantrypal.shared.camera.ImageDto
 import org.darthacheron.pantrypal.shared.inventory.InventoryItemDto
 import java.io.File
 import kotlin.uuid.ExperimentalUuidApi
@@ -9,7 +11,7 @@ import kotlin.uuid.Uuid
 @OptIn(ExperimentalUuidApi::class)
 class InventoryItemService(
     private val inventoryItemRepository: InventoryItemRepository,
-    private val configurationService: ConfigurationService
+    private val imageService: ImageService
 ) {
     fun getInventoryItemById(id: Uuid): Result<InventoryItemDto?> = runCatching {
         inventoryItemRepository.getInventoryItemById(id)
@@ -28,35 +30,18 @@ class InventoryItemService(
     }
 
     fun deleteInventoryItem(id: Uuid, profileId: Uuid): Result<Boolean> = runCatching {
-        val deleted = inventoryItemRepository.deleteInventoryItem(id, profileId)
-        if (deleted) {
-            deleteInventoryImage(id, profileId)
-        }
-        deleted
+        inventoryItemRepository.deleteInventoryItem(id, profileId)
     }
 
-    fun saveInventoryImage(inventoryItemId: Uuid, profileId: Uuid, imageData: ByteArray): Result<Unit> = runCatching {
-        val userDir = File(configurationService.inventoryImagesPath, profileId.toString())
-        if (!userDir.exists()) {
-            userDir.mkdirs()
-        }
-        val imageFile = File(userDir, "$inventoryItemId.jpg")
-        imageFile.writeBytes(imageData)
+    fun saveImage(inventoryItemId: Uuid, profileId: Uuid, isPrimary: Boolean, imageData: ByteArray): Result<ImageDto> {
+        return imageService.saveImage(null, inventoryItemId, profileId, isPrimary, imageData)
     }
 
-    fun getInventoryImage(inventoryItemId: Uuid, profileId: Uuid): Result<ByteArray?> = runCatching {
-        val imageFile = File(File(configurationService.inventoryImagesPath, profileId.toString()), "$inventoryItemId.jpg")
-        if (imageFile.exists()) {
-            imageFile.readBytes()
-        } else {
-            null
-        }
+    fun getImage(imageId: Uuid, profileId: Uuid): Result<ByteArray?> {
+        return imageService.getImageBytes(imageId, profileId)
     }
 
-    private fun deleteInventoryImage(inventoryItemId: Uuid, profileId: Uuid) {
-        val imageFile = File(File(configurationService.inventoryImagesPath, profileId.toString()), "$inventoryItemId.jpg")
-        if (imageFile.exists()) {
-            imageFile.delete()
-        }
+    fun deleteImage(imageId: Uuid, profileId: Uuid): Result<Boolean> {
+        return imageService.deleteImage(imageId, profileId)
     }
 }

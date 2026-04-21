@@ -180,7 +180,7 @@ fun Route.deleteInventoryItem() {
 
 @OptIn(ExperimentalUuidApi::class)
 fun Route.inventoryImageRoutes() {
-    route("/{id}/image") {
+    route("/{id}/images") {
         get {
             val inventoryItemService by inject<InventoryItemService>()
             val principal = call.principal<JWTPrincipal>() ?: return@get call.respondUnauthorized()
@@ -203,16 +203,27 @@ fun Route.inventoryImageRoutes() {
                         detail = "Cannot access image of a deleted inventory item."
                     )
                 } else {
-                    inventoryItemService.getInventoryImage(id, profileId).onSuccess { bytes ->
-                        if (bytes != null) {
-                            call.respondBytes(bytes, ContentType.Image.JPEG, HttpStatusCode.OK)
-                        } else {
-                            call.respondNotFound(
-                                title = "Inventory item image not found",
-                                detail = "The requested inventory item image does not exist."
-                            )
-                        }
-                    }.onFailure { call.respondProblem(it) }
+                    call.respond(HttpStatusCode.OK, item.primaryImage?.let { listOf(it) + item.additionalImages } ?: item.additionalImages)
+                }
+            }.onFailure { call.respondProblem(it) }
+        }
+
+        get("/{imageId}") {
+            val inventoryItemService by inject<InventoryItemService>()
+            val principal = call.principal<JWTPrincipal>() ?: return@get call.respondUnauthorized()
+            val profileIdStr = principal.payload.getClaim("sub").asString() ?: return@get call.respondBadRequestUserId()
+            val profileId = Uuid.parse(profileIdStr)
+            val imageIdStr = call.parameters["imageId"] ?: return@get call.respondBadRequest("Missing image ID")
+            val imageId = Uuid.parse(imageIdStr)
+
+            inventoryItemService.getImage(imageId, profileId).onSuccess { bytes ->
+                if (bytes != null) {
+                    call.respondBytes(bytes, ContentType.Image.JPEG, HttpStatusCode.OK)
+                } else {
+                    call.respondNotFound(
+                        title = "Image not found",
+                        detail = "The requested inventory item does not exist."
+                    )
                 }
             }.onFailure { call.respondProblem(it) }
         }
@@ -224,26 +235,25 @@ fun Route.inventoryImageRoutes() {
             val profileId = Uuid.parse(profileIdStr)
             val idStr = call.parameters["id"] ?: return@post call.respondBadRequest("Missing inventory item ID")
             val id = Uuid.parse(idStr)
-            
-            inventoryItemService.getInventoryItemById(id).onSuccess { item ->
-                if (item == null) {
-                    call.respondNotFound(
-                        title = "Inventory item not found",
-                        detail = "The requested inventory item does not exist."
-                    )
-                } else if (item.profileId != profileId) {
-                    call.respondForbidden(detail = "You do not have permission to upload an image for this inventory item.")
-                } else if (item.deletedAt != null) {
-                    call.respondGone(
-                        title = "Inventory item deleted",
-                        detail = "Cannot upload image for a deleted inventory item."
-                    )
-                } else {
-                    val imageData = call.receiveChannel().readRemaining().readByteArray()
-                    inventoryItemService.saveInventoryImage(id, profileId, imageData).onSuccess {
-                        call.respond(HttpStatusCode.OK)
-                    }.onFailure { call.respondProblem(it) }
-                }
+            val isPrimary = call.request.queryParameters["isPrimary"]?.toBoolean() ?: false
+
+            val imageData = call.receiveChannel().readRemaining().readByteArray()
+            inventoryItemService.saveImage(id, profileId, isPrimary, imageData).onSuccess {
+                call.respond(HttpStatusCode.Created, it)
+            }.onFailure { call.respondProblem(it) }
+        }
+
+        delete("/{imageId}") {
+            val inventoryItemService by inject<InventoryItemService>()
+            val principal = call.principal<JWTPrincipal>() ?: return@delete call.respondUnauthorized()
+            val profileIdStr = principal.payload.getClaim("sub").asString() ?: return@delete call.respondBadRequestUserId()
+            val profileId = Uuid.parse(profileIdStr)
+            val imageIdStr = call.parameters["imageId"] ?: return@delete call.respondBadRequest("Missing image ID")
+            val imageId = Uuid.parse(imageIdStr)
+
+            inventoryItemService.deleteImage(imageId, profileId).onSuccess { deleted ->
+                if (deleted) call.respond(HttpStatusCode.NoContent)
+                else call.respondNotFound(title = "Image not found")
             }.onFailure { call.respondProblem(it) }
         }
     }

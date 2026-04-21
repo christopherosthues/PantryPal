@@ -1,15 +1,15 @@
 package org.darthacheron.pantrypal.server.food
 
-import org.darthacheron.pantrypal.server.configuration.ConfigurationService
+import org.darthacheron.pantrypal.server.camera.ImageService
+import org.darthacheron.pantrypal.shared.camera.ImageDto
 import org.darthacheron.pantrypal.shared.food.FoodDto
-import java.io.File
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 @OptIn(ExperimentalUuidApi::class)
 class FoodService(
     private val foodRepository: FoodRepository,
-    private val configurationService: ConfigurationService
+    private val imageService: ImageService
 ) {
     fun getFoodById(id: Uuid): Result<FoodDto?> = runCatching {
         foodRepository.getFoodById(id)
@@ -28,35 +28,18 @@ class FoodService(
     }
 
     fun deleteFood(id: Uuid, profileId: Uuid): Result<Boolean> = runCatching {
-        val deleted = foodRepository.deleteFood(id, profileId)
-        if (deleted) {
-            deleteFoodImage(id, profileId)
-        }
-        deleted
+        foodRepository.deleteFood(id, profileId)
     }
 
-    fun saveFoodImage(foodId: Uuid, profileId: Uuid, imageData: ByteArray): Result<Unit> = runCatching {
-        val userDir = File(configurationService.foodImagesPath, profileId.toString())
-        if (!userDir.exists()) {
-            userDir.mkdirs()
-        }
-        val imageFile = File(userDir, "$foodId.jpg")
-        imageFile.writeBytes(imageData)
+    fun saveImage(foodId: Uuid, profileId: Uuid, isPrimary: Boolean, imageData: ByteArray): Result<ImageDto> {
+        return imageService.saveImage(foodId, null, profileId, isPrimary, imageData)
     }
 
-    fun getFoodImage(foodId: Uuid, profileId: Uuid): Result<ByteArray?> = runCatching {
-        val imageFile = File(File(configurationService.foodImagesPath, profileId.toString()), "$foodId.jpg")
-        if (imageFile.exists()) {
-            imageFile.readBytes()
-        } else {
-            null
-        }
+    fun getImage(imageId: Uuid, profileId: Uuid): Result<ByteArray?> {
+        return imageService.getImageBytes(imageId, profileId)
     }
 
-    private fun deleteFoodImage(foodId: Uuid, profileId: Uuid) {
-        val imageFile = File(File(configurationService.foodImagesPath, profileId.toString()), "$foodId.jpg")
-        if (imageFile.exists()) {
-            imageFile.delete()
-        }
+    fun deleteImage(imageId: Uuid, profileId: Uuid): Result<Boolean> {
+        return imageService.deleteImage(imageId, profileId)
     }
 }

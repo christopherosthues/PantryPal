@@ -5,7 +5,7 @@ import io.ktor.server.application.ApplicationCall
 import io.ktor.server.response.respond
 import org.darthacheron.pantrypal.shared.auth.ProblemDetails
 
-suspend fun ApplicationCall.respondNotFound(title: String, detail: String) {
+suspend fun ApplicationCall.respondNotFound(title: String, detail: String = "The requested resource was not found.") {
     respond(HttpStatusCode.NotFound, ProblemDetails(
         title = title,
         status = HttpStatusCode.NotFound.value,
@@ -33,7 +33,7 @@ suspend fun ApplicationCall.respondBadRequestUserId() {
     respondBadRequest(detail = "Missing user ID.")
 }
 
-suspend fun ApplicationCall.respondForbidden(detail: String) {
+suspend fun ApplicationCall.respondForbidden(detail: String = "You do not have permission to access this resource.") {
     respond(HttpStatusCode.Forbidden, ProblemDetails(
         title = "Forbidden",
         status = HttpStatusCode.Forbidden.value,

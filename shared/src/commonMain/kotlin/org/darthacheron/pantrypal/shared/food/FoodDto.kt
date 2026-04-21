@@ -2,6 +2,7 @@ package org.darthacheron.pantrypal.shared.food
 
 import kotlinx.datetime.LocalDate
 import kotlinx.serialization.Serializable
+import org.darthacheron.pantrypal.shared.camera.ImageDto
 import kotlin.time.Instant
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -27,6 +28,8 @@ data class FoodDto(
     val bestBeforeUsedByDate: LocalDate?,
     val isUseBy: Boolean,
     val openedAt: LocalDate?,
+    val primaryImage: ImageDto? = null,
+    val additionalImages: List<ImageDto> = emptyList(),
     val createdAt: Instant,
     val lastModifiedAt: Instant,
     val deletedAt: Instant? = null

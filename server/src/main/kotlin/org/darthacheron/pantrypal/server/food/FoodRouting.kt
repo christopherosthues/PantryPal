@@ -24,7 +24,7 @@ import org.darthacheron.pantrypal.server.networking.respondGone
 import org.darthacheron.pantrypal.server.networking.respondNotFound
 import org.darthacheron.pantrypal.server.networking.respondProblem
 import org.darthacheron.pantrypal.server.networking.respondUnauthorized
-import org.darthacheron.pantrypal.shared.auth.ProblemDetails
+import org.darthacheron.pantrypal.shared.camera.ImageDto
 import org.darthacheron.pantrypal.shared.food.FoodDto
 import org.koin.ktor.ext.inject
 import kotlin.uuid.ExperimentalUuidApi
@@ -182,7 +182,7 @@ fun Route.deleteFood() {
 
 @OptIn(ExperimentalUuidApi::class)
 fun Route.foodImageRoutes() {
-    route("/{id}/image") {
+    route("/{id}/images") {
         get {
             val foodService by inject<FoodService>()
             val principal = call.principal<JWTPrincipal>() ?: return@get call.respondUnauthorized()
@@ -199,22 +199,28 @@ fun Route.foodImageRoutes() {
                     )
                 } else if (food.profileId != profileId) {
                     call.respondForbidden(detail = "You do not have permission to access this food image.")
-                } else if (food.deletedAt != null) {
-                    call.respondGone(
-                        title = "Food deleted",
-                        detail = "Cannot access image of a deleted food item."
-                    )
                 } else {
-                    foodService.getFoodImage(id, profileId).onSuccess { bytes ->
-                        if (bytes != null) {
-                            call.respondBytes(bytes, ContentType.Image.JPEG, HttpStatusCode.OK)
-                        } else {
-                            call.respondNotFound(
-                                title = "Food image not found",
-                                detail = "The requested food image does not exist."
-                            )
-                        }
-                    }.onFailure { call.respondProblem(it) }
+                    val images = mutableListOf<ImageDto>()
+                    food.primaryImage?.let { images.add(it) }
+                    images.addAll(food.additionalImages)
+                    call.respond(HttpStatusCode.OK, images)
+                }
+            }.onFailure { call.respondProblem(it) }
+        }
+
+        get("/{imageId}") {
+            val foodService by inject<FoodService>()
+            val principal = call.principal<JWTPrincipal>() ?: return@get call.respondUnauthorized()
+            val profileIdStr = principal.payload.getClaim("sub").asString() ?: return@get call.respondBadRequestUserId()
+            val profileId = Uuid.parse(profileIdStr)
+            val imageIdStr = call.parameters["imageId"] ?: return@get call.respondBadRequest("Missing image ID")
+            val imageId = Uuid.parse(imageIdStr)
+
+            foodService.getImage(imageId, profileId).onSuccess { bytes ->
+                if (bytes != null) {
+                    call.respondBytes(bytes, ContentType.Image.JPEG, HttpStatusCode.OK)
+                } else {
+                    call.respondNotFound(title = "Image not found")
                 }
             }.onFailure { call.respondProblem(it) }
         }
@@ -226,26 +232,25 @@ fun Route.foodImageRoutes() {
             val profileId = Uuid.parse(profileIdStr)
             val idStr = call.parameters["id"] ?: return@post call.respondBadRequest("Missing food item ID")
             val id = Uuid.parse(idStr)
-            
-            foodService.getFoodById(id).onSuccess { food ->
-                if (food == null) {
-                    call.respondNotFound(
-                        title = "Food not found",
-                        detail = "The requested food item does not exist."
-                    )
-                } else if (food.profileId != profileId) {
-                    call.respondForbidden(detail = "You do not have permission to upload an image for this food item.")
-                } else if (food.deletedAt != null) {
-                    call.respondGone(
-                        title = "Food deleted",
-                        detail = "Cannot upload image for a deleted food item."
-                    )
-                } else {
-                    val imageData = call.receiveChannel().readRemaining().readByteArray()
-                    foodService.saveFoodImage(id, profileId, imageData).onSuccess {
-                        call.respond(HttpStatusCode.OK)
-                    }.onFailure { call.respondProblem(it) }
-                }
+            val isPrimary = call.request.queryParameters["isPrimary"]?.toBoolean() ?: false
+
+            val imageData = call.receiveChannel().readRemaining().readByteArray()
+            foodService.saveImage(id, profileId, isPrimary, imageData).onSuccess {
+                call.respond(HttpStatusCode.Created, it)
+            }.onFailure { call.respondProblem(it) }
+        }
+
+        delete("/{imageId}") {
+            val foodService by inject<FoodService>()
+            val principal = call.principal<JWTPrincipal>() ?: return@delete call.respondUnauthorized()
+            val profileIdStr = principal.payload.getClaim("sub").asString() ?: return@delete call.respondBadRequestUserId()
+            val profileId = Uuid.parse(profileIdStr)
+            val imageIdStr = call.parameters["imageId"] ?: return@delete call.respondBadRequest("Missing image ID")
+            val imageId = Uuid.parse(imageIdStr)
+
+            foodService.deleteImage(imageId, profileId).onSuccess { deleted ->
+                if (deleted) call.respond(HttpStatusCode.NoContent)
+                else call.respondNotFound(title = "Image not found")
             }.onFailure { call.respondProblem(it) }
         }
     }

@@ -1,6 +1,7 @@
 package org.darthacheron.pantrypal.shared.inventory
 
 import kotlinx.serialization.Serializable
+import org.darthacheron.pantrypal.shared.camera.ImageDto
 import kotlin.time.Instant
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -23,6 +24,8 @@ data class InventoryItemDto(
     val fillingQuantity: Float?,
     val isLiquid: Boolean = false,
     val profileId: Uuid,
+    val primaryImage: ImageDto? = null,
+    val additionalImages: List<ImageDto> = emptyList(),
     val createdAt: Instant,
     val lastModifiedAt: Instant,
     val deletedAt: Instant? = null
