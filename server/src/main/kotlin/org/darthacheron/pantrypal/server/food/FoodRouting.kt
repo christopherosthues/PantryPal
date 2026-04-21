@@ -2,9 +2,6 @@ package org.darthacheron.pantrypal.server.food
 
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
-import io.ktor.server.application.ApplicationCall
-import io.ktor.server.auth.jwt.JWTPrincipal
-import io.ktor.server.auth.principal
 import io.ktor.server.request.receive
 import io.ktor.server.request.receiveChannel
 import io.ktor.server.response.respond
@@ -17,13 +14,12 @@ import io.ktor.server.routing.put
 import io.ktor.server.routing.route
 import io.ktor.utils.io.readRemaining
 import kotlinx.io.readByteArray
+import org.darthacheron.pantrypal.server.networking.extractProfileId
 import org.darthacheron.pantrypal.server.networking.respondBadRequest
-import org.darthacheron.pantrypal.server.networking.respondBadRequestUserId
 import org.darthacheron.pantrypal.server.networking.respondForbidden
 import org.darthacheron.pantrypal.server.networking.respondGone
 import org.darthacheron.pantrypal.server.networking.respondNotFound
 import org.darthacheron.pantrypal.server.networking.respondProblem
-import org.darthacheron.pantrypal.server.networking.respondUnauthorized
 import org.darthacheron.pantrypal.shared.camera.ImageDto
 import org.darthacheron.pantrypal.shared.food.FoodDto
 import org.koin.ktor.ext.inject
@@ -46,9 +42,7 @@ fun Route.foodRoutes() {
 fun Route.getAllFood() {
     get {
         val foodService by inject<FoodService>()
-        val principal = call.principal<JWTPrincipal>() ?: return@get call.respondUnauthorized()
-        val profileIdStr = principal.payload.getClaim("sub").asString() ?: return@get call.respondBadRequestUserId()
-        val profileId = Uuid.parse(profileIdStr)
+        val profileId = call.extractProfileId() ?: return@get
 
         foodService.getAllFoodByProfileId(profileId).onSuccess {
             call.respond(HttpStatusCode.OK, it)
@@ -62,9 +56,7 @@ fun Route.getAllFood() {
 fun Route.getFoodById() {
     get("/{id}") {
         val foodService by inject<FoodService>()
-        val principal = call.principal<JWTPrincipal>() ?: return@get call.respondUnauthorized()
-        val profileIdStr = principal.payload.getClaim("sub").asString() ?: return@get call.respondBadRequestUserId()
-        val profileId = Uuid.parse(profileIdStr)
+        val profileId = call.extractProfileId() ?: return@get
         val idStr = call.parameters["id"] ?: return@get call.respondBadRequest("Missing food item ID")
         val id = Uuid.parse(idStr)
 
@@ -94,9 +86,7 @@ fun Route.getFoodById() {
 fun Route.createFood() {
     post {
         val foodService by inject<FoodService>()
-        val principal = call.principal<JWTPrincipal>() ?: return@post call.respondUnauthorized()
-        val profileIdStr = principal.payload.getClaim("sub").asString() ?: return@post call.respondBadRequestUserId()
-        val profileId = Uuid.parse(profileIdStr)
+        val profileId = call.extractProfileId() ?: return@post
         val foodDto = call.receive<FoodDto>()
 
         foodService.createFood(foodDto, profileId).onSuccess {
@@ -111,9 +101,7 @@ fun Route.createFood() {
 fun Route.updateFood() {
     put {
         val foodService by inject<FoodService>()
-        val principal = call.principal<JWTPrincipal>() ?: return@put call.respondUnauthorized()
-        val profileIdStr = principal.payload.getClaim("sub").asString() ?: return@put call.respondBadRequestUserId()
-        val profileId = Uuid.parse(profileIdStr)
+        val profileId = call.extractProfileId() ?: return@put
         val foodDto = call.receive<FoodDto>()
 
         val id = foodDto.serverId ?: return@put call.respondBadRequest("Missing food item server ID")
@@ -148,9 +136,7 @@ fun Route.updateFood() {
 fun Route.deleteFood() {
     delete("/{id}") {
         val foodService by inject<FoodService>()
-        val principal = call.principal<JWTPrincipal>() ?: return@delete call.respondUnauthorized()
-        val profileIdStr = principal.payload.getClaim("sub").asString() ?: return@delete call.respondBadRequestUserId()
-        val profileId = Uuid.parse(profileIdStr)
+        val profileId = call.extractProfileId() ?: return@delete
         val idStr = call.parameters["id"] ?: return@delete call.respondBadRequest("Missing food item ID")
         val id = Uuid.parse(idStr)
 
@@ -185,9 +171,7 @@ fun Route.foodImageRoutes() {
     route("/{id}/images") {
         get {
             val foodService by inject<FoodService>()
-            val principal = call.principal<JWTPrincipal>() ?: return@get call.respondUnauthorized()
-            val profileIdStr = principal.payload.getClaim("sub").asString() ?: return@get call.respondBadRequestUserId()
-            val profileId = Uuid.parse(profileIdStr)
+            val profileId = call.extractProfileId() ?: return@get
             val idStr = call.parameters["id"] ?: return@get call.respondBadRequest("Missing food item ID")
             val id = Uuid.parse(idStr)
 
@@ -210,9 +194,7 @@ fun Route.foodImageRoutes() {
 
         get("/{imageId}") {
             val foodService by inject<FoodService>()
-            val principal = call.principal<JWTPrincipal>() ?: return@get call.respondUnauthorized()
-            val profileIdStr = principal.payload.getClaim("sub").asString() ?: return@get call.respondBadRequestUserId()
-            val profileId = Uuid.parse(profileIdStr)
+            val profileId = call.extractProfileId() ?: return@get
             val imageIdStr = call.parameters["imageId"] ?: return@get call.respondBadRequest("Missing image ID")
             val imageId = Uuid.parse(imageIdStr)
 
@@ -244,9 +226,7 @@ fun Route.foodImageRoutes() {
 
         post {
             val foodService by inject<FoodService>()
-            val principal = call.principal<JWTPrincipal>() ?: return@post call.respondUnauthorized()
-            val profileIdStr = principal.payload.getClaim("sub").asString() ?: return@post call.respondBadRequestUserId()
-            val profileId = Uuid.parse(profileIdStr)
+            val profileId = call.extractProfileId() ?: return@post
             val idStr = call.parameters["id"] ?: return@post call.respondBadRequest("Missing food item ID")
             val id = Uuid.parse(idStr)
             val isPrimary = call.request.queryParameters["isPrimary"]?.toBoolean() ?: false
@@ -273,9 +253,7 @@ fun Route.foodImageRoutes() {
 
         delete("/{imageId}") {
             val foodService by inject<FoodService>()
-            val principal = call.principal<JWTPrincipal>() ?: return@delete call.respondUnauthorized()
-            val profileIdStr = principal.payload.getClaim("sub").asString() ?: return@delete call.respondBadRequestUserId()
-            val profileId = Uuid.parse(profileIdStr)
+            val profileId = call.extractProfileId() ?: return@delete
             val imageIdStr = call.parameters["imageId"] ?: return@delete call.respondBadRequest("Missing image ID")
             val imageId = Uuid.parse(imageIdStr)
 

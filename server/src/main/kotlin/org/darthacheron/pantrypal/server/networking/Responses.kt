@@ -2,8 +2,27 @@ package org.darthacheron.pantrypal.server.networking
 
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
+import io.ktor.server.auth.jwt.JWTPrincipal
+import io.ktor.server.auth.principal
 import io.ktor.server.response.respond
 import org.darthacheron.pantrypal.shared.auth.ProblemDetails
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
+
+@OptIn(ExperimentalUuidApi::class)
+suspend fun ApplicationCall.extractProfileId(): Uuid? {
+    val principal = principal<JWTPrincipal>() ?: run {
+        respondUnauthorized()
+        return null
+    }
+
+    val profileIdStr = principal.payload.getClaim("sub").asString() ?: run {
+        respondBadRequestUserId()
+        return null
+    }
+
+    return Uuid.parse(profileIdStr)
+}
 
 suspend fun ApplicationCall.respondNotFound(title: String, detail: String) {
     respond(HttpStatusCode.NotFound, ProblemDetails(

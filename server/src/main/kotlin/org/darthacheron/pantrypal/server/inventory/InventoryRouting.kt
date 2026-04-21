@@ -2,8 +2,6 @@ package org.darthacheron.pantrypal.server.inventory
 
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
-import io.ktor.server.auth.jwt.JWTPrincipal
-import io.ktor.server.auth.principal
 import io.ktor.server.request.receive
 import io.ktor.server.request.receiveChannel
 import io.ktor.server.response.respond
@@ -16,13 +14,12 @@ import io.ktor.server.routing.put
 import io.ktor.server.routing.route
 import io.ktor.utils.io.readRemaining
 import kotlinx.io.readByteArray
+import org.darthacheron.pantrypal.server.networking.extractProfileId
 import org.darthacheron.pantrypal.server.networking.respondBadRequest
-import org.darthacheron.pantrypal.server.networking.respondBadRequestUserId
 import org.darthacheron.pantrypal.server.networking.respondForbidden
 import org.darthacheron.pantrypal.server.networking.respondGone
 import org.darthacheron.pantrypal.server.networking.respondNotFound
 import org.darthacheron.pantrypal.server.networking.respondProblem
-import org.darthacheron.pantrypal.server.networking.respondUnauthorized
 import org.darthacheron.pantrypal.shared.inventory.InventoryItemDto
 import org.koin.ktor.ext.inject
 import kotlin.uuid.ExperimentalUuidApi
@@ -44,9 +41,7 @@ fun Route.inventoryItemRoutes() {
 fun Route.getAllInventoryItems() {
     get {
         val inventoryItemService by inject<InventoryItemService>()
-        val principal = call.principal<JWTPrincipal>() ?: return@get call.respondUnauthorized()
-        val profileIdStr = principal.payload.getClaim("sub").asString() ?: return@get call.respondBadRequestUserId()
-        val profileId = Uuid.parse(profileIdStr)
+        val profileId = call.extractProfileId() ?: return@get
 
         inventoryItemService.getAllInventoryItemsByProfileId(profileId).onSuccess {
             call.respond(HttpStatusCode.OK, it)
@@ -60,9 +55,7 @@ fun Route.getAllInventoryItems() {
 fun Route.getInventoryItemById() {
     get("/{id}") {
         val inventoryItemService by inject<InventoryItemService>()
-        val principal = call.principal<JWTPrincipal>() ?: return@get call.respondUnauthorized()
-        val profileIdStr = principal.payload.getClaim("sub").asString() ?: return@get call.respondBadRequestUserId()
-        val profileId = Uuid.parse(profileIdStr)
+        val profileId = call.extractProfileId() ?: return@get
         val idStr = call.parameters["id"] ?: return@get call.respondBadRequest("Missing inventory item ID")
         val id = Uuid.parse(idStr)
 
@@ -92,9 +85,7 @@ fun Route.getInventoryItemById() {
 fun Route.createInventoryItem() {
     post {
         val inventoryItemService by inject<InventoryItemService>()
-        val principal = call.principal<JWTPrincipal>() ?: return@post call.respondUnauthorized()
-        val profileIdStr = principal.payload.getClaim("sub").asString() ?: return@post call.respondBadRequestUserId()
-        val profileId = Uuid.parse(profileIdStr)
+        val profileId = call.extractProfileId() ?: return@post
         val inventoryItemDto = call.receive<InventoryItemDto>()
 
         inventoryItemService.createInventoryItem(inventoryItemDto, profileId).onSuccess {
@@ -109,9 +100,7 @@ fun Route.createInventoryItem() {
 fun Route.updateInventoryItem() {
     put {
         val inventoryItemService by inject<InventoryItemService>()
-        val principal = call.principal<JWTPrincipal>() ?: return@put call.respondUnauthorized()
-        val profileIdStr = principal.payload.getClaim("sub").asString() ?: return@put call.respondBadRequestUserId()
-        val profileId = Uuid.parse(profileIdStr)
+        val profileId = call.extractProfileId() ?: return@put
         val inventoryItemDto = call.receive<InventoryItemDto>()
 
         val id = inventoryItemDto.serverId ?: return@put call.respondBadRequest("Missing inventory item server ID")
@@ -146,9 +135,7 @@ fun Route.updateInventoryItem() {
 fun Route.deleteInventoryItem() {
     delete("/{id}") {
         val inventoryItemService by inject<InventoryItemService>()
-        val principal = call.principal<JWTPrincipal>() ?: return@delete call.respondUnauthorized()
-        val profileIdStr = principal.payload.getClaim("sub").asString() ?: return@delete call.respondBadRequestUserId()
-        val profileId = Uuid.parse(profileIdStr)
+        val profileId = call.extractProfileId() ?: return@delete
         val idStr = call.parameters["id"] ?: return@delete call.respondBadRequest("Missing inventory item ID")
         val id = Uuid.parse(idStr)
 
@@ -183,9 +170,7 @@ fun Route.inventoryImageRoutes() {
     route("/{id}/images") {
         get {
             val inventoryItemService by inject<InventoryItemService>()
-            val principal = call.principal<JWTPrincipal>() ?: return@get call.respondUnauthorized()
-            val profileIdStr = principal.payload.getClaim("sub").asString() ?: return@get call.respondBadRequestUserId()
-            val profileId = Uuid.parse(profileIdStr)
+            val profileId = call.extractProfileId() ?: return@get
             val idStr = call.parameters["id"] ?: return@get call.respondBadRequest("Missing inventory item ID")
             val id = Uuid.parse(idStr)
 
@@ -210,9 +195,7 @@ fun Route.inventoryImageRoutes() {
 
         get("/{imageId}") {
             val inventoryItemService by inject<InventoryItemService>()
-            val principal = call.principal<JWTPrincipal>() ?: return@get call.respondUnauthorized()
-            val profileIdStr = principal.payload.getClaim("sub").asString() ?: return@get call.respondBadRequestUserId()
-            val profileId = Uuid.parse(profileIdStr)
+            val profileId = call.extractProfileId() ?: return@get
             val imageIdStr = call.parameters["imageId"] ?: return@get call.respondBadRequest("Missing image ID")
             val imageId = Uuid.parse(imageIdStr)
 
@@ -244,9 +227,7 @@ fun Route.inventoryImageRoutes() {
 
         post {
             val inventoryItemService by inject<InventoryItemService>()
-            val principal = call.principal<JWTPrincipal>() ?: return@post call.respondUnauthorized()
-            val profileIdStr = principal.payload.getClaim("sub").asString() ?: return@post call.respondBadRequestUserId()
-            val profileId = Uuid.parse(profileIdStr)
+            val profileId = call.extractProfileId() ?: return@post
             val idStr = call.parameters["id"] ?: return@post call.respondBadRequest("Missing inventory item ID")
             val id = Uuid.parse(idStr)
             val isPrimary = call.request.queryParameters["isPrimary"]?.toBoolean() ?: false
@@ -273,9 +254,7 @@ fun Route.inventoryImageRoutes() {
 
         delete("/{imageId}") {
             val inventoryItemService by inject<InventoryItemService>()
-            val principal = call.principal<JWTPrincipal>() ?: return@delete call.respondUnauthorized()
-            val profileIdStr = principal.payload.getClaim("sub").asString() ?: return@delete call.respondBadRequestUserId()
-            val profileId = Uuid.parse(profileIdStr)
+            val profileId = call.extractProfileId() ?: return@delete
             val imageIdStr = call.parameters["imageId"] ?: return@delete call.respondBadRequest("Missing image ID")
             val imageId = Uuid.parse(imageIdStr)
 
