@@ -58,7 +58,7 @@ fun Route.getProfile() {
                     detail = "The profile associated with this account has been deleted."
                 )
             } else {
-                call.respond(profile)
+                call.respond(HttpStatusCode.OK, profile)
             }
         }.onFailure { e ->
             call.respond(HttpStatusCode.InternalServerError, ProblemDetails(
@@ -171,7 +171,7 @@ fun Route.updateProfile() {
 
 @OptIn(ExperimentalUuidApi::class)
 fun Route.deleteProfile() {
-    delete("/users/me") {
+    delete {
         val configurationService by inject<ConfigurationService>()
         val profileService by inject<ProfileService>()
         val httpClient = createHttpClient()
