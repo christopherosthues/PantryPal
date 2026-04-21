@@ -18,6 +18,8 @@ import io.ktor.server.routing.Route
 import io.ktor.server.routing.post
 import org.darthacheron.pantrypal.server.configuration.ConfigurationService
 import org.darthacheron.pantrypal.server.networking.createHttpClient
+import org.darthacheron.pantrypal.server.networking.respondGone
+import org.darthacheron.pantrypal.server.networking.respondNotFound
 import org.darthacheron.pantrypal.server.profile.ProfileService
 import org.darthacheron.pantrypal.shared.auth.LoginDto
 import org.darthacheron.pantrypal.shared.auth.LoginResponse
@@ -64,20 +66,14 @@ fun Route.login() {
 
                 profileService.getProfileByUsernameOrEmail(loginDto.username).onSuccess { profile ->
                     if (profile == null) {
-                        call.respond(
-                            HttpStatusCode.NotFound, ProblemDetails(
-                                title = "Profile not found",
-                                status = HttpStatusCode.NotFound.value,
-                                detail = "Credentials valid in Keycloak, but no associated profile found in server database."
-                            )
+                        call.respondNotFound(
+                            title = "Profile not found",
+                            detail = "Credentials valid in Keycloak, but no associated profile found in server database."
                         )
                     } else if (profile.deletedAt != null) {
-                        call.respond(
-                            HttpStatusCode.Gone, ProblemDetails(
-                                title = "Profile deleted",
-                                status = HttpStatusCode.Gone.value,
-                                detail = "Credentials valid in Keycloak, but associated profile has been deleted in server database."
-                            )
+                        call.respondGone(
+                            title = "Profile deleted",
+                            detail = "Credentials valid in Keycloak, but associated profile has been deleted in server database."
                         )
                     } else {
                         val userResponse = UserResponse(
