@@ -118,7 +118,13 @@ class InventoryDetailViewModel(
                 val lastModifiedAt = Clock.System.now()
                 inventoryRepository.upsert(item.copy(createdAt = createdAt, lastModifiedAt = lastModifiedAt))
                 internalIsSaved.value = true
-                goBack()
+
+                if (originalItem == null) {
+                    navigator.goToInventoryDetail(id.toString())
+                } else {
+                    originalItem = inventoryRepository.getById(id)
+                    internalUiState.value = UiState.success(item)
+                }
             } catch (e: Exception) {
                 Logger.withTag(loggerTag).e { "Error saving inventory item: ${e.message}" }
                 internalUiState.value = UiState.error(internalUiState.value, Res.string.food_detail_error_saving)

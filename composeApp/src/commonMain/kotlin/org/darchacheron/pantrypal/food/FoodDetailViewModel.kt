@@ -133,7 +133,14 @@ class FoodDetailViewModel(
                 val lastModifiedAt = Clock.System.now()
                 foodRepository.upsert(item.copy(createdAt = createdAt, lastModifiedAt = lastModifiedAt))
                 internalIsSaved.value = true
-                goBack()
+
+                if (originalItem == null) {
+                    navigator.goToFoodDetail(id.toString())
+                } else {
+                    originalItem = foodRepository.getById(id)
+                    internalUiState.value = UiState.success(item)
+                }
+
             } catch (e: Exception) {
                 Logger.withTag(foodDetailLoggerTag).e { "Error saving food: ${e.message}" }
                 internalUiState.value = UiState.error(internalUiState.value, Res.string.food_detail_error_saving)
