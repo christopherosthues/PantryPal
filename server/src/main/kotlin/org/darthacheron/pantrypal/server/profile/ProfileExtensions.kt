@@ -13,6 +13,7 @@ fun ProfileDAO.toDto(clientId: Uuid = Uuid.random()) : ProfileDto {
         email = this.email,
         createdAt = this.createdAt,
         lastModifiedAt = this.lastModifiedAt,
-        lastSyncedAt = this.lastSyncedAt
+        lastSyncedAt = this.lastSyncedAt,
+        deletedAt = this.deletedAt
     )
 }

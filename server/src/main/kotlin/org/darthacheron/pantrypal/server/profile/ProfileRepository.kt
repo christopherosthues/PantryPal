@@ -46,9 +46,7 @@ class ProfileRepository {
 
     fun getProfile(id: Uuid): ProfileDto? {
         return transaction {
-            ProfileDAO.find { (ProfilesTable.id eq id) and (ProfilesTable.deletedAt.isNull()) }
-                .firstOrNull()
-                ?.toDto()
+            ProfileDAO.findById(id)?.toDto()
         }
     }
 

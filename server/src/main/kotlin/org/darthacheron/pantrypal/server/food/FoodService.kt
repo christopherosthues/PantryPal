@@ -23,15 +23,53 @@ class FoodService(
         foodRepository.createFood(foodDto, profileId)
     }
 
-    fun updateFood(foodDto: FoodDto, profileId: Uuid): Result<FoodDto?> = runCatching {
-        foodRepository.updateFood(foodDto, profileId)
+    fun updateFood(foodDto: FoodDto, profileId: Uuid): Result<FoodDto> {
+        val id = foodDto.serverId ?: return Result.failure(Exception("Missing food item server ID"))
+        val existing = runCatching { foodRepository.getFoodById(id) }
+            .getOrElse { return Result.failure(it) }
+            ?: return Result.failure(Exception("Food not found"))
+
+        if (existing.profileId != profileId) {
+            return Result.failure(Exception("Forbidden"))
+        }
+
+        if (existing.deletedAt != null) {
+            return Result.failure(Exception("Food deleted"))
+        }
+
+        return runCatching {
+            foodRepository.updateFood(foodDto, profileId)
+                ?: throw Exception("Failed to update food item")
+        }
     }
 
-    fun deleteFood(id: Uuid, profileId: Uuid): Result<Boolean> = runCatching {
-        foodRepository.deleteFood(id, profileId)
+    fun deleteFood(id: Uuid, profileId: Uuid): Result<Boolean> {
+        val existing = runCatching { foodRepository.getFoodById(id) }
+            .getOrElse { return Result.failure(it) }
+            ?: return Result.failure(Exception("Food not found"))
+
+        if (existing.profileId != profileId) {
+            return Result.failure(Exception("Forbidden"))
+        }
+
+        if (existing.deletedAt != null) {
+            return Result.failure(Exception("Food already deleted"))
+        }
+
+        return runCatching {
+            foodRepository.deleteFood(id, profileId)
+        }
     }
 
     fun saveImage(foodId: Uuid, profileId: Uuid, isPrimary: Boolean, imageData: ByteArray): Result<ImageDto> {
+        val food = runCatching { foodRepository.getFoodById(foodId) }
+            .getOrElse { return Result.failure(it) }
+            ?: return Result.failure(Exception("Food not found"))
+
+        if (food.deletedAt != null) {
+            return Result.failure(Exception("Food deleted"))
+        }
+
         return imageService.saveImage(foodId, null, profileId, isPrimary, imageData)
     }
 
@@ -44,6 +82,13 @@ class FoodService(
     }
 
     fun deleteImage(imageId: Uuid, profileId: Uuid): Result<Boolean> {
+        val image = imageService.getImage(imageId, profileId).getOrElse { return Result.failure(it) }
+            ?: return Result.failure(Exception("Image not found"))
+
+        if (image.deletedAt != null) {
+            return Result.failure(Exception("Image already deleted"))
+        }
+
         return imageService.deleteImage(imageId, profileId)
     }
 }
