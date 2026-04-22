@@ -149,7 +149,6 @@ exposed-datetime = { group = "org.jetbrains.exposed", name = "exposed-kotlin-dat
 postgresql = { group = "org.postgresql", name = "postgresql", version.ref = "postgres" }
 flaxoos-ktor-server-rate-limiting = { group = "io.github.flaxoos", name = "ktor-server-rate-limiting", version.ref = "flaxoos-ktor-rate-limiting" }
 logback-classic = { group = "ch.qos.logback", name = "logback-classic", version.ref = "logback" }
-# = { group = "io.ktor", name = "ktor-client-apache" }
 ktor-server-compression = { group = "io.ktor", name = "ktor-server-compression", version.ref = "ktor" }
 ktor-server-caching-headers = { group = "io.ktor", name = "ktor-server-caching-headers", version.ref = "ktor" }
 ktor-server-cors = { group = "io.ktor", name = "ktor-server-cors", version.ref = "ktor" }
