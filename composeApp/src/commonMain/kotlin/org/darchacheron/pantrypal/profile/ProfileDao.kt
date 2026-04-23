@@ -16,9 +16,6 @@ interface ProfileDao {
     @Query("SELECT * FROM profile WHERE id = :id")
     fun getProfileById(id: Uuid): Flow<ProfileEntity?>
 
-    @Query("SELECT * FROM profile WHERE serverId = :serverId")
-    fun getProfileByServerId(serverId: Uuid): Flow<ProfileEntity?>
-
     @Query("SELECT * FROM profile WHERE username = :username")
     fun getProfileByUsername(username: String): Flow<ProfileEntity?>
 

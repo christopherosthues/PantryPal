@@ -4,6 +4,7 @@ import co.touchlab.kermit.Logger
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
@@ -24,9 +25,6 @@ class ProfileRepository(
 
     fun getProfileById(id: Uuid): Flow<Profile?> =
         profileDao.getProfileById(id).map { it?.toProfile() }
-
-    fun getProfileByServerId(serverId: Uuid): Flow<Profile?> =
-        profileDao.getProfileByServerId(serverId).map { it?.toProfile() }
 
     fun getProfileByUsername(username: String): Flow<Profile?> =
         profileDao.getProfileByUsername(username).map { it?.toProfile() }
@@ -51,7 +49,7 @@ class ProfileRepository(
         )) {
             try {
                 // TODO: what if the remote profile does not exist yet?
-                profileNetworkService.updateProfile(profile, prefs!!.serverUrl)?.let { synced ->
+                profileNetworkService.updateProfile(profile, prefs.serverUrl)?.let { synced ->
                     profileDao.upsert(synced.toProfileEntity())
                 }
             } catch (e: ProfileNetworkService.RemoteAccountDeletedException) {
@@ -69,7 +67,7 @@ class ProfileRepository(
 
             if (canSync) {
                 try {
-                    profileNetworkService.deleteProfile(prefs!!.serverUrl, remote = true)
+                    profileNetworkService.deleteProfile(prefs.serverUrl, remote = true)
                 } catch (e: Exception) {
                     Logger.withTag(loggerTag).e { "Remote profile deletion failed: ${e.message}" }
                 }
@@ -78,12 +76,14 @@ class ProfileRepository(
         profileDao.delete()
     }
 
-    private val _remoteAccountDeleted = kotlinx.coroutines.flow.MutableSharedFlow<Boolean>()
+    private val _remoteAccountDeleted = MutableSharedFlow<Boolean>()
     val remoteAccountDeleted: Flow<Boolean> = _remoteAccountDeleted
 
     suspend fun syncWithServer() = withContext(Dispatchers.IO) {
         val settings = settingsRepository.getSettings()
-        if (settings.dataSynchronization == DataSynchronization.NO_SYNCHRONIZATION) return@withContext
+        if (settings.dataSynchronization == DataSynchronization.NO_SYNCHRONIZATION) {
+            return@withContext
+        }
 
         val prefs = authenticationPreferencesRepository.authenticationPreferencesFlow.firstOrNull()
         if (prefs?.isLoggedInRemotely != true) {

@@ -97,7 +97,7 @@ class InventoryRepository(
                 settings.dataSynchronization == DataSynchronization.ONLY_UPLOAD)
             ) {
                 try {
-                    inventoryNetworkService.deleteInventoryItem(item.serverId, prefs!!.serverUrl)
+                    inventoryNetworkService.deleteInventoryItem(item.serverId, prefs.serverUrl)
                 } catch (e: Exception) {
                     Logger.withTag(loggerTag).w { "Failed to delete item ${item.name} from server. Error: ${e.message}" }
                 }
@@ -162,13 +162,4 @@ class InventoryRepository(
             Logger.withTag(loggerTag).e(e) { "Failed to delete image file: $path" }
         }
     }
-}
-
-enum class InventorySortOrder {
-    Name,
-}
-
-enum class InventorySortDirection {
-    Ascending,
-    Descending
 }
