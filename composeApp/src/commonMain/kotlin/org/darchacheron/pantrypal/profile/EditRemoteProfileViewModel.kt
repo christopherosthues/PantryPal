@@ -18,7 +18,7 @@ class EditRemoteProfileViewModel(
     private val authenticationService: AuthenticationService
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow<UiState<Boolean>>(UiState.success(false))
+    private val _uiState = MutableStateFlow(UiState.success(false))
     val uiState: StateFlow<UiState<Boolean>> = _uiState
 
     private val _username = MutableStateFlow("")
