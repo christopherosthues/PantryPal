@@ -70,7 +70,7 @@ class InventoryRepository(
             settings.dataSynchronization == DataSynchronization.ONLY_UPLOAD
         )) {
             try {
-                val syncedItems = inventoryNetworkService.pushInventoryItems(listOf(inventoryItem), prefs!!.serverUrl)
+                val syncedItems = inventoryNetworkService.pushInventoryItems(listOf(inventoryItem), prefs.serverUrl)
                 syncedItems.firstOrNull()?.let { synced ->
                     inventoryItemDao.updateServerId(inventoryItem.id, synced.serverId!!)
                 }
