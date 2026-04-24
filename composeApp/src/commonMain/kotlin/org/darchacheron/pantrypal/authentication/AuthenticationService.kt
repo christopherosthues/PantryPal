@@ -208,7 +208,7 @@ class AuthenticationService(
         password: String? = null,
         currentPassword: String? = null
     ): Result<Boolean> {
-        val updateUrl = "$serverUrl/users/me"
+        val updateUrl = "$serverUrl/profile"
 
         try {
             val prefs = authenticationPreferencesRepository.authenticationPreferencesFlow.firstOrNull() ?: return Result.failure(Exception("Not authenticated"))
@@ -225,23 +225,6 @@ class AuthenticationService(
                 HttpStatusCode.Unauthorized -> Result.failure(InvalidCredentialsException("Invalid current password"))
                 else -> Result.failure(Exception("Update failed with status ${response.status}"))
             }
-        } catch (e: Exception) {
-            return Result.failure(e)
-        }
-    }
-
-    suspend fun deleteUser(serverUrl: String, remote: Boolean): Result<Boolean> {
-        val deleteUrl = "$serverUrl/users/me"
-
-        try {
-            val prefs = authenticationPreferencesRepository.authenticationPreferencesFlow.firstOrNull() ?: return Result.failure(Exception("Not authenticated"))
-            val response: HttpResponse = createHttpClient().use {
-                it.delete(deleteUrl) {
-                    header(HttpHeaders.Authorization, "Bearer ${prefs.accessToken}")
-                    parameter("remote", remote)
-                }
-            }
-            return if (response.status == HttpStatusCode.NoContent || response.status == HttpStatusCode.OK) Result.success(true) else Result.failure(Exception("Delete failed"))
         } catch (e: Exception) {
             return Result.failure(e)
         }

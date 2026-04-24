@@ -63,7 +63,7 @@ class RemoteLoginViewModel(
 
     fun onEmailChanged(email: String) {
         val error = if (email.isBlank()) {
-            Res.string.remote_login_error_username_empty // Reusing for now
+            Res.string.remote_login_error_username_empty // TODO Reusing for now
         } else if (!isValidEmail(email)) {
             Res.string.registration_error_invalid_email
         } else {

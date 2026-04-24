@@ -59,58 +59,38 @@ class ProfileService(
             return Result.failure(Exception("Profile is deleted"))
         }
 
-        // 1. Get Admin Token
-        logger.debug("Getting Keycloak admin token")
-        val adminTokenResponse = runCatching {
-            httpClient.submitForm(
-                url = "${configurationService.keycloakBaseUrl}/protocol/openid-connect/token",
-                formParameters = parameters {
-                    append("grant_type", "password")
-                    append("client_id", "admin-cli")
-                    append("username", configurationService.keycloakAdminUser)
-                    append("password", configurationService.keycloakAdminPassword)
-                }
-            )
-        }.onFailure { logger.error("Failed to get Keycloak admin token", it) }
-            .getOrElse { return Result.failure(it) }
-
-        if (adminTokenResponse.status != HttpStatusCode.OK) {
-            logger.error("Failed to get Keycloak admin token, status: {}", adminTokenResponse.status)
-            return Result.failure(Exception("Failed to get admin token"))
-        }
-        val adminToken = runCatching { adminTokenResponse.body<TokenResponse>().accessToken }
-            .onFailure { logger.error("Failed to parse admin token response", it) }
-            .getOrElse { return Result.failure(it) }
-
-        // 2. Update Keycloak
-        logger.debug("Updating Keycloak user for user ID: {}", userId)
-        val updateKeycloakResponse = runCatching {
-            httpClient.put("${configurationService.keycloakBaseUrl}/admin/realms/${configurationService.keycloakRealm}/users/$userId") {
-                header(HttpHeaders.Authorization, "Bearer $adminToken")
-                contentType(ContentType.Application.Json)
-                val body = mutableMapOf<String, Any>()
-                updateDto.username?.let { body["username"] = it }
-                updateDto.email?.let { body["email"] = it }
-                updateDto.password?.let {
-                    body["credentials"] = listOf(
-                        mapOf(
-                            "type" to "password",
-                            "value" to it,
-                            "temporary" to false
+        // 1. Update Keycloak if credentials changed
+        if (updateDto.username != null || updateDto.email != null || updateDto.password != null) {
+            logger.debug("Updating Keycloak user for user ID: {}", userId)
+            val adminToken = getAdminToken().getOrElse { return Result.failure(it) }
+            val updateKeycloakResponse = runCatching {
+                httpClient.put("${configurationService.keycloakBaseUrl}/admin/realms/${configurationService.keycloakRealm}/users/$userId") {
+                    header(HttpHeaders.Authorization, "Bearer $adminToken")
+                    contentType(ContentType.Application.Json)
+                    val body = mutableMapOf<String, Any>()
+                    updateDto.username?.let { body["username"] = it }
+                    updateDto.email?.let { body["email"] = it }
+                    updateDto.password?.let {
+                        body["credentials"] = listOf(
+                            mapOf(
+                                "type" to "password",
+                                "value" to it,
+                                "temporary" to false
+                            )
                         )
-                    )
+                    }
+                    setBody(body)
                 }
-                setBody(body)
-            }
-        }.onFailure { logger.error("Failed to update Keycloak for user ID: {}", userId, it) }
-            .getOrElse { return Result.failure(it) }
+            }.onFailure { logger.error("Failed to update Keycloak for user ID: {}", userId, it) }
+                .getOrElse { return Result.failure(it) }
 
-        if (updateKeycloakResponse.status != HttpStatusCode.NoContent && updateKeycloakResponse.status != HttpStatusCode.OK) {
-            logger.error("Failed to update Keycloak for user ID: {}, status: {}", userId, updateKeycloakResponse.status)
-            return Result.failure(Exception("Failed to update Keycloak: ${updateKeycloakResponse.status}"))
+            if (updateKeycloakResponse.status != HttpStatusCode.NoContent && updateKeycloakResponse.status != HttpStatusCode.OK) {
+                logger.error("Failed to update Keycloak for user ID: {}, status: {}", userId, updateKeycloakResponse.status)
+                return Result.failure(Exception("Failed to update Keycloak: ${updateKeycloakResponse.status}"))
+            }
         }
 
-        // 3. Update Database
+        // 2. Update Database
         logger.debug("Updating database profile for user ID: {}", userId)
         val updatedProfile = existingProfile.copy(
             username = updateDto.username ?: existingProfile.username,
@@ -122,6 +102,71 @@ class ProfileService(
             .onSuccess { logger.info("Successfully updated profile for user ID: {}", userId) }
             .onFailure { logger.error("Failed to update database profile for user ID: {}", userId, it) }
     }
+
+    suspend fun syncProfile(userId: Uuid, profileDto: ProfileDto): Result<ProfileDto> {
+        logger.info("Syncing profile for user ID: {}", userId)
+        val existingProfile = runCatching { profileRepository.getProfile(userId) }
+            .onFailure { logger.error("Failed to retrieve profile for user ID: {}", userId, it) }
+            .getOrElse { return Result.failure(it) }
+            ?: run {
+                logger.warn("Profile not found for user ID: {}", userId)
+                return Result.failure(Exception("Profile not found"))
+            }
+
+        if (existingProfile.deletedAt != null) {
+            logger.warn("Attempted to sync a deleted profile for user ID: {}", userId)
+            return Result.failure(Exception("Profile is deleted"))
+        }
+
+        // 1. Update Keycloak if username or email changed
+        if (existingProfile.username != profileDto.username || existingProfile.email != profileDto.email) {
+            logger.debug("Updating Keycloak user during sync for user ID: {}", userId)
+            val adminToken = getAdminToken().getOrElse { return Result.failure(it) }
+            val updateKeycloakResponse = runCatching {
+                httpClient.put("${configurationService.keycloakBaseUrl}/admin/realms/${configurationService.keycloakRealm}/users/$userId") {
+                    header(HttpHeaders.Authorization, "Bearer $adminToken")
+                    contentType(ContentType.Application.Json)
+                    setBody(mapOf(
+                        "username" to profileDto.username,
+                        "email" to profileDto.email
+                    ))
+                }
+            }.onFailure { logger.error("Failed to update Keycloak for user ID: {}", userId, it) }
+                .getOrElse { return Result.failure(it) }
+
+            if (updateKeycloakResponse.status != HttpStatusCode.NoContent && updateKeycloakResponse.status != HttpStatusCode.OK) {
+                logger.error("Failed to update Keycloak during sync for user ID: {}, status: {}", userId, updateKeycloakResponse.status)
+                return Result.failure(Exception("Failed to update Keycloak: ${updateKeycloakResponse.status}"))
+            }
+        }
+
+        // 2. Update Database
+        logger.debug("Updating database profile during sync for user ID: {}", userId)
+        val profileToUpdate = profileDto.copy(
+            serverId = userId,
+            lastSyncedAt = Clock.System.now()
+        )
+        return runCatching { profileRepository.updateProfile(profileToUpdate) }
+            .onSuccess { logger.info("Successfully synced profile for user ID: {}", userId) }
+            .onFailure { logger.error("Failed to update database profile during sync for user ID: {}", userId, it) }
+    }
+
+    private suspend fun getAdminToken(): Result<String> = runCatching {
+        val adminTokenResponse = httpClient.submitForm(
+            url = "${configurationService.keycloakBaseUrl}/protocol/openid-connect/token",
+            formParameters = parameters {
+                append("grant_type", "password")
+                append("client_id", "admin-cli")
+                append("username", configurationService.keycloakAdminUser)
+                append("password", configurationService.keycloakAdminPassword)
+            }
+        )
+
+        if (adminTokenResponse.status != HttpStatusCode.OK) {
+            throw Exception("Failed to get admin token: ${adminTokenResponse.status}")
+        }
+        adminTokenResponse.body<TokenResponse>().accessToken
+    }.onFailure { logger.error("Failed to get Keycloak admin token", it) }
 
     suspend fun deleteProfile(userId: Uuid, deleteRemote: Boolean): Result<Boolean> {
         logger.info("Deleting profile for user ID: {}, deleteRemote: {}", userId, deleteRemote)
@@ -140,27 +185,7 @@ class ProfileService(
 
         if (deleteRemote) {
             // 1. Get Admin Token
-            logger.debug("Getting Keycloak admin token for deletion")
-            val adminTokenResponse = runCatching {
-                httpClient.submitForm(
-                    url = "${configurationService.keycloakBaseUrl}/protocol/openid-connect/token",
-                    formParameters = parameters {
-                        append("grant_type", "password")
-                        append("client_id", "admin-cli")
-                        append("username", configurationService.keycloakAdminUser)
-                        append("password", configurationService.keycloakAdminPassword)
-                    }
-                )
-            }.onFailure { logger.error("Failed to get Keycloak admin token for deletion", it) }
-                .getOrElse { return Result.failure(it) }
-
-            if (adminTokenResponse.status != HttpStatusCode.OK) {
-                logger.error("Failed to get Keycloak admin token for deletion, status: {}", adminTokenResponse.status)
-                return Result.failure(Exception("Failed to get admin token"))
-            }
-            val adminToken = runCatching { adminTokenResponse.body<TokenResponse>().accessToken }
-                .onFailure { logger.error("Failed to parse admin token response for deletion", it) }
-                .getOrElse { return Result.failure(it) }
+            val adminToken = getAdminToken().getOrElse { return Result.failure(it) }
 
             // 2. Delete from Keycloak
             logger.debug("Deleting user from Keycloak for user ID: {}", userId)

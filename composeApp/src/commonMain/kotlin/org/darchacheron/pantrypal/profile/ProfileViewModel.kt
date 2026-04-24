@@ -291,12 +291,7 @@ class ProfileViewModel(
 
     fun deleteProfile(deleteRemote: Boolean) {
         viewModelScope.launch {
-            val profile = _uiState.value.data
-            val serverUrl = profile?.serverUrl
             try {
-                if (deleteRemote && !serverUrl.isNullOrBlank()) {
-                    authenticationService.deleteUser(serverUrl, deleteRemote)
-                }
                 profileRepository.delete(deleteRemote)
                 authenticationService.logout()
                 navigator.goToLogin()

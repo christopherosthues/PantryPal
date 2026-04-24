@@ -12,18 +12,19 @@ import io.ktor.http.contentType
 import kotlinx.coroutines.flow.firstOrNull
 import org.darchacheron.pantrypal.authentication.AuthenticationPreferencesRepository
 import org.darchacheron.pantrypal.utils.createHttpClient
+import org.darthacheron.pantrypal.shared.profile.ProfileDto
 import kotlin.uuid.ExperimentalUuidApi
 
 @OptIn(ExperimentalUuidApi::class)
 class ProfileNetworkService(private val preferencesRepository: AuthenticationPreferencesRepository) {
 
-    suspend fun fetchProfile(serverUrl: String): Profile? {
+    suspend fun fetchProfile(serverUrl: String): ProfileDto? {
         val auth = preferencesRepository.authenticationPreferencesFlow.firstOrNull()
         val token = auth?.accessToken
         if (token.isNullOrBlank()) return null
 
         createHttpClient(token).use { client ->
-            val response = client.get("$serverUrl/users/me")
+            val response = client.get("$serverUrl/profile")
             if (response.status == HttpStatusCode.NotFound || response.status == HttpStatusCode.Gone) {
                 throw RemoteAccountDeletedException()
             }
@@ -31,15 +32,15 @@ class ProfileNetworkService(private val preferencesRepository: AuthenticationPre
         }
     }
 
-    suspend fun updateProfile(profile: Profile, serverUrl: String): Profile? {
+    suspend fun updateProfile(profile: Profile, serverUrl: String): ProfileDto? {
         val auth = preferencesRepository.authenticationPreferencesFlow.firstOrNull()
         val token = auth?.accessToken
         if (token.isNullOrBlank()) return null
 
         createHttpClient(token).use { client ->
-            val response = client.put("$serverUrl/users/me") {
+            val response = client.put("$serverUrl/profile") {
                 contentType(ContentType.Application.Json)
-                setBody(profile)
+                setBody(profile.toDto())
             }
             if (response.status == HttpStatusCode.NotFound || response.status == HttpStatusCode.Gone) {
                 throw RemoteAccountDeletedException()
@@ -57,7 +58,7 @@ class ProfileNetworkService(private val preferencesRepository: AuthenticationPre
 
         return try {
             createHttpClient(token).use { client ->
-                val response = client.delete("$serverUrl/users/me") {
+                val response = client.delete("$serverUrl/profile") {
                     parameter("remote", remote)
                 }
                 if (response.status == HttpStatusCode.NotFound || response.status == HttpStatusCode.Gone) {

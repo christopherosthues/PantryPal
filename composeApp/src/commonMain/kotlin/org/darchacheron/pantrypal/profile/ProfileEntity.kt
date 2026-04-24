@@ -3,6 +3,7 @@ package org.darchacheron.pantrypal.profile
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import org.darthacheron.pantrypal.shared.profile.ProfileDto
 import kotlin.time.Instant
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -53,4 +54,18 @@ fun Profile.toProfileEntity(): ProfileEntity = ProfileEntity(
     lastModifiedAt = lastModifiedAt,
     lastSyncedAt = lastSyncedAt,
     isLocalOnly = isLocalOnly
+)
+
+@OptIn(ExperimentalUuidApi::class)
+fun ProfileDto.toProfileEntity(baseProfile: Profile): ProfileEntity = ProfileEntity(
+    id = baseProfile.id,
+    serverId = serverId,
+    username = username,
+    email = email,
+    passwordHash = baseProfile.passwordHash,
+    serverUrl = baseProfile.serverUrl,
+    createdAt = createdAt,
+    lastModifiedAt = lastModifiedAt,
+    lastSyncedAt = lastSyncedAt,
+    isLocalOnly = baseProfile.isLocalOnly
 )

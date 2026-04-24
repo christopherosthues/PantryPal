@@ -49,8 +49,8 @@ class ProfileRepository(
         )) {
             try {
                 // TODO: what if the remote profile does not exist yet?
-                profileNetworkService.updateProfile(profile, prefs.serverUrl)?.let { synced ->
-                    profileDao.upsert(synced.toProfileEntity())
+                profileNetworkService.updateProfile(profile, prefs.serverUrl)?.let { syncedDto ->
+                    profileDao.upsert(syncedDto.toProfileEntity(profile))
                 }
             } catch (e: ProfileNetworkService.RemoteAccountDeletedException) {
                 _remoteAccountDeleted.emit(true)
@@ -101,8 +101,8 @@ class ProfileRepository(
                 if (localProfile.serverId == null || localProfile.isLocalOnly) {
                     // Skip sync for local-only profiles
                 } else if (localProfile.lastSyncedAt == null || localProfile.lastModifiedAt > localProfile.lastSyncedAt) {
-                    profileNetworkService.updateProfile(localProfile, prefs.serverUrl)?.let { synced ->
-                        profileDao.upsert(synced.toProfileEntity())
+                    profileNetworkService.updateProfile(localProfile, prefs.serverUrl)?.let { syncedDto ->
+                        profileDao.upsert(syncedDto.toProfileEntity(localProfile))
                     }
                 }
             }
@@ -111,8 +111,8 @@ class ProfileRepository(
             if (!localProfile.isLocalOnly && (settings.dataSynchronization == DataSynchronization.UPLOAD_AND_DOWNLOAD ||
                 settings.dataSynchronization == DataSynchronization.ONLY_DOWNLOAD)
             ) {
-                profileNetworkService.fetchProfile(prefs.serverUrl)?.let { remoteProfile ->
-                    profileDao.upsert(remoteProfile.toProfileEntity())
+                profileNetworkService.fetchProfile(prefs.serverUrl)?.let { remoteProfileDto ->
+                    profileDao.upsert(remoteProfileDto.toProfileEntity(localProfile))
                 }
             }
         } catch (e: ProfileNetworkService.RemoteAccountDeletedException) {
