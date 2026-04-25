@@ -41,7 +41,7 @@ fun Application.configureSecurity() {
                 OAuthServerSettings.OAuth2ServerSettings(
                     name = "keycloak",
                     authorizeUrl = "${configurationService.keycloakExternalBaseUrl}/realms/${configurationService.keycloakRealm}/protocol/openid-connect/auth",
-                    accessTokenUrl = "${configurationService.keycloakExternalBaseUrl}/realms/${configurationService.keycloakRealm}/protocol/openid-connect/token",
+                    accessTokenUrl = "${configurationService.keycloakBaseUrl}/realms/${configurationService.keycloakRealm}/protocol/openid-connect/token",
                     requestMethod = HttpMethod.Post,
                     clientId = configurationService.keycloakClientId,
                     clientSecret = configurationService.keycloakClientSecret,

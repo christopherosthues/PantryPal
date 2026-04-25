@@ -1,8 +1,10 @@
-ignore
 .git
 .gradle
 .idea
-build
-androidApp
-composeApp
-iosApp
+**/build/
+*/*/build/
+*.bak
+*.swp
+out/
+bin/
+.DS_Store
