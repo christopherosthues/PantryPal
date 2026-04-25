@@ -130,47 +130,48 @@ class RegistrationViewModel(
         val password = registrationData.password
 
         viewModelScope.launch {
-            try {
-                registrationState.emit(UiState.loading())
+            registrationState.emit(UiState.loading())
 
-                // Local only mode
-                val localProfile = createLocalProfile(userName, email, password)
-                authenticationService.loginLocally(localProfile.id, localProfile.serverUrl)
-
-                registrationState.emit(UiState.success(registrationData.copy(userName = userName, email = email, password = password)))
-                navigator.goToMain()
-            } catch (exception: Exception) {
-                Logger.withTag(registrationTag).e(exception) { "Error registration of user: $userName with email: $email" }
-                // TODO Error handling for loginLocally failure
-                registrationState.emit(uiState.copy(error = Res.string.registration_error))
-            }
+            createLocalProfile(userName, email, password)
+                .onSuccess { localProfile ->
+                    authenticationService.loginLocally(localProfile.id, localProfile.serverUrl)
+                    registrationState.emit(UiState.success(registrationData.copy(userName = userName, email = email, password = password)))
+                    navigator.goToMain()
+                }
+                .onFailure { exception ->
+                    Logger.withTag(registrationTag).e(exception) { "Error registration of user: $userName with email: $email" }
+                    val errorRes = when (exception) {
+                        is UserAlreadyExistsException -> Res.string.registration_error_username_exists
+                        else -> Res.string.registration_error
+                    }
+                    registrationState.emit(uiState.copy(error = errorRes))
+                }
         }
     }
 
-    private suspend fun createLocalProfile(userName: String, email: String, password: String): Profile {
-        val now = Clock.System.now()
-        
+    private suspend fun createLocalProfile(userName: String, email: String, password: String): Result<Profile> {
         val existingProfile = profileRepository.getProfileByIdentifier(userName).firstOrNull()
             ?: profileRepository.getProfileByIdentifier(email).firstOrNull()
 
-        val profile = existingProfile?.copy(
-            username = userName,
-            email = email,
-            passwordHash = hashPassword(password),
-            lastModifiedAt = now,
-            isLocalOnly = true
-        ) ?: Profile(
-            id = Uuid.generateV7(),
-            serverId = null,
-            username = userName,
-            email = email,
-            passwordHash = hashPassword(password),
-            createdAt = now,
-            lastModifiedAt = now,
-            isLocalOnly = true
-        )
+        if (existingProfile != null) {
+            return Result.failure(UserAlreadyExistsException("Profile already exists locally"))
+        }
 
-        profileRepository.upsert(profile)
-        return profile
+        return runCatching {
+            val now = Clock.System.now()
+            val profile = Profile(
+                id = Uuid.generateV7(),
+                serverId = null,
+                username = userName,
+                email = email,
+                passwordHash = hashPassword(password),
+                createdAt = now,
+                lastModifiedAt = now,
+                isLocalOnly = true
+            )
+
+            profileRepository.upsert(profile)
+            profile
+        }
     }
 }
