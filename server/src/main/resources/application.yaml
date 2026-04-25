@@ -21,6 +21,8 @@ postgres:
   user: ${POSTGRES_USER:-pantry_pal_user}
   password: ${POSTGRES_PASSWORD:-pantry_pal_user_password}
   schema: ${PANTRY_PAL_SCHEMA:-pantry_pal}
+  generateMigration: ${GENERATE_MIGRATION:-false}
+  migrationsPath: ${MIGRATIONS_PATH:-migrations}
 
 images:
   path: ${IMAGES_PATH:-/app/pantrypal/}

@@ -15,6 +15,20 @@ class ConfigurationService(environment: ApplicationEnvironment) {
     val keycloakAdminUser = environment.config.property("keycloak.adminUser").getString()
     val keycloakAdminPassword = environment.config.property("keycloak.adminPassword").getString()
     val keycloakIssuer = "$keycloakExternalBaseUrl/realms/$keycloakRealm"
+    
+    private val rawPostgresUrl = environment.config.property("postgres.url").getString()
+    val postgresUser = environment.config.property("postgres.user").getString()
+    val postgresPassword = environment.config.property("postgres.password").getString()
+    val postgresSchema = environment.config.property("postgres.schema").getString()
+    val generateMigration = environment.config.property("postgres.generateMigration").getString().toBoolean()
+    val migrationsPath = environment.config.property("postgres.migrationsPath").getString()
+
+    val postgresUrl = if (rawPostgresUrl.contains("?")) {
+        "$rawPostgresUrl&currentSchema=$postgresSchema"
+    } else {
+        "$rawPostgresUrl?currentSchema=$postgresSchema"
+    }
+
     val imagesPath = environment.config.property("images.path").getString()
     val foodImagesPath = imagesPath + "food/"
     val inventoryImagesPath = imagesPath + "inventory/"

@@ -19,7 +19,7 @@ services:
       - "5432:5432"
     volumes:
       - ./database:/docker-entrypoint-initdb.d
-      - pantrypal-pgdata:/var/lib/postgresql/data
+      - pantrypal-pgdata:/var/lib/postgresql
     hostname: pantrypaldb
     container_name: pantry_pal_db
     restart: unless-stopped
@@ -109,6 +109,36 @@ services:
     networks:
       - pantrypal_network
       - pantrypal_keycloak_network
+
+  pantrypal-migration:
+    build:
+      context: ..
+      dockerfile: server/Dockerfile
+    container_name: pantry_pal_migration
+    environment:
+      - POSTGRES_CONNECTION_STRING=${POSTGRES_CONNECTION_STRING}
+      - POSTGRES_USER=${PANTRY_PAL_USER}
+      - POSTGRES_PASSWORD=${PANTRY_PAL_USER_PASSWORD}
+      - PANTRY_PAL_SCHEMA=${PANTRY_PAL_SCHEMA}
+      - GENERATE_MIGRATION=true
+      - MIGRATIONS_PATH=/app/migrations
+      - KEYCLOAK_BASE_URL=${KEYCLOAK_BASE_URL}
+      - KEYCLOAK_EXTERNAL_BASE_URL=${KEYCLOAK_EXTERNAL_BASE_URL}
+      - KEYCLOAK_CLIENT_ID=${KEYCLOAK_CLIENT_ID}
+      - KEYCLOAK_CLIENT_SECRET=${KEYCLOAK_CLIENT_SECRET}
+      - KEYCLOAK_REALM=${KEYCLOAK_REALM}
+      - KEYCLOAK_AUDIENCE=${KEYCLOAK_AUDIENCE}
+      - KEYCLOAK_ADMIN=${KEYCLOAK_ADMIN}
+      - KEYCLOAK_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD}
+    volumes:
+      - ./migrations:/app/migrations
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - pantrypal_network
+    profiles:
+      - migration
 
 volumes:
   pantrypal-pgdata:
