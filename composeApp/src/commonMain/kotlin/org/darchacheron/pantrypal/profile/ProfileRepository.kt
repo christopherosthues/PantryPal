@@ -47,16 +47,18 @@ class ProfileRepository(
         if (canSync && (settings.dataSynchronization == DataSynchronization.UPLOAD_AND_DOWNLOAD ||
             settings.dataSynchronization == DataSynchronization.ONLY_UPLOAD
         )) {
-            try {
-                // TODO: what if the remote profile does not exist yet?
-                profileNetworkService.updateProfile(profile, prefs.serverUrl)?.let { syncedDto ->
-                    profileDao.upsert(syncedDto.toProfileEntity(profile))
+            // TODO: what if the remote profile does not exist yet?
+            profileNetworkService.updateProfile(profile, prefs.serverUrl)
+                .onSuccess { syncedDto ->
+                    syncedDto?.let { profileDao.upsert(it.toProfileEntity(profile)) }
                 }
-            } catch (e: ProfileNetworkService.RemoteAccountDeletedException) {
-                _remoteAccountDeleted.emit(true)
-            } catch (e: Exception) {
-                Logger.withTag(loggerTag).w { "Failed immediate profile sync: ${e.message}" }
-            }
+                .onFailure { e ->
+                    if (e is ProfileNetworkService.RemoteAccountDeletedException) {
+                        _remoteAccountDeleted.emit(true)
+                    } else {
+                        Logger.withTag(loggerTag).w { "Failed immediate profile sync: ${e.message}" }
+                    }
+                }
         }
     }
 
@@ -66,11 +68,10 @@ class ProfileRepository(
             val canSync = prefs?.isLoggedInRemotely == true
 
             if (canSync) {
-                try {
-                    profileNetworkService.deleteProfile(prefs.serverUrl, remote = true)
-                } catch (e: Exception) {
-                    Logger.withTag(loggerTag).e { "Remote profile deletion failed: ${e.message}" }
-                }
+                profileNetworkService.deleteProfile(prefs.serverUrl, remote = true)
+                    .onFailure { e ->
+                        Logger.withTag(loggerTag).e { "Remote profile deletion failed: ${e.message}" }
+                    }
             }
         }
         profileDao.delete()
@@ -91,33 +92,43 @@ class ProfileRepository(
             return@withContext
         }
 
-        try {
-            val localProfile = profileDao.getProfile().firstOrNull()?.toProfile() ?: return@withContext
+        val localProfile = profileDao.getProfile().firstOrNull()?.toProfile() ?: return@withContext
 
-            // 1. Push changes if needed
-            if (settings.dataSynchronization == DataSynchronization.UPLOAD_AND_DOWNLOAD ||
-                settings.dataSynchronization == DataSynchronization.ONLY_UPLOAD
-            ) {
-                if (localProfile.serverId == null || localProfile.isLocalOnly) {
-                    // Skip sync for local-only profiles
-                } else if (localProfile.lastSyncedAt == null || localProfile.lastModifiedAt > localProfile.lastSyncedAt) {
-                    profileNetworkService.updateProfile(localProfile, prefs.serverUrl)?.let { syncedDto ->
-                        profileDao.upsert(syncedDto.toProfileEntity(localProfile))
-                    }
+        // 1. Push changes if needed
+        if (settings.dataSynchronization == DataSynchronization.UPLOAD_AND_DOWNLOAD ||
+            settings.dataSynchronization == DataSynchronization.ONLY_UPLOAD
+        ) {
+            if (localProfile.serverId != null && !localProfile.isLocalOnly) {
+                if (localProfile.lastSyncedAt == null || localProfile.lastModifiedAt > localProfile.lastSyncedAt) {
+                    profileNetworkService.updateProfile(localProfile, prefs.serverUrl)
+                        .onSuccess { syncedDto ->
+                            syncedDto?.let { profileDao.upsert(it.toProfileEntity(localProfile)) }
+                        }
+                        .onFailure { e ->
+                            handleSyncError(e)
+                        }
                 }
             }
+        }
 
-            // 2. Pull changes
-            if (!localProfile.isLocalOnly && (settings.dataSynchronization == DataSynchronization.UPLOAD_AND_DOWNLOAD ||
-                settings.dataSynchronization == DataSynchronization.ONLY_DOWNLOAD)
-            ) {
-                profileNetworkService.fetchProfile(prefs.serverUrl)?.let { remoteProfileDto ->
-                    profileDao.upsert(remoteProfileDto.toProfileEntity(localProfile))
+        // 2. Pull changes
+        if (!localProfile.isLocalOnly && (settings.dataSynchronization == DataSynchronization.UPLOAD_AND_DOWNLOAD ||
+                    settings.dataSynchronization == DataSynchronization.ONLY_DOWNLOAD)
+        ) {
+            profileNetworkService.fetchProfile(prefs.serverUrl)
+                .onSuccess { remoteProfileDto ->
+                    remoteProfileDto?.let { profileDao.upsert(it.toProfileEntity(localProfile)) }
                 }
-            }
-        } catch (e: ProfileNetworkService.RemoteAccountDeletedException) {
+                .onFailure { e ->
+                    handleSyncError(e)
+                }
+        }
+    }
+
+    private suspend fun handleSyncError(e: Throwable) {
+        if (e is ProfileNetworkService.RemoteAccountDeletedException) {
             _remoteAccountDeleted.emit(true)
-        } catch (e: Exception) {
+        } else {
             Logger.withTag(loggerTag).e { "Profile sync failed: ${e.message}" }
         }
     }

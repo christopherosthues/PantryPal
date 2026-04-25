@@ -18,45 +18,49 @@ import kotlin.uuid.ExperimentalUuidApi
 @OptIn(ExperimentalUuidApi::class)
 class ProfileNetworkService(private val preferencesRepository: AuthenticationPreferencesRepository) {
 
-    suspend fun fetchProfile(serverUrl: String): ProfileDto? {
+    suspend fun fetchProfile(serverUrl: String): Result<ProfileDto?> {
         val auth = preferencesRepository.authenticationPreferencesFlow.firstOrNull()
         val token = auth?.accessToken
-        if (token.isNullOrBlank()) return null
+        if (token.isNullOrBlank()) return Result.failure(Exception("Not authenticated"))
 
-        createHttpClient(token).use { client ->
-            val response = client.get("$serverUrl/profile")
-            if (response.status == HttpStatusCode.NotFound || response.status == HttpStatusCode.Gone) {
-                throw RemoteAccountDeletedException()
+        return runCatching {
+            createHttpClient(token).use { client ->
+                val response = client.get("$serverUrl/profile")
+                if (response.status == HttpStatusCode.NotFound || response.status == HttpStatusCode.Gone) {
+                    throw RemoteAccountDeletedException()
+                }
+                response.body<ProfileDto>()
             }
-            return response.body()
         }
     }
 
-    suspend fun updateProfile(profile: Profile, serverUrl: String): ProfileDto? {
+    suspend fun updateProfile(profile: Profile, serverUrl: String): Result<ProfileDto?> {
         val auth = preferencesRepository.authenticationPreferencesFlow.firstOrNull()
         val token = auth?.accessToken
-        if (token.isNullOrBlank()) return null
+        if (token.isNullOrBlank()) return Result.failure(Exception("Not authenticated"))
 
-        createHttpClient(token).use { client ->
-            val response = client.put("$serverUrl/profile") {
-                contentType(ContentType.Application.Json)
-                setBody(profile.toDto())
+        return runCatching {
+            createHttpClient(token).use { client ->
+                val response = client.put("$serverUrl/profile") {
+                    contentType(ContentType.Application.Json)
+                    setBody(profile.toDto())
+                }
+                if (response.status == HttpStatusCode.NotFound || response.status == HttpStatusCode.Gone) {
+                    throw RemoteAccountDeletedException()
+                }
+                response.body<ProfileDto>()
             }
-            if (response.status == HttpStatusCode.NotFound || response.status == HttpStatusCode.Gone) {
-                throw RemoteAccountDeletedException()
-            }
-            return response.body()
         }
     }
 
     class RemoteAccountDeletedException : Exception("Remote account has been deleted.")
 
-    suspend fun deleteProfile(serverUrl: String, remote: Boolean): Boolean {
+    suspend fun deleteProfile(serverUrl: String, remote: Boolean): Result<Boolean> {
         val auth = preferencesRepository.authenticationPreferencesFlow.firstOrNull()
         val token = auth?.accessToken
-        if (token.isNullOrBlank()) return false
+        if (token.isNullOrBlank()) return Result.failure(Exception("Not authenticated"))
 
-        return try {
+        return runCatching {
             createHttpClient(token).use { client ->
                 val response = client.delete("$serverUrl/profile") {
                     parameter("remote", remote)
@@ -66,10 +70,6 @@ class ProfileNetworkService(private val preferencesRepository: AuthenticationPre
                 }
                 response.status == HttpStatusCode.NoContent
             }
-        } catch (e: RemoteAccountDeletedException) {
-            throw e
-        } catch (e: Exception) {
-            false
         }
     }
 }
