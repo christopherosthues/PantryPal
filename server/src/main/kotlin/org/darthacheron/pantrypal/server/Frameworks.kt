@@ -1,7 +1,7 @@
 package org.darthacheron.pantrypal.server
 
-import io.ktor.http.parametersOf
-import io.ktor.server.application.*
+import io.ktor.server.application.Application
+import io.ktor.server.application.install
 import org.darthacheron.pantrypal.server.camera.ImageRepository
 import org.darthacheron.pantrypal.server.camera.ImageService
 import org.darthacheron.pantrypal.server.configuration.ConfigurationService
@@ -20,11 +20,6 @@ fun Application.configureFrameworks() {
     install(Koin) {
         slf4jLogger()
         modules(module {
-            single<HelloService> {
-                HelloService {
-                    println(environment.log.info("Hello, World!"))
-                }
-            }
             factoryOf(::ProfileRepository)
             factoryOf(::ProfileService)
             factoryOf(::FoodRepository)

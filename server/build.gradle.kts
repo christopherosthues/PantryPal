@@ -37,6 +37,8 @@ dependencies {
     implementation(libs.exposed.jdbc)
     implementation(libs.exposed.dao)
     implementation(libs.exposed.datetime)
+    implementation(libs.exposed.migration.core)
+    implementation(libs.exposed.migration.jdbc)
     implementation(libs.postgresql)
     implementation(libs.flaxoos.ktor.server.rate.limiting)
     implementation(libs.ktor.server.compression)

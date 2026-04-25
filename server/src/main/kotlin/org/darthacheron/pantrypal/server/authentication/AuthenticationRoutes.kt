@@ -51,10 +51,11 @@ fun Route.login() {
         val loginDto = call.receive<LoginDto>()
         try {
             val response: HttpResponse = httpClient.submitForm(
-                url = "${configurationService.keycloakBaseUrl}/protocol/openid-connect/token",
+                url = "${configurationService.keycloakBaseUrl}/realms/${configurationService.keycloakRealm}/protocol/openid-connect/token",
                 formParameters = parameters {
                     append("grant_type", "password")
                     append("client_id", configurationService.keycloakClientId)
+                    append("client_secret", configurationService.keycloakClientSecret)
                     append("username", loginDto.username)
                     append("password", loginDto.password)
                     append("scope", "openid profile email offline_access")
@@ -119,12 +120,11 @@ fun Route.register() {
         try {
             // 1. Get Admin Token
             val adminTokenResponse: HttpResponse = httpClient.submitForm(
-                url = "${configurationService.keycloakBaseUrl}/protocol/openid-connect/token",
+                url = "${configurationService.keycloakBaseUrl}/realms/${configurationService.keycloakRealm}/protocol/openid-connect/token",
                 formParameters = parameters {
-                    append("grant_type", "password")
-                    append("client_id", "admin-cli")
-                    append("username", configurationService.keycloakAdminUser)
-                    append("password", configurationService.keycloakAdminPassword)
+                    append("grant_type", "client_credentials")
+                    append("client_id", configurationService.keycloakClientId)
+                    append("client_secret", configurationService.keycloakClientSecret)
                 }
             )
 
@@ -142,6 +142,7 @@ fun Route.register() {
                 setBody(mapOf(
                     "username" to registrationDto.username,
                     "email" to registrationDto.email,
+                    "emailVerified" to true,
                     "enabled" to true,
                     "credentials" to listOf(mapOf(
                         "type" to "password",
@@ -154,10 +155,11 @@ fun Route.register() {
             if (createUserResponse.status == HttpStatusCode.Created) {
                 // 3. Login with new credentials to get tokens for the response
                 val loginResponse: HttpResponse = httpClient.submitForm(
-                    url = "${configurationService.keycloakBaseUrl}/protocol/openid-connect/token",
+                    url = "${configurationService.keycloakBaseUrl}/realms/${configurationService.keycloakRealm}/protocol/openid-connect/token",
                     formParameters = parameters {
                         append("grant_type", "password")
                         append("client_id", configurationService.keycloakClientId)
+                        append("client_secret", configurationService.keycloakClientSecret)
                         append("username", registrationDto.username)
                         append("password", registrationDto.password)
                         append("scope", "openid profile email offline_access")
@@ -198,15 +200,15 @@ fun Route.register() {
                     call.respond(HttpStatusCode.InternalServerError, ProblemDetails(
                         title = "User created but login failed",
                         status = HttpStatusCode.InternalServerError.value,
-                        detail = "Keycloak user created successfully, but initial login attempt failed."
+                        detail = "User created successfully, but initial login attempt failed."
                     ))
                 }
             } else if (createUserResponse.status == HttpStatusCode.Conflict) {
                 val errorBody = createUserResponse.bodyAsText()
                 val detail = if (errorBody.contains("exists", ignoreCase = true)) {
-                    "A user with this username or email already exists in Keycloak."
+                    "A user with this username or email already exists."
                 } else {
-                    "Conflict during user creation in Keycloak."
+                    "Conflict during user creation."
                 }
                 call.respond(HttpStatusCode.Conflict, ProblemDetails(
                     type = "https://pantrypal.org/probs/keycloak-conflict",
@@ -239,7 +241,7 @@ fun Route.refresh() {
         val refreshDto = call.receive<RefreshTokenDto>()
         try {
             val response: HttpResponse = httpClient.submitForm(
-                url = "${configurationService.keycloakBaseUrl}/protocol/openid-connect/token",
+                url = "${configurationService.keycloakBaseUrl}/realms/${configurationService.keycloakRealm}/protocol/openid-connect/token",
                 formParameters = parameters {
                     append("grant_type", "refresh_token")
                     append("client_id", configurationService.keycloakClientId)

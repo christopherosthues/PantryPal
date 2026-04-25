@@ -153,7 +153,7 @@ class ProfileService(
 
     private suspend fun getAdminToken(): Result<String> = runCatching {
         val adminTokenResponse = httpClient.submitForm(
-            url = "${configurationService.keycloakBaseUrl}/protocol/openid-connect/token",
+            url = "${configurationService.keycloakBaseUrl}/realms/master/protocol/openid-connect/token",
             formParameters = parameters {
                 append("grant_type", "password")
                 append("client_id", "admin-cli")

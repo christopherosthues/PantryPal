@@ -6,20 +6,21 @@ ktor:
     port: 8080
 
 keycloak:
-  # The base URL for Keycloak (internal for server-to-server, external for browser redirects)
-  baseUrl: ${KEYCLOAK_AUTHORITY:-http://localhost:18080/realms/pantry_pal}
+  # Use KEYCLOAK_BASE_URL (root) to avoid double-realm paths in code
+  baseUrl: ${KEYCLOAK_BASE_URL:-http://keycloak:8080}
+  externalBaseUrl: ${KEYCLOAK_EXTERNAL_BASE_URL:-http://localhost:18080}
   clientId: ${KEYCLOAK_CLIENT_ID:-PantryPal}
+  clientSecret: ${KEYCLOAK_CLIENT_SECRET:-""}
   realm: ${KEYCLOAK_REALM:-pantry_pal}
+  audience: ${KEYCLOAK_AUDIENCE:-PantryPal}
   adminUser: ${KEYCLOAK_ADMIN:-admin}
   adminPassword: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
 
-jwt:
-  # The issuer expected in the JWT (must match the 'iss' claim from Keycloak)
-  domain: ${KEYCLOAK_VALID_ISSUER:-http://localhost:18080/realms/pantry_pal}
-  audience: ${KEYCLOAK_AUDIENCE:-PantryPal}
-  realm: ${KEYCLOAK_REALM:-pantry_pal}
-
 postgres:
-  url: ${SERVER_CONNECTION_STRING:-jdbc:postgresql://localhost/pantry_pal}
-  user: ${POSTGRES_USER:-username}
-  password: ${POSTGRES_PASSWORD:-password}
+  url: ${POSTGRES_CONNECTION_STRING:-jdbc:postgresql://localhost/pantrypal}
+  user: ${POSTGRES_USER:-pantry_pal_user}
+  password: ${POSTGRES_PASSWORD:-pantry_pal_user_password}
+  schema: ${PANTRY_PAL_SCHEMA:-pantry_pal}
+
+images:
+  path: ${IMAGES_PATH:-/app/pantrypal/}
