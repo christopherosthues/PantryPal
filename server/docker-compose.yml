@@ -34,7 +34,7 @@ services:
       timeout: 5s
 
   pgadmin:
-    image: dpage/pgadmin4:9.13.0
+    image: dpage/pgadmin4:9.14.0
     environment:
       - PGADMIN_DEFAULT_EMAIL=${PGADMIN_MAIL}
       - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASSWORD}
@@ -51,7 +51,7 @@ services:
       - pantrypal_network
 
   keycloak:
-    image: keycloak/keycloak:26.5
+    image: keycloak/keycloak:26.6
     container_name: pantry_pal_keycloak
     environment:
       - KC_BOOTSTRAP_ADMIN_USERNAME=${KEYCLOAK_ADMIN}
