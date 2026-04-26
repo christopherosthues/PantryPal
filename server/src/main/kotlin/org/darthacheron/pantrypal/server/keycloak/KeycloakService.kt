@@ -35,7 +35,7 @@ class KeycloakService(private val configurationService: ConfigurationService) {
                     append("client_secret", configurationService.keycloakClientSecret)
                     append("username", username)
                     append("password", password)
-                    append("scope", "openid profile email offline_access")
+                    append("scope", "openid profile email offline_access PantryPal")
                 }
             )
         }.getOrElse { return Result.failure(it) }
