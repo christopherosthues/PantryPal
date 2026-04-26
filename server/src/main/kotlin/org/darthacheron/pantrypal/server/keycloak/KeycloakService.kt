@@ -68,7 +68,7 @@ class KeycloakService(private val configurationService: ConfigurationService) {
         return runCatching { response.body<TokenResponse>() }
     }
 
-    suspend fun createUser(username: String, email: String, password: String): Result<Unit> {
+    suspend fun createUser(username: String, email: String, password: String): Result<Uuid> {
         val adminToken = getAdminToken().getOrElse { return Result.failure(it) }
 
         val response = runCatching {
@@ -90,7 +90,12 @@ class KeycloakService(private val configurationService: ConfigurationService) {
         }.getOrElse { return Result.failure(it) }
 
         return when (response.status) {
-            HttpStatusCode.Created -> Result.success(Unit)
+            HttpStatusCode.Created -> {
+                val location = response.headers[HttpHeaders.Location]
+                val userId = location?.substringAfterLast("/")?.let { runCatching { Uuid.parse(it) }.getOrNull() }
+                    ?: return Result.failure(Exception("User created in Keycloak, but failed to extract user ID from Location header."))
+                Result.success(userId)
+            }
             HttpStatusCode.Conflict -> {
                 val errorBody = runCatching { response.bodyAsText() }.getOrDefault("")
                 val detail = if (errorBody.contains("exists", ignoreCase = true)) {

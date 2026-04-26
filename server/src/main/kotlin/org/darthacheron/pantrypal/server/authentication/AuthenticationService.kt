@@ -42,14 +42,15 @@ class AuthenticationService(
         logger.info("Attempting registration for user: {}", registrationDto.username)
         
         // 1. Create User in Keycloak
-        keycloakService.createUser(registrationDto.username, registrationDto.email, registrationDto.password)
+        val keycloakUserId = keycloakService.createUser(registrationDto.username, registrationDto.email, registrationDto.password)
             .getOrElse { return Result.failure(it) }
 
         // 2. Login with new credentials to get tokens for the response
         val tokenResponse = keycloakService.getAccessToken(registrationDto.username, registrationDto.password)
             .getOrElse {
-                logger.error("User created in Keycloak, but initial login failed for user: {}", registrationDto.username)
-                return Result.failure(Exception("User created successfully, but initial login attempt failed."))
+                logger.error("User created in Keycloak, but initial login failed for user: {}. Reverting Keycloak user creation.", registrationDto.username)
+                keycloakService.deleteUser(keycloakUserId)
+                return Result.failure(Exception("User created successfully, but initial login attempt failed. Reverting Keycloak user creation."))
             }
 
         // 3. Create local profile
@@ -66,8 +67,9 @@ class AuthenticationService(
         )
         
         val profile = profileResult.getOrElse { e ->
-            logger.error("Failed to create local profile for user: {}", registrationDto.username, e)
-            return Result.failure(ProfileAlreadyExistsException("A profile with this username or email already exists in the server database.", e.message ?: "Conflict"))
+            logger.error("Failed to create local profile for user: {}. Reverting Keycloak user creation.", registrationDto.username, e)
+            keycloakService.deleteUser(keycloakUserId)
+            return Result.failure(ProfileAlreadyExistsException("A profile with this username or email already exists in the server database. Reverting Keycloak user creation.", e.message ?: "Conflict"))
         }
 
         val userResponse = UserResponse(

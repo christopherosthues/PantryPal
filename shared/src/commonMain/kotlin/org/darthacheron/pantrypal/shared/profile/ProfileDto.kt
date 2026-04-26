@@ -16,8 +16,4 @@ data class ProfileDto(
     val lastModifiedAt: Instant,
     val lastSyncedAt: Instant? = null,
     val deletedAt: Instant? = null
-) {
-    companion object {
-        val NotFound = ProfileDto(null, Uuid.random(), "", "", Instant.DISTANT_PAST, Instant.DISTANT_PAST)
-    }
-}
+)
