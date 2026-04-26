@@ -107,14 +107,14 @@ fun Route.updateFood() {
         foodService.updateFood(foodDto, profileId).onSuccess {
             call.respond(HttpStatusCode.OK, it)
         }.onFailure { e ->
-            when (e.message) {
-                "Missing food item server ID" -> call.respondBadRequest(e.message!!)
-                "Food not found" -> call.respondNotFound(
+            when (e) {
+                is FoodMissingIdException -> call.respondBadRequest(e.message!!)
+                is FoodNotFoundException -> call.respondNotFound(
                     title = "Food not found",
                     detail = "Cannot update non-existent food item."
                 )
-                "Forbidden" -> call.respondForbidden(detail = "You do not have permission to update this food item.")
-                "Food deleted" -> call.respondGone(
+                is FoodNoAccessException -> call.respondForbidden(detail = "You do not have permission to update this food item.")
+                is FoodDeletedException -> call.respondGone(
                     title = "Food deleted",
                     detail = "Cannot update a deleted food item."
                 )
@@ -135,13 +135,13 @@ fun Route.deleteFood() {
         foodService.deleteFood(id, profileId).onSuccess {
             call.respond(HttpStatusCode.NoContent)
         }.onFailure { e ->
-            when (e.message) {
-                "Food not found" -> call.respondNotFound(
+            when (e) {
+                is FoodNotFoundException -> call.respondNotFound(
                     title = "Food not found",
                     detail = "Cannot delete non-existent food item."
                 )
-                "Forbidden" -> call.respondForbidden(detail = "You do not have permission to delete this food item.")
-                "Food already deleted" -> call.respondGone(
+                is FoodNoAccessException -> call.respondForbidden(detail = "You do not have permission to delete this food item.")
+                is FoodDeletedException -> call.respondGone(
                     title = "Food already deleted",
                     detail = "This food item has already been deleted."
                 )
@@ -225,12 +225,12 @@ fun Route.foodImageRoutes() {
             foodService.saveImage(id, profileId, isPrimary, imageData).onSuccess {
                 call.respond(HttpStatusCode.Created, it)
             }.onFailure { e ->
-                when (e.message) {
-                    "Food not found" -> call.respondNotFound(
+                when (e) {
+                    is FoodNotFoundException -> call.respondNotFound(
                         title = "Food not found",
                         detail = "Cannot add images to a non-existent food item."
                     )
-                    "Food deleted" -> call.respondGone(
+                    is FoodDeletedException -> call.respondGone(
                         title = "Food deleted",
                         detail = "Cannot add images to a deleted food item."
                     )

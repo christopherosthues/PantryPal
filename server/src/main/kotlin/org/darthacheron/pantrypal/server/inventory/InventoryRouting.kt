@@ -14,6 +14,7 @@ import io.ktor.server.routing.put
 import io.ktor.server.routing.route
 import io.ktor.utils.io.readRemaining
 import kotlinx.io.readByteArray
+import org.darthacheron.pantrypal.server.food.FoodMissingIdException
 import org.darthacheron.pantrypal.server.networking.extractProfileId
 import org.darthacheron.pantrypal.server.networking.respondBadRequest
 import org.darthacheron.pantrypal.server.networking.respondForbidden
@@ -106,14 +107,14 @@ fun Route.updateInventoryItem() {
         inventoryItemService.updateInventoryItem(inventoryItemDto, profileId).onSuccess {
             call.respond(HttpStatusCode.OK, it)
         }.onFailure { e ->
-            when (e.message) {
-                "Missing inventory item server ID" -> call.respondBadRequest(e.message!!)
-                "Inventory item not found" -> call.respondNotFound(
+            when (e) {
+                is InventoryItemMissingIdException -> call.respondBadRequest(e.message!!)
+                is InventoryItemNotFoundException -> call.respondNotFound(
                     title = "Inventory item not found",
                     detail = "Cannot update non-existent inventory item."
                 )
-                "Forbidden" -> call.respondForbidden(detail = "You do not have permission to update this inventory item.")
-                "Inventory item deleted" -> call.respondGone(
+                is InventoryItemNoAccessException -> call.respondForbidden(detail = "You do not have permission to update this inventory item.")
+                is InventoryItemDeletedException -> call.respondGone(
                     title = "Inventory item deleted",
                     detail = "Cannot update a deleted inventory item."
                 )
@@ -134,13 +135,13 @@ fun Route.deleteInventoryItem() {
         inventoryItemService.deleteInventoryItem(id, profileId).onSuccess {
             call.respond(HttpStatusCode.NoContent)
         }.onFailure { e ->
-            when (e.message) {
-                "Inventory item not found" -> call.respondNotFound(
+            when (e) {
+                is InventoryItemNotFoundException -> call.respondNotFound(
                     title = "Inventory item not found",
                     detail = "Cannot delete non-existent inventory item."
                 )
-                "Forbidden" -> call.respondForbidden(detail = "You do not have permission to delete this inventory item.")
-                "Inventory item already deleted" -> call.respondGone(
+                is InventoryItemNoAccessException -> call.respondForbidden(detail = "You do not have permission to delete this inventory item.")
+                is InventoryItemDeletedException -> call.respondGone(
                     title = "Inventory item already deleted",
                     detail = "This inventory item has already been deleted."
                 )
@@ -221,12 +222,12 @@ fun Route.inventoryImageRoutes() {
             inventoryItemService.saveImage(id, profileId, isPrimary, imageData).onSuccess {
                 call.respond(HttpStatusCode.Created, it)
             }.onFailure { e ->
-                when (e.message) {
-                    "Inventory item not found" -> call.respondNotFound(
+                when (e) {
+                    is InventoryItemNotFoundException -> call.respondNotFound(
                         title = "Inventory item not found",
                         detail = "Cannot add images to a non-existent inventory item."
                     )
-                    "Inventory item deleted" -> call.respondGone(
+                    is InventoryItemDeletedException -> call.respondGone(
                         title = "Inventory item deleted",
                         detail = "Cannot add images to a deleted inventory item."
                     )
