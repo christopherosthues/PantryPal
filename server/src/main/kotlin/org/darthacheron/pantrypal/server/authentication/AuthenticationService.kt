@@ -1,6 +1,9 @@
 package org.darthacheron.pantrypal.server.authentication
 
 import org.darthacheron.pantrypal.server.keycloak.*
+import org.darthacheron.pantrypal.server.profile.ProfileAlreadyExistsException
+import org.darthacheron.pantrypal.server.profile.ProfileDeletedException
+import org.darthacheron.pantrypal.server.profile.ProfileNotFoundException
 import org.darthacheron.pantrypal.server.profile.ProfileService
 import org.darthacheron.pantrypal.shared.auth.*
 import org.darthacheron.pantrypal.shared.profile.ProfileDto
@@ -69,7 +72,12 @@ class AuthenticationService(
         val profile = profileResult.getOrElse { e ->
             logger.error("Failed to create local profile for user: {}. Reverting Keycloak user creation.", registrationDto.username, e)
             keycloakService.deleteUser(keycloakUserId)
-            return Result.failure(ProfileAlreadyExistsException("A profile with this username or email already exists in the server database. Reverting Keycloak user creation.", e.message ?: "Conflict"))
+            return Result.failure(
+                ProfileAlreadyExistsException(
+                    "A profile with this username or email already exists in the server database. Reverting Keycloak user creation.",
+                    e.message ?: "Conflict"
+                )
+            )
         }
 
         val userResponse = UserResponse(
@@ -85,7 +93,3 @@ class AuthenticationService(
         return keycloakService.refreshAccessToken(refreshDto.refreshToken)
     }
 }
-
-class ProfileNotFoundException(message: String) : Exception(message)
-class ProfileDeletedException(message: String) : Exception(message)
-class ProfileAlreadyExistsException(message: String, val detail: String) : Exception(message)

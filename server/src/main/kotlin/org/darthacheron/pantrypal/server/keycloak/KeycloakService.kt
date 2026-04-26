@@ -40,12 +40,40 @@ class KeycloakService(private val configurationService: ConfigurationService) {
             )
         }.getOrElse { return Result.failure(it) }
 
-        if (response.status != HttpStatusCode.OK) {
-            logger.warn("Keycloak login failed for user: {}, status: {}", username, response.status)
-            return Result.failure(InvalidCredentialsException("Keycloak rejected the login attempt. Please check your username/email and password."))
+        if (response.status == HttpStatusCode.OK) {
+            return runCatching { response.body<TokenResponse>() }
         }
 
-        return runCatching { response.body<TokenResponse>() }
+        val errorResponse = runCatching { response.body<KeycloakErrorResponse>() }.getOrNull()
+        val error = errorResponse?.error
+        val description = errorResponse?.errorDescription
+
+        logger.warn("Keycloak login failed for user: {}, status: {}, error: {}, description: {}", username, response.status, error, description)
+
+        return when {
+            response.status == HttpStatusCode.BadRequest && error == "invalid_grant" -> {
+                if (description == "Account is not fully set up") {
+                    Result.failure(AccountNotFullySetUpException("Account is not fully set up in Keycloak."))
+                } else {
+                    Result.failure(InvalidCredentialsException("Keycloak rejected the login attempt. Please check your username/email and password."))
+                }
+            }
+            response.status == HttpStatusCode.Unauthorized && error == "invalid_client" -> {
+                Result.failure(KeycloakException(response.status, "Invalid client credentials."))
+            }
+            response.status == HttpStatusCode.NotFound && error == "Realm does not exist" -> {
+                Result.failure(KeycloakException(response.status, "Keycloak realm does not exist."))
+            }
+            error == "unauthorized_client" -> {
+                Result.failure(KeycloakException(response.status, "Client not allowed for direct access grants."))
+            }
+            error == "invalid_scope" -> {
+                Result.failure(KeycloakException(response.status, "Invalid scope requested: $description"))
+            }
+            else -> {
+                Result.failure(KeycloakException(response.status, description ?: error ?: "Keycloak login failed."))
+            }
+        }
     }
 
     suspend fun refreshAccessToken(refreshToken: String): Result<TokenResponse> {
@@ -60,12 +88,15 @@ class KeycloakService(private val configurationService: ConfigurationService) {
             )
         }.getOrElse { return Result.failure(it) }
 
-        if (response.status != HttpStatusCode.OK) {
-            logger.warn("Keycloak token refresh failed, status: {}", response.status)
-            return Result.failure(InvalidCredentialsException("Keycloak rejected the refresh token."))
+        if (response.status == HttpStatusCode.OK) {
+            return runCatching { response.body<TokenResponse>() }
         }
 
-        return runCatching { response.body<TokenResponse>() }
+        val errorResponse = runCatching { response.body<KeycloakErrorResponse>() }.getOrNull()
+        logger.warn("Keycloak token refresh failed, status: {}, error: {}, description: {}",
+            response.status, errorResponse?.error, errorResponse?.errorDescription)
+
+        return Result.failure(InvalidCredentialsException("Keycloak rejected the refresh token."))
     }
 
     suspend fun createUser(username: String, email: String, password: String): Result<Uuid> {
@@ -191,7 +222,3 @@ class KeycloakService(private val configurationService: ConfigurationService) {
             .onFailure { logger.error("Failed to parse admin token response", it) }
     }
 }
-
-class InvalidCredentialsException(message: String) : Exception(message)
-class UserAlreadyExistsException(message: String) : Exception(message)
-class KeycloakException(val status: HttpStatusCode, override val message: String) : Exception(message)

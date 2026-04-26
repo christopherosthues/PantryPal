@@ -37,12 +37,12 @@ class ProfileService(
             .getOrElse { return Result.failure(it) }
             ?: run {
                 logger.warn("Profile not found for user ID: {}", userId)
-                return Result.failure(Exception("Profile not found"))
+                return Result.failure(ProfileNotFoundException("Profile not found"))
             }
 
         if (existingProfile.deletedAt != null) {
             logger.warn("Attempted to update a deleted profile for user ID: {}", userId)
-            return Result.failure(Exception("Profile is deleted"))
+            return Result.failure(ProfileDeletedException("Profile is deleted"))
         }
 
         // 1. Update Keycloak if credentials changed
@@ -76,12 +76,12 @@ class ProfileService(
             .getOrElse { return Result.failure(it) }
             ?: run {
                 logger.warn("Profile not found for user ID: {}", userId)
-                return Result.failure(Exception("Profile not found"))
+                return Result.failure(ProfileNotFoundException("Profile not found"))
             }
 
         if (existingProfile.deletedAt != null) {
             logger.warn("Attempted to sync a deleted profile for user ID: {}", userId)
-            return Result.failure(Exception("Profile is deleted"))
+            return Result.failure(ProfileDeletedException("Profile is deleted"))
         }
 
         // 1. Update Keycloak if username or email changed
@@ -112,12 +112,12 @@ class ProfileService(
             .getOrElse { return Result.failure(it) }
             ?: run {
                 logger.warn("Profile not found for user ID: {}", userId)
-                return Result.failure(Exception("Profile not found"))
+                return Result.failure(ProfileNotFoundException("Profile not found"))
             }
 
         if (profile.deletedAt != null) {
             logger.warn("Attempted to delete an already deleted profile for user ID: {}", userId)
-            return Result.failure(Exception("Profile already deleted"))
+            return Result.failure(ProfileDeletedException("Profile already deleted"))
         }
 
         if (deleteRemote) {

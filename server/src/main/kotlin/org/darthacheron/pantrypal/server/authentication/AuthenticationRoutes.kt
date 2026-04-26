@@ -10,6 +10,9 @@ import org.darthacheron.pantrypal.server.keycloak.KeycloakException
 import org.darthacheron.pantrypal.server.keycloak.UserAlreadyExistsException
 import org.darthacheron.pantrypal.server.networking.respondGone
 import org.darthacheron.pantrypal.server.networking.respondNotFound
+import org.darthacheron.pantrypal.server.profile.ProfileAlreadyExistsException
+import org.darthacheron.pantrypal.server.profile.ProfileDeletedException
+import org.darthacheron.pantrypal.server.profile.ProfileNotFoundException
 import org.darthacheron.pantrypal.shared.auth.*
 import org.koin.ktor.ext.inject
 import kotlin.getValue
