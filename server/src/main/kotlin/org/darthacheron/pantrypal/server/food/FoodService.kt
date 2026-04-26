@@ -32,7 +32,7 @@ class FoodService(
     fun updateFood(foodDto: FoodDto, profileId: Uuid): Result<FoodDto> {
         val id = foodDto.serverId ?: run {
             logger.warn("Attempted to update food item with missing server ID")
-            return Result.failure(Exception("Missing food item server ID"))
+            return Result.failure(FoodMissingIdException("Missing food item server ID"))
         }
         logger.info("Updating food item ID: {} for profile ID: {}", id, profileId)
         val existing = runCatching { foodRepository.getFoodById(id) }
@@ -40,17 +40,17 @@ class FoodService(
             .getOrElse { return Result.failure(it) }
             ?: run {
                 logger.warn("Food item not found for ID: {}", id)
-                return Result.failure(Exception("Food not found"))
+                return Result.failure(FoodNotFoundException("Food not found"))
             }
 
         if (existing.profileId != profileId) {
             logger.warn("Forbidden update attempt on food item ID: {} by profile ID: {}", id, profileId)
-            return Result.failure(Exception("Forbidden"))
+            return Result.failure(FoodNoAccessException("Forbidden"))
         }
 
         if (existing.deletedAt != null) {
             logger.warn("Attempted to update a deleted food item ID: {}", id)
-            return Result.failure(Exception("Food deleted"))
+            return Result.failure(FoodDeletedException("Food deleted"))
         }
 
         return runCatching {
@@ -67,17 +67,17 @@ class FoodService(
             .getOrElse { return Result.failure(it) }
             ?: run {
                 logger.warn("Food item not found for deletion, ID: {}", id)
-                return Result.failure(Exception("Food not found"))
+                return Result.failure(FoodNotFoundException("Food not found"))
             }
 
         if (existing.profileId != profileId) {
             logger.warn("Forbidden deletion attempt on food item ID: {} by profile ID: {}", id, profileId)
-            return Result.failure(Exception("Forbidden"))
+            return Result.failure(FoodNoAccessException("Forbidden"))
         }
 
         if (existing.deletedAt != null) {
             logger.warn("Attempted to delete an already deleted food item ID: {}", id)
-            return Result.failure(Exception("Food already deleted"))
+            return Result.failure(FoodDeletedException("Food already deleted"))
         }
 
         return runCatching {
@@ -93,12 +93,12 @@ class FoodService(
             .getOrElse { return Result.failure(it) }
             ?: run {
                 logger.warn("Food item not found for image attachment, ID: {}", foodId)
-                return Result.failure(Exception("Food not found"))
+                return Result.failure(FoodNotFoundException("Food not found"))
             }
 
         if (food.deletedAt != null) {
             logger.warn("Attempted to add image to a deleted food item ID: {}", foodId)
-            return Result.failure(Exception("Food deleted"))
+            return Result.failure(FoodDeletedException("Food deleted"))
         }
 
         return imageService.saveImage(foodId, null, profileId, isPrimary, imageData)
@@ -136,3 +136,4 @@ class FoodService(
             .onFailure { logger.error("Failed to delete image ID: {}", imageId, it) }
     }
 }
+

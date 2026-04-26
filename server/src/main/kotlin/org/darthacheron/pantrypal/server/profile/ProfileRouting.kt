@@ -66,13 +66,13 @@ fun Route.updateProfile() {
         profileService.syncProfile(userId, profileDto).onSuccess {
             call.respond(HttpStatusCode.OK, it)
         }.onFailure { e ->
-            when (e.message) {
-                "Profile not found" -> call.respondNotFound(
+            when (e) {
+                is ProfileNotFoundException -> call.respondNotFound(
                     title = "Profile not found",
                     detail = "Cannot sync a profile that does not exist."
                 )
 
-                "Profile is deleted" -> call.respondGone(
+                is ProfileDeletedException -> call.respondGone(
                     title = "Profile deleted",
                     detail = "Cannot sync a deleted profile."
                 )
@@ -89,13 +89,13 @@ fun Route.updateProfile() {
         profileService.updateProfile(userId, updateDto).onSuccess {
             call.respond(HttpStatusCode.OK, it)
         }.onFailure { e ->
-            when (e.message) {
-                "Profile not found" -> call.respondNotFound(
+            when (e) {
+                is ProfileNotFoundException -> call.respondNotFound(
                     title = "Profile not found",
                     detail = "Cannot update a profile that does not exist."
                 )
 
-                "Profile is deleted" -> call.respondGone(
+                is ProfileDeletedException -> call.respondGone(
                     title = "Profile deleted",
                     detail = "Cannot update a deleted profile."
                 )
@@ -116,13 +116,13 @@ fun Route.deleteProfile() {
         profileService.deleteProfile(userId, deleteRemote).onSuccess {
             call.respond(HttpStatusCode.NoContent)
         }.onFailure { e ->
-            when (e.message) {
-                "Profile not found" -> call.respondNotFound(
+            when (e) {
+                is ProfileNotFoundException -> call.respondNotFound(
                     title = "Profile not found",
                     detail = "Cannot delete a profile that does not exist."
                 )
 
-                "Profile already deleted" -> call.respondGone(
+                is ProfileDeletedException -> call.respondGone(
                     title = "Profile already deleted",
                     detail = "This profile has already been deleted."
                 )

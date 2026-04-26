@@ -32,7 +32,7 @@ class InventoryItemService(
     fun updateInventoryItem(inventoryItemDto: InventoryItemDto, profileId: Uuid): Result<InventoryItemDto> {
         val id = inventoryItemDto.serverId ?: run {
             logger.warn("Attempted to update inventory item with missing server ID")
-            return Result.failure(Exception("Missing inventory item server ID"))
+            return Result.failure(InventoryItemMissingIdException("Missing inventory item server ID"))
         }
         logger.info("Updating inventory item ID: {} for profile ID: {}", id, profileId)
         val existing = runCatching { inventoryItemRepository.getInventoryItemById(id) }
@@ -40,17 +40,17 @@ class InventoryItemService(
             .getOrElse { return Result.failure(it) }
             ?: run {
                 logger.warn("Inventory item not found for ID: {}", id)
-                return Result.failure(Exception("Inventory item not found"))
+                return Result.failure(InventoryItemNotFoundException("Inventory item not found"))
             }
 
         if (existing.profileId != profileId) {
             logger.warn("Forbidden update attempt on inventory item ID: {} by profile ID: {}", id, profileId)
-            return Result.failure(Exception("Forbidden"))
+            return Result.failure(InventoryItemNoAccessException("Forbidden"))
         }
 
         if (existing.deletedAt != null) {
             logger.warn("Attempted to update a deleted inventory item ID: {}", id)
-            return Result.failure(Exception("Inventory item deleted"))
+            return Result.failure(InventoryItemDeletedException("Inventory item deleted"))
         }
 
         return runCatching {
@@ -67,17 +67,17 @@ class InventoryItemService(
             .getOrElse { return Result.failure(it) }
             ?: run {
                 logger.warn("Inventory item not found for deletion, ID: {}", id)
-                return Result.failure(Exception("Inventory item not found"))
+                return Result.failure(InventoryItemNotFoundException("Inventory item not found"))
             }
 
         if (existing.profileId != profileId) {
             logger.warn("Forbidden deletion attempt on inventory item ID: {} by profile ID: {}", id, profileId)
-            return Result.failure(Exception("Forbidden"))
+            return Result.failure(InventoryItemNoAccessException("Forbidden"))
         }
 
         if (existing.deletedAt != null) {
             logger.warn("Attempted to delete an already deleted inventory item ID: {}", id)
-            return Result.failure(Exception("Inventory item already deleted"))
+            return Result.failure(InventoryItemDeletedException("Inventory item already deleted"))
         }
 
         return runCatching {
@@ -93,12 +93,12 @@ class InventoryItemService(
             .getOrElse { return Result.failure(it) }
             ?: run {
                 logger.warn("Inventory item not found for image attachment, ID: {}", inventoryItemId)
-                return Result.failure(Exception("Inventory item not found"))
+                return Result.failure(InventoryItemNotFoundException("Inventory item not found"))
             }
 
         if (item.deletedAt != null) {
             logger.warn("Attempted to add image to a deleted inventory item ID: {}", inventoryItemId)
-            return Result.failure(Exception("Inventory item deleted"))
+            return Result.failure(InventoryItemDeletedException("Inventory item deleted"))
         }
 
         return imageService.saveImage(null, inventoryItemId, profileId, isPrimary, imageData)
