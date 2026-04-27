@@ -14,6 +14,9 @@ import io.ktor.server.routing.put
 import io.ktor.server.routing.route
 import io.ktor.utils.io.readRemaining
 import kotlinx.io.readByteArray
+import org.darthacheron.pantrypal.server.camera.ImageDeletedException
+import org.darthacheron.pantrypal.server.camera.ImageNotFoundException
+import org.darthacheron.pantrypal.server.networking.extractIdParameter
 import org.darthacheron.pantrypal.server.networking.extractProfileId
 import org.darthacheron.pantrypal.server.networking.respondBadRequest
 import org.darthacheron.pantrypal.server.networking.respondForbidden
@@ -57,8 +60,7 @@ fun Route.getFoodById() {
     get("/{id}") {
         val foodService by inject<FoodService>()
         val profileId = call.extractProfileId() ?: return@get
-        val idStr = call.parameters["id"] ?: return@get call.respondBadRequest("Missing food item ID")
-        val id = Uuid.parse(idStr)
+        val id = call.extractIdParameter("id") ?: return@get
 
         foodService.getFoodById(id).onSuccess { food ->
             if (food == null) {
@@ -129,8 +131,7 @@ fun Route.deleteFood() {
     delete("/{id}") {
         val foodService by inject<FoodService>()
         val profileId = call.extractProfileId() ?: return@delete
-        val idStr = call.parameters["id"] ?: return@delete call.respondBadRequest("Missing food item ID")
-        val id = Uuid.parse(idStr)
+        val id = call.extractIdParameter("id") ?: return@delete
 
         foodService.deleteFood(id, profileId).onSuccess {
             call.respond(HttpStatusCode.NoContent)
@@ -157,8 +158,7 @@ fun Route.foodImageRoutes() {
         get {
             val foodService by inject<FoodService>()
             val profileId = call.extractProfileId() ?: return@get
-            val idStr = call.parameters["id"] ?: return@get call.respondBadRequest("Missing food item ID")
-            val id = Uuid.parse(idStr)
+            val id = call.extractIdParameter("id") ?: return@get
 
             foodService.getFoodById(id).onSuccess { food ->
                 if (food == null) {
@@ -185,8 +185,7 @@ fun Route.foodImageRoutes() {
         get("/{imageId}") {
             val foodService by inject<FoodService>()
             val profileId = call.extractProfileId() ?: return@get
-            val imageIdStr = call.parameters["imageId"] ?: return@get call.respondBadRequest("Missing image ID")
-            val imageId = Uuid.parse(imageIdStr)
+            val imageId = call.extractIdParameter("imageId") ?: return@get
 
             foodService.getImageMetadata(imageId, profileId).onSuccess { image ->
                 if (image == null) {
@@ -217,8 +216,7 @@ fun Route.foodImageRoutes() {
         post {
             val foodService by inject<FoodService>()
             val profileId = call.extractProfileId() ?: return@post
-            val idStr = call.parameters["id"] ?: return@post call.respondBadRequest("Missing food item ID")
-            val id = Uuid.parse(idStr)
+            val id = call.extractIdParameter("id") ?: return@post
             val isPrimary = call.request.queryParameters["isPrimary"]?.toBoolean() ?: false
 
             val imageData = call.receiveChannel().readRemaining().readByteArray()
@@ -242,8 +240,7 @@ fun Route.foodImageRoutes() {
         delete("/{imageId}") {
             val foodService by inject<FoodService>()
             val profileId = call.extractProfileId() ?: return@delete
-            val imageIdStr = call.parameters["imageId"] ?: return@delete call.respondBadRequest("Missing image ID")
-            val imageId = Uuid.parse(imageIdStr)
+            val imageId = call.extractIdParameter("imageId") ?: return@delete
 
             foodService.deleteImage(imageId, profileId).onSuccess { deleted ->
                 if (deleted) call.respond(HttpStatusCode.NoContent)
@@ -252,12 +249,12 @@ fun Route.foodImageRoutes() {
                     detail = "Failed to delete the food image."
                 )
             }.onFailure { e ->
-                when (e.message) {
-                    "Image not found" -> call.respondNotFound(
+                when (e) {
+                    is ImageNotFoundException -> call.respondNotFound(
                         title = "Image not found",
                         detail = "Cannot delete a non-existent food image."
                     )
-                    "Image already deleted" -> call.respondGone(
+                    is ImageDeletedException -> call.respondGone(
                         title = "Image already deleted",
                         detail = "This image has already been deleted."
                     )

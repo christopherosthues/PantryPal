@@ -1,5 +1,7 @@
 package org.darthacheron.pantrypal.server.inventory
 
+import org.darthacheron.pantrypal.server.camera.ImageDeletedException
+import org.darthacheron.pantrypal.server.camera.ImageNotFoundException
 import org.darthacheron.pantrypal.server.camera.ImageService
 import org.darthacheron.pantrypal.shared.camera.ImageDto
 import org.darthacheron.pantrypal.shared.inventory.InventoryItemDto
@@ -123,12 +125,12 @@ class InventoryItemService(
             .getOrElse { return Result.failure(it) }
             ?: run {
                 logger.warn("Image not found for deletion, ID: {}", imageId)
-                return Result.failure(Exception("Image not found"))
+                return Result.failure(ImageNotFoundException("Image not found"))
             }
 
         if (image.deletedAt != null) {
             logger.warn("Attempted to delete an already deleted image ID: {}", imageId)
-            return Result.failure(Exception("Image already deleted"))
+            return Result.failure(ImageDeletedException("Image already deleted"))
         }
 
         return imageService.deleteImage(imageId, profileId)

@@ -24,6 +24,16 @@ suspend fun ApplicationCall.extractProfileId(): Uuid? {
     return Uuid.parse(profileIdStr)
 }
 
+@OptIn(ExperimentalUuidApi::class)
+suspend fun ApplicationCall.extractIdParameter(idName: String) : Uuid? {
+    val parameter = parameters["id"] ?: run {
+        respondBadRequest("Missing $idName")
+        return null
+    }
+
+    return Uuid.parse(parameter)
+}
+
 suspend fun ApplicationCall.respondNotFound(title: String, detail: String) {
     respond(HttpStatusCode.NotFound, ProblemDetails(
         title = title,

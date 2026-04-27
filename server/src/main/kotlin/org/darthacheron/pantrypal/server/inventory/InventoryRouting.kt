@@ -14,7 +14,10 @@ import io.ktor.server.routing.put
 import io.ktor.server.routing.route
 import io.ktor.utils.io.readRemaining
 import kotlinx.io.readByteArray
+import org.darthacheron.pantrypal.server.camera.ImageDeletedException
+import org.darthacheron.pantrypal.server.camera.ImageNotFoundException
 import org.darthacheron.pantrypal.server.food.FoodMissingIdException
+import org.darthacheron.pantrypal.server.networking.extractIdParameter
 import org.darthacheron.pantrypal.server.networking.extractProfileId
 import org.darthacheron.pantrypal.server.networking.respondBadRequest
 import org.darthacheron.pantrypal.server.networking.respondForbidden
@@ -57,8 +60,7 @@ fun Route.getInventoryItemById() {
     get("/{id}") {
         val inventoryItemService by inject<InventoryItemService>()
         val profileId = call.extractProfileId() ?: return@get
-        val idStr = call.parameters["id"] ?: return@get call.respondBadRequest("Missing inventory item ID")
-        val id = Uuid.parse(idStr)
+        val id = call.extractIdParameter("id") ?: return@get
 
         inventoryItemService.getInventoryItemById(id).onSuccess { item ->
             if (item == null) {
@@ -129,8 +131,7 @@ fun Route.deleteInventoryItem() {
     delete("/{id}") {
         val inventoryItemService by inject<InventoryItemService>()
         val profileId = call.extractProfileId() ?: return@delete
-        val idStr = call.parameters["id"] ?: return@delete call.respondBadRequest("Missing inventory item ID")
-        val id = Uuid.parse(idStr)
+        val id = call.extractIdParameter("id") ?: return@delete
 
         inventoryItemService.deleteInventoryItem(id, profileId).onSuccess {
             call.respond(HttpStatusCode.NoContent)
@@ -157,8 +158,7 @@ fun Route.inventoryImageRoutes() {
         get {
             val inventoryItemService by inject<InventoryItemService>()
             val profileId = call.extractProfileId() ?: return@get
-            val idStr = call.parameters["id"] ?: return@get call.respondBadRequest("Missing inventory item ID")
-            val id = Uuid.parse(idStr)
+            val id = call.extractIdParameter("id") ?: return@get
 
             inventoryItemService.getInventoryItemById(id).onSuccess { item ->
                 if (item == null) {
@@ -182,8 +182,7 @@ fun Route.inventoryImageRoutes() {
         get("/{imageId}") {
             val inventoryItemService by inject<InventoryItemService>()
             val profileId = call.extractProfileId() ?: return@get
-            val imageIdStr = call.parameters["imageId"] ?: return@get call.respondBadRequest("Missing image ID")
-            val imageId = Uuid.parse(imageIdStr)
+            val imageId = call.extractIdParameter("imageId") ?: return@get
 
             inventoryItemService.getImageMetadata(imageId, profileId).onSuccess { image ->
                 if (image == null) {
@@ -214,8 +213,7 @@ fun Route.inventoryImageRoutes() {
         post {
             val inventoryItemService by inject<InventoryItemService>()
             val profileId = call.extractProfileId() ?: return@post
-            val idStr = call.parameters["id"] ?: return@post call.respondBadRequest("Missing inventory item ID")
-            val id = Uuid.parse(idStr)
+            val id = call.extractIdParameter("id") ?: return@post
             val isPrimary = call.request.queryParameters["isPrimary"]?.toBoolean() ?: false
 
             val imageData = call.receiveChannel().readRemaining().readByteArray()
@@ -239,8 +237,7 @@ fun Route.inventoryImageRoutes() {
         delete("/{imageId}") {
             val inventoryItemService by inject<InventoryItemService>()
             val profileId = call.extractProfileId() ?: return@delete
-            val imageIdStr = call.parameters["imageId"] ?: return@delete call.respondBadRequest("Missing image ID")
-            val imageId = Uuid.parse(imageIdStr)
+            val imageId = call.extractIdParameter("imageId") ?: return@delete
 
             inventoryItemService.deleteImage(imageId, profileId).onSuccess { deleted ->
                 if (deleted) call.respond(HttpStatusCode.NoContent)
@@ -249,12 +246,12 @@ fun Route.inventoryImageRoutes() {
                     detail = "Failed to delete the inventory image."
                 )
             }.onFailure { e ->
-                when (e.message) {
-                    "Image not found" -> call.respondNotFound(
+                when (e) {
+                    is ImageNotFoundException -> call.respondNotFound(
                         title = "Image not found",
                         detail = "Cannot delete a non-existent inventory image."
                     )
-                    "Image already deleted" -> call.respondGone(
+                    is ImageDeletedException -> call.respondGone(
                         title = "Image already deleted",
                         detail = "This image has already been deleted."
                     )
