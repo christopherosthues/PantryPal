@@ -55,17 +55,17 @@ class KeycloakService(private val configurationService: ConfigurationService) {
                 if (description == "Account is not fully set up") {
                     Result.failure(AccountNotFullySetUpException("Account is not fully set up in Keycloak."))
                 } else {
-                    Result.failure(InvalidCredentialsException("Keycloak rejected the login attempt. Please check your username/email and password."))
+                    Result.failure(InvalidCredentialsException(description ?: "Keycloak rejected the login attempt. Please check your username/email and password."))
                 }
             }
+            error == "unauthorized_client" -> {
+                Result.failure(KeycloakException(response.status, description ?: "Client not allowed for direct access grants (password flow)."))
+            }
             response.status == HttpStatusCode.Unauthorized && error == "invalid_client" -> {
-                Result.failure(KeycloakException(response.status, "Invalid client credentials."))
+                Result.failure(KeycloakException(response.status, description ?: "Invalid client credentials."))
             }
             response.status == HttpStatusCode.NotFound && error == "Realm does not exist" -> {
                 Result.failure(KeycloakException(response.status, "Keycloak realm does not exist."))
-            }
-            error == "unauthorized_client" -> {
-                Result.failure(KeycloakException(response.status, "Client not allowed for direct access grants."))
             }
             error == "invalid_scope" -> {
                 Result.failure(KeycloakException(response.status, "Invalid scope requested: $description"))
@@ -83,6 +83,7 @@ class KeycloakService(private val configurationService: ConfigurationService) {
                 formParameters = parameters {
                     append("grant_type", "refresh_token")
                     append("client_id", configurationService.keycloakClientId)
+                    append("client_secret", configurationService.keycloakClientSecret)
                     append("refresh_token", refreshToken)
                 }
             )
@@ -106,15 +107,15 @@ class KeycloakService(private val configurationService: ConfigurationService) {
             httpClient.post("${configurationService.keycloakBaseUrl}/admin/realms/${configurationService.keycloakRealm}/users") {
                 header(HttpHeaders.Authorization, "Bearer $adminToken")
                 contentType(ContentType.Application.Json)
-                setBody(mapOf(
-                    "username" to username,
-                    "email" to email,
-                    "emailVerified" to true,
-                    "enabled" to true,
-                    "credentials" to listOf(mapOf(
-                        "type" to "password",
-                        "value" to password,
-                        "temporary" to false
+                setBody(KeycloakUserRequest(
+                    username = username,
+                    email = email,
+                    emailVerified = true,
+                    enabled = true,
+                    credentials = listOf(KeycloakCredential(
+                        type = "password",
+                        value = password,
+                        temporary = false
                     ))
                 ))
             }
@@ -156,19 +157,17 @@ class KeycloakService(private val configurationService: ConfigurationService) {
             httpClient.put("${configurationService.keycloakBaseUrl}/admin/realms/${configurationService.keycloakRealm}/users/$userId") {
                 header(HttpHeaders.Authorization, "Bearer $adminToken")
                 contentType(ContentType.Application.Json)
-                val body = mutableMapOf<String, Any>()
-                username?.let { body["username"] = it }
-                email?.let { body["email"] = it }
-                password?.let {
-                    body["credentials"] = listOf(
-                        mapOf(
-                            "type" to "password",
-                            "value" to it,
-                            "temporary" to false
-                        )
-                    )
-                }
-                setBody(body)
+                setBody(KeycloakUserRequest(
+                    username = username,
+                    email = email,
+                    credentials = password?.let {
+                        listOf(KeycloakCredential(
+                            type = "password",
+                            value = it,
+                            temporary = false
+                        ))
+                    }
+                ))
             }
         }.getOrElse { return Result.failure(it) }
 

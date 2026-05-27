@@ -34,9 +34,19 @@ class ConfigurationService(environment: ApplicationEnvironment) {
     val inventoryImagesPath = imagesPath + "inventory/"
 
     init {
+        validateConfig()
         logger.info("ConfigurationService initialized with Keycloak URL: {}", keycloakBaseUrl)
         logger.info("ConfigurationService initialized with external Keycloak URL: {}", keycloakExternalBaseUrl)
         logger.info("Food images path: {}", foodImagesPath)
         logger.info("Inventory images path: {}", inventoryImagesPath)
+    }
+
+    private fun validateConfig() {
+        check(keycloakBaseUrl.isNotBlank()) { "keycloak.baseUrl must not be blank" }
+        check(keycloakClientId.isNotBlank()) { "keycloak.clientId must not be blank" }
+        check(keycloakRealm.isNotBlank()) { "keycloak.realm must not be blank" }
+        check(keycloakAdminUser.isNotBlank()) { "keycloak.adminUser must not be blank" }
+        check(keycloakAdminPassword.isNotBlank()) { "keycloak.adminPassword must not be blank" }
+        check(postgresUrl.isNotBlank()) { "postgres.url must not be blank" }
     }
 }
