@@ -250,6 +250,7 @@
     <string name="remote_login_error_credentials">Incorrect username or password</string>
     <string name="remote_login_error_profile_not_found">No profile found on this server</string>
     <string name="remote_login_error_unreachable">Could not connect to the server</string>
+    <string name="remote_login_error_user_exists">User already exists</string>
 
     <!-- Inventory -->
     <string name="inventory_list_title">Inventory Templates</string>

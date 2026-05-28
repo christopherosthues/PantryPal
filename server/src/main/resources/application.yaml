@@ -9,22 +9,22 @@ ktor:
 
 keycloak:
   # Use KEYCLOAK_BASE_URL (root) to avoid double-realm paths in code
-  baseUrl: ${KEYCLOAK_BASE_URL:-http://keycloak:8080}
-  externalBaseUrl: ${KEYCLOAK_EXTERNAL_BASE_URL:-http://localhost:18080}
-  clientId: ${KEYCLOAK_CLIENT_ID:-PantryPal}
-  clientSecret: ${KEYCLOAK_CLIENT_SECRET:-""}
-  realm: ${KEYCLOAK_REALM:-pantry_pal}
-  audience: ${KEYCLOAK_AUDIENCE:-PantryPal}
-  adminUser: ${KEYCLOAK_ADMIN:-admin}
-  adminPassword: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
+  baseUrl: ${KEYCLOAK_BASE_URL:http://localhost:18080}
+  externalBaseUrl: ${KEYCLOAK_EXTERNAL_BASE_URL:http://localhost:18080}
+  clientId: ${KEYCLOAK_CLIENT_ID:PantryPal}
+  clientSecret: ${KEYCLOAK_CLIENT_SECRET:""}
+  realm: ${KEYCLOAK_REALM:pantry_pal}
+  audience: ${KEYCLOAK_AUDIENCE:PantryPal}
+  adminUser: ${KEYCLOAK_ADMIN:admin}
+  adminPassword: ${KEYCLOAK_ADMIN_PASSWORD:admin}
 
 postgres:
-  url: ${POSTGRES_CONNECTION_STRING:-jdbc:postgresql://localhost/pantrypal}
-  user: ${POSTGRES_USER:-pantry_pal_user}
-  password: ${POSTGRES_PASSWORD:-pantry_pal_user_password}
-  schema: ${PANTRY_PAL_SCHEMA:-pantry_pal}
-  generateMigration: ${GENERATE_MIGRATION:-false}
-  migrationsPath: ${MIGRATIONS_PATH:-migrations}
+  url: ${POSTGRES_CONNECTION_STRING:jdbc:postgresql://localhost/pantrypal}
+  user: ${POSTGRES_USER:pantry_pal_user}
+  password: ${POSTGRES_PASSWORD:pantry_pal_user_password}
+  schema: ${PANTRY_PAL_SCHEMA:pantry_pal}
+  generateMigration: ${GENERATE_MIGRATION:false}
+  migrationsPath: ${MIGRATIONS_PATH:migrations}
 
 images:
-  path: ${IMAGES_PATH:-/app/pantrypal/}
+  path: ${IMAGES_PATH:/app/pantrypal/}

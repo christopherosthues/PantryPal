@@ -21,6 +21,7 @@ import pantrypal.composeapp.generated.resources.remote_login_error_unreachable
 import pantrypal.composeapp.generated.resources.remote_login_error_username_empty
 import pantrypal.composeapp.generated.resources.registration_error_password_mismatch
 import pantrypal.composeapp.generated.resources.registration_error_invalid_email
+import pantrypal.composeapp.generated.resources.remote_login_error_user_exists
 import kotlin.time.Clock
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -193,6 +194,7 @@ class RemoteLoginViewModel(
             is InvalidCredentialsException -> Res.string.remote_login_error_credentials
             is ProfileNotFoundException -> Res.string.remote_login_error_profile_not_found
             is ServerUnreachableException -> Res.string.remote_login_error_unreachable
+            is UserAlreadyExistsException -> Res.string.remote_login_error_user_exists
             else -> Res.string.remote_login_error_generic
         }
         loginState.emit(uiState.copy(error = errorRes))

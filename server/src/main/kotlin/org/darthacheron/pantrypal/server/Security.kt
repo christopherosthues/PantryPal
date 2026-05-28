@@ -53,8 +53,9 @@ fun Application.configureSecurity() {
     }
 
     install(CSRF) {
-        allowOrigin("http://localhost:8080")
-        originMatchesHost()
+//        allowOrigin("http://localhost:8080")
+//        allowOrigin("http://localhost:8081")
+//        originMatchesHost()
         checkHeader("X-CSRF-Token")
     }
 }

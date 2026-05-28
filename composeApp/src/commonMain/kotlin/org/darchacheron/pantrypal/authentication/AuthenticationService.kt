@@ -14,6 +14,7 @@ import io.ktor.client.request.patch
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
+import io.ktor.client.plugins.defaultRequest
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
@@ -99,6 +100,12 @@ class AuthenticationService(
         install(Logging) {
             level = LogLevel.INFO
             sanitizeHeader { header -> header == HttpHeaders.Authorization }
+        }
+        defaultRequest {
+            // Required for server CSRF/CORS validation if enabled
+            header(HttpHeaders.Origin, "http://localhost:8081")
+            header("X-CSRF-Token", "PantryPal") // TODO provide CSRF token
+            contentType(ContentType.Application.Json)
         }
         expectSuccess = false
     }

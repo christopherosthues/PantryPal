@@ -243,6 +243,7 @@
     <string name="remote_login_error_credentials">Falscher Benutzername oder Passwort</string>
     <string name="remote_login_error_profile_not_found">Kein Profil auf diesem Server gefunden</string>
     <string name="remote_login_error_unreachable">Server nicht erreichbar</string>
+    <string name="remote_login_error_user_exists">Der Nutzer existiert bereits</string>
 
     <!-- Inventory -->
     <string name="inventory_list_title">Vorlagen</string>

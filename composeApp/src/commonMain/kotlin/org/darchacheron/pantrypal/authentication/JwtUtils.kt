@@ -22,7 +22,7 @@ object JwtUtils {
             val payloadBase64 = parts[1]
             
             // Base64Url decoding (replacing characters if needed)
-            val decodedBytes = Base64.UrlSafe.decode(payloadBase64)
+            val decodedBytes = Base64.UrlSafe.withPadding(Base64.PaddingOption.ABSENT_OPTIONAL).decode(payloadBase64)
             val decodedString = decodedBytes.decodeToString()
             
             val jsonObject = json.parseToJsonElement(decodedString).jsonObject
