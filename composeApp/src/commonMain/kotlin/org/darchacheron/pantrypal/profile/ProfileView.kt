@@ -155,41 +155,7 @@ fun ProfileView(
                             .verticalScroll(rememberScrollState()),
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        OutlinedTextField(
-                            value = profile.username,
-                            onValueChange = { profileViewModel.updateUsername(it) },
-                            label = { Text(stringResource(Res.string.profile_username_label)) },
-                            keyboardOptions = KeyboardOptions(
-                                keyboardType = KeyboardType.Text,
-                                imeAction = ImeAction.Next
-                            ),
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth(),
-                            isError = profileValidationState.usernameError != null,
-                            supportingText = {
-                                profileValidationState.usernameError?.let {
-                                    Text(stringResource(it))
-                                }
-                            }
-                        )
-
-                        OutlinedTextField(
-                            value = profile.email,
-                            onValueChange = { profileViewModel.updateEmail(it) },
-                            label = { Text(stringResource(Res.string.profile_email_label)) },
-                            keyboardOptions = KeyboardOptions(
-                                keyboardType = KeyboardType.Email,
-                                imeAction = ImeAction.Next
-                            ),
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth(),
-                            isError = profileValidationState.emailError != null,
-                            supportingText = {
-                                profileValidationState.emailError?.let {
-                                    Text(stringResource(it))
-                                }
-                            }
-                        )
+                        PersonalInformationSection(profile, profileViewModel, profileValidationState)
 
                         RemoteProfileSection(profileViewModel, remoteLoginViewModel, profile)
 
@@ -252,6 +218,55 @@ fun ProfileView(
             )
         }
     }
+}
+
+@Composable
+private fun PersonalInformationSection(
+    profile: Profile,
+    profileViewModel: ProfileViewModel,
+    profileValidationState: ProfileValidationState
+) {
+    Text(
+        text = stringResource(Res.string.profile_personal_information),
+        style = MaterialTheme.typography.titleMedium,
+        modifier = Modifier.padding(top = 8.dp)
+    )
+
+    OutlinedTextField(
+        value = profile.username,
+        onValueChange = { profileViewModel.updateUsername(it) },
+        label = { Text(stringResource(Res.string.profile_username_label)) },
+        keyboardOptions = KeyboardOptions(
+            keyboardType = KeyboardType.Text,
+            imeAction = ImeAction.Next
+        ),
+        singleLine = true,
+        modifier = Modifier.fillMaxWidth(),
+        isError = profileValidationState.usernameError != null,
+        supportingText = {
+            profileValidationState.usernameError?.let {
+                Text(stringResource(it))
+            }
+        }
+    )
+
+    OutlinedTextField(
+        value = profile.email,
+        onValueChange = { profileViewModel.updateEmail(it) },
+        label = { Text(stringResource(Res.string.profile_email_label)) },
+        keyboardOptions = KeyboardOptions(
+            keyboardType = KeyboardType.Email,
+            imeAction = ImeAction.Next
+        ),
+        singleLine = true,
+        modifier = Modifier.fillMaxWidth(),
+        isError = profileValidationState.emailError != null,
+        supportingText = {
+            profileValidationState.emailError?.let {
+                Text(stringResource(it))
+            }
+        }
+    )
 }
 
 @OptIn(ExperimentalUuidApi::class)
