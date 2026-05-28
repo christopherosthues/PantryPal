@@ -3,6 +3,8 @@ package org.darchacheron.pantrypal.authentication
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import co.touchlab.kermit.Logger
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
@@ -31,6 +33,8 @@ class RegistrationViewModel(
     private val navigator: Navigator
 ): ViewModel() {
     private val registrationTag = "Registration"
+    private var userNameValidationJob: Job? = null
+    private var emailValidationJob: Job? = null
 
     val registrationState = MutableStateFlow(
         UiState.success(
@@ -63,26 +67,38 @@ class RegistrationViewModel(
     }
 
     fun onUserNameChanged(userName: String) {
-        viewModelScope.launch {
-            val error = if (userName.isBlank()) Res.string.registration_error_empty_username
-            else if (profileRepository.getProfileByUsername(userName).firstOrNull() != null) Res.string.registration_error_username_exists
-            else null
-            updateRegistration { it.copy(userName = userName, userNameError = error) }
+        userNameValidationJob?.cancel()
+        val error = if (userName.isBlank()) Res.string.registration_error_empty_username else null
+        updateRegistration { it.copy(userName = userName, userNameError = error) }
+
+        if (error == null) {
+            userNameValidationJob = viewModelScope.launch {
+                delay(300)
+                if (profileRepository.getProfileByUsername(userName).firstOrNull() != null) {
+                    updateRegistration { it.copy(userNameError = Res.string.registration_error_username_exists) }
+                }
+            }
         }
     }
 
     fun onEmailChanged(email: String) {
-        viewModelScope.launch {
-            val error = if (email.isBlank()) {
-                Res.string.registration_error_empty_email
-            } else if (!isValidEmail(email)) {
-                Res.string.registration_error_invalid_email
-            } else if (profileRepository.getProfileByEmail(email).firstOrNull() != null) {
-                Res.string.registration_error_email_exists
-            } else {
-                null
+        emailValidationJob?.cancel()
+        val error = if (email.isBlank()) {
+            Res.string.registration_error_empty_email
+        } else if (!isValidEmail(email)) {
+            Res.string.registration_error_invalid_email
+        } else {
+            null
+        }
+        updateRegistration { it.copy(email = email, emailError = error) }
+
+        if (error == null) {
+            emailValidationJob = viewModelScope.launch {
+                delay(300)
+                if (profileRepository.getProfileByEmail(email).firstOrNull() != null) {
+                    updateRegistration { it.copy(emailError = Res.string.registration_error_email_exists) }
+                }
             }
-            updateRegistration { it.copy(email = email, emailError = error) }
         }
     }
 

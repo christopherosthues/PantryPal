@@ -16,6 +16,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SecondaryTabRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
@@ -53,7 +54,7 @@ fun RemoteLoginDialog(
                 .fillMaxWidth(0.9f)
                 .wrapContentHeight(),
             shape = MaterialTheme.shapes.large,
-            color = MaterialTheme.colorScheme.surface,
+            color = MaterialTheme.colorScheme.surfaceContainer,
             tonalElevation = 6.dp
         ) {
             Column(
@@ -69,7 +70,7 @@ fun RemoteLoginDialog(
                     color = MaterialTheme.colorScheme.onSurface
                 )
 
-                TabRow(selectedTabIndex = if (data.isCreatingNew) 1 else 0) {
+                SecondaryTabRow(selectedTabIndex = if (data.isCreatingNew) 1 else 0) {
                     Tab(
                         selected = !data.isCreatingNew,
                         onClick = { viewModel.setIsCreatingNew(false) },
