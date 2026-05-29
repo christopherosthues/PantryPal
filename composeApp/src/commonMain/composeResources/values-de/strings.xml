@@ -219,6 +219,10 @@
     <string name="profile_create_account_button">Neues Konto erstellen</string>
     <string name="profile_synchronization_title">Synchronization</string>
     <string name="profile_server_url_label">Server-URL</string>
+    <string name="profile_test_connection_button">Verbindung testen</string>
+    <string name="profile_testing_connection">Testet...</string>
+    <string name="profile_connection_success">Verbindung erfolgreich</string>
+    <string name="profile_connection_error">Verbindung fehlgeschlagen</string>
     <string name="profile_remote_password_label">Remote-Passwort</string>
     <string name="profile_link_success">Konto erfolgreich verknüpft</string>
     <string name="profile_link_error">Verknüpfung fehlgeschlagen. Bitte überprüfen Sie Ihre Anmeldedaten und die Server-URL.</string>

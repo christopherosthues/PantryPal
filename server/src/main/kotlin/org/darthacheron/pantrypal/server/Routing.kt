@@ -12,6 +12,7 @@ import jakarta.validation.Validation
 import org.darthacheron.pantrypal.server.authentication.authenticationRoutes
 import org.darthacheron.pantrypal.server.food.foodRoutes
 import org.darthacheron.pantrypal.server.inventory.inventoryItemRoutes
+import org.darthacheron.pantrypal.server.networking.connectionRoutes
 import org.darthacheron.pantrypal.server.profile.profileRoutes
 import org.darthacheron.pantrypal.shared.auth.LoginDto
 
@@ -35,6 +36,7 @@ fun Application.configureRouting() {
 
     routing {
         authenticationRoutes()
+        connectionRoutes()
 
         authenticate("auth-jwt") {
             profileRoutes()

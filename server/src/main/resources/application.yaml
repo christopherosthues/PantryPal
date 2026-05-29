@@ -28,3 +28,6 @@ postgres:
 
 images:
   path: ${IMAGES_PATH:/app/pantrypal/}
+
+networking:
+  appToken: ${APP_TOKEN:""}

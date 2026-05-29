@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -60,6 +61,8 @@ import pantrypal.composeapp.generated.resources.ic_profile
 import pantrypal.composeapp.generated.resources.ic_save
 import pantrypal.composeapp.generated.resources.ic_settings
 import pantrypal.composeapp.generated.resources.profile_change_password_title
+import pantrypal.composeapp.generated.resources.profile_connection_error
+import pantrypal.composeapp.generated.resources.profile_connection_success
 import pantrypal.composeapp.generated.resources.profile_content_description_delete
 import pantrypal.composeapp.generated.resources.profile_content_description_logout
 import pantrypal.composeapp.generated.resources.profile_content_description_save
@@ -86,6 +89,8 @@ import pantrypal.composeapp.generated.resources.profile_remote_logout_button
 import pantrypal.composeapp.generated.resources.profile_repeat_new_password_label
 import pantrypal.composeapp.generated.resources.profile_server_url_label
 import pantrypal.composeapp.generated.resources.profile_synchronization_title
+import pantrypal.composeapp.generated.resources.profile_test_connection_button
+import pantrypal.composeapp.generated.resources.profile_testing_connection
 import pantrypal.composeapp.generated.resources.profile_title
 import pantrypal.composeapp.generated.resources.profile_username_label
 import pantrypal.composeapp.generated.resources.remote_login_password_label
@@ -441,6 +446,45 @@ private fun RemoteProfileSection(
                     }
                 }
             )
+
+            val isTestingConnection by profileViewModel.isTestingConnection.collectAsState()
+            val connectionTestSuccess by profileViewModel.connectionTestSuccess.collectAsState()
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Button(
+                    onClick = { profileViewModel.testConnection() },
+                    modifier = Modifier.weight(1f),
+                    enabled = !isTestingConnection && !profile.serverUrl.isNullOrBlank() && profileValidationState.serverUrlError == null
+                ) {
+                    if (isTestingConnection) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(18.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(stringResource(Res.string.profile_testing_connection))
+                    } else {
+                        Text(stringResource(Res.string.profile_test_connection_button))
+                    }
+                }
+
+                connectionTestSuccess?.let { success ->
+                    val color =
+                        if (success) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+                    val text =
+                        if (success) Res.string.profile_connection_success else Res.string.profile_connection_error
+                    Text(
+                        text = stringResource(text),
+                        color = color,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
 
             if (isLoggedInRemotely) {
                 Row(

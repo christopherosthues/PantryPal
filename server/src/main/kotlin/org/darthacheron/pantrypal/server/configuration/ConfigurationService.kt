@@ -33,6 +33,8 @@ class ConfigurationService(environment: ApplicationEnvironment) {
     val foodImagesPath = imagesPath + "food/"
     val inventoryImagesPath = imagesPath + "inventory/"
 
+    val appToken = environment.config.property("networking.appToken").getString()
+
     init {
         validateConfig()
         logger.info("ConfigurationService initialized with Keycloak URL: {}", keycloakBaseUrl)

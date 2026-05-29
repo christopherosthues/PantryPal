@@ -10,6 +10,7 @@ import org.darchacheron.pantrypal.authentication.AuthenticationService
 import org.darchacheron.pantrypal.authentication.hashPassword
 import org.darchacheron.pantrypal.authentication.verifyPassword
 import org.darchacheron.pantrypal.navigation.Navigator
+import org.darchacheron.pantrypal.networking.ConnectionNetworkService
 import org.darchacheron.pantrypal.settings.DataSynchronization
 import org.darchacheron.pantrypal.ui.UiState
 import pantrypal.composeapp.generated.resources.Res
@@ -30,6 +31,7 @@ class ProfileViewModel(
     private val profileRepository: ProfileRepository,
     private val authenticationPreferencesRepository: AuthenticationPreferencesRepository,
     private val authenticationService: AuthenticationService,
+    private val connectionNetworkService: ConnectionNetworkService,
     private val navigator: Navigator
 ) : ViewModel() {
 
@@ -50,6 +52,12 @@ class ProfileViewModel(
 
     private val _persistedServerUrl = MutableStateFlow<String?>(null)
     val persistedServerUrl: StateFlow<String?> = _persistedServerUrl
+
+    private val _isTestingConnection = MutableStateFlow(false)
+    val isTestingConnection: StateFlow<Boolean> = _isTestingConnection
+
+    private val _connectionTestSuccess = MutableStateFlow<Boolean?>(null)
+    val connectionTestSuccess: StateFlow<Boolean?> = _connectionTestSuccess
 
     init {
         loadProfile()
@@ -245,6 +253,20 @@ class ProfileViewModel(
             null
         }
         _profileValidationState.value = _profileValidationState.value.copy(serverUrlError = error)
+        _connectionTestSuccess.value = null
+    }
+
+    fun testConnection() {
+        val serverUrl = _uiState.value.data?.serverUrl ?: return
+        if (serverUrl.isBlank() || _profileValidationState.value.serverUrlError != null) return
+
+        viewModelScope.launch {
+            _isTestingConnection.value = true
+            _connectionTestSuccess.value = null
+            val result = connectionNetworkService.testConnection(serverUrl)
+            _connectionTestSuccess.value = result.isSuccess
+            _isTestingConnection.value = false
+        }
     }
 
     private val _showRemoteProfileDialog = MutableStateFlow(false)

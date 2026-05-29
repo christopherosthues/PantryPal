@@ -226,6 +226,10 @@
     <string name="profile_create_account_button">Create New Account</string>
     <string name="profile_synchronization_title">Synchronization</string>
     <string name="profile_server_url_label">Server URL</string>
+    <string name="profile_test_connection_button">Test Connection</string>
+    <string name="profile_testing_connection">Testing...</string>
+    <string name="profile_connection_success">Connection successful</string>
+    <string name="profile_connection_error">Connection failed</string>
     <string name="profile_remote_password_label">Remote Password</string>
     <string name="profile_link_success">Account linked successfully</string>
     <string name="profile_link_error">Failed to link account. Please check your credentials and server URL.</string>
