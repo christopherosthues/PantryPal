@@ -1,5 +1,6 @@
 package org.darchacheron.pantrypal.profile
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -8,7 +9,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -38,6 +41,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -52,6 +56,7 @@ import org.koin.compose.koinInject
 import pantrypal.composeapp.generated.resources.Res
 import pantrypal.composeapp.generated.resources.ic_delete
 import pantrypal.composeapp.generated.resources.ic_logout
+import pantrypal.composeapp.generated.resources.ic_profile
 import pantrypal.composeapp.generated.resources.ic_save
 import pantrypal.composeapp.generated.resources.ic_settings
 import pantrypal.composeapp.generated.resources.profile_change_password_title
@@ -181,10 +186,26 @@ fun ProfileView(
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(top = 16.dp, start = 16.dp, end = 16.dp, bottom = 72.dp)
+                            .padding(top = 16.dp, start = 16.dp, end = 16.dp, bottom = 80.dp)
                             .verticalScroll(rememberScrollState()),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
+                        Box(
+                            modifier = Modifier
+                                .size(100.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.primaryContainer),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                painter = painterResource(Res.drawable.ic_profile),
+                                contentDescription = null,
+                                modifier = Modifier.size(64.dp),
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+
                         PersonalInformationSection(profile, profileViewModel, profileValidationState)
 
                         RemoteProfileSection(profileViewModel, remoteLoginViewModel, profile)

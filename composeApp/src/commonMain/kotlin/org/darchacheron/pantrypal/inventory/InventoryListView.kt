@@ -184,7 +184,7 @@ fun InventoryListView(
                     LazyColumn(
                         state = scrollState, // 3. Attach the scroll state
                         modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 72.dp),
+                        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 80.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         // 4. Move Controls inside the LazyColumn

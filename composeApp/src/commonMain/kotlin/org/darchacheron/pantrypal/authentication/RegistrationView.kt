@@ -80,7 +80,7 @@ fun RegistrationView(registrationViewModel: RegistrationViewModel) {
             modifier = Modifier.fillMaxSize()
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
-                .padding(start = 16.dp, end = 16.dp, bottom = 72.dp),
+                .padding(start = 16.dp, end = 16.dp, bottom = 80.dp),
             verticalArrangement = Arrangement.Center
         ) {
             val data = uiState.data ?: return@Scaffold
