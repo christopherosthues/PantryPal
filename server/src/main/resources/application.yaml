@@ -30,4 +30,4 @@ images:
   path: ${IMAGES_PATH:/app/pantrypal/}
 
 networking:
-  appToken: ${APP_TOKEN:""}
+  appToken: ${APP_TOKEN:pantrypal-default-app-token}
