@@ -273,31 +273,90 @@ class ProfileViewModel(
         }
     }
 
-    private val _showDeleteDialog = MutableStateFlow(false)
-    val showDeleteDialog: StateFlow<Boolean> = _showDeleteDialog
+    private val _showDeleteLocalDialog = MutableStateFlow(false)
+    val showDeleteLocalDialog: StateFlow<Boolean> = _showDeleteLocalDialog
 
-    fun showDeleteDialog() {
-        _showDeleteDialog.value = true
+    private val _showDeleteRemoteDialog = MutableStateFlow(false)
+    val showDeleteRemoteDialog: StateFlow<Boolean> = _showDeleteRemoteDialog
+
+    private val _remoteDeleteUsername = MutableStateFlow("")
+    val remoteDeleteUsername: StateFlow<String> = _remoteDeleteUsername
+
+    private val _remoteDeletePassword = MutableStateFlow("")
+    val remoteDeletePassword: StateFlow<String> = _remoteDeletePassword
+
+    private val _remoteDeleteError = MutableStateFlow<String?>(null)
+    val remoteDeleteError: StateFlow<String?> = _remoteDeleteError
+
+    fun showDeleteLocalDialog() {
+        _showDeleteLocalDialog.value = true
+    }
+
+    fun dismissDeleteLocalDialog() {
+        _showDeleteLocalDialog.value = false
+    }
+
+    fun showDeleteRemoteDialog() {
+        _showDeleteRemoteDialog.value = true
+        _remoteDeleteUsername.value = _uiState.value.data?.username ?: ""
+        _remoteDeletePassword.value = ""
+        _remoteDeleteError.value = null
+    }
+
+    fun dismissDeleteRemoteDialog() {
+        _showDeleteRemoteDialog.value = false
+    }
+
+    fun onRemoteDeleteUsernameChanged(username: String) {
+        _remoteDeleteUsername.value = username
+    }
+
+    fun onRemoteDeletePasswordChanged(password: String) {
+        _remoteDeletePassword.value = password
+    }
+
+    fun deleteLocalProfile() {
+        viewModelScope.launch {
+            try {
+                profileRepository.deleteLocal()
+                authenticationService.logout()
+                navigator.goToLogin()
+            } catch (e: Exception) {
+                // Log error
+            }
+        }
+    }
+
+    fun deleteRemoteProfile() {
+        viewModelScope.launch {
+            val profile = _uiState.value.data ?: return@launch
+            val serverUrl = profile.serverUrl ?: return@launch
+
+            try {
+                if (!_isLoggedInRemotely.value) {
+                    val loginResult = authenticationService.loginRemotely(
+                        _remoteDeleteUsername.value,
+                        _remoteDeletePassword.value,
+                        serverUrl
+                    )
+                    if (loginResult.isFailure) {
+                        _remoteDeleteError.value = loginResult.exceptionOrNull()?.message ?: "Login failed"
+                        return@launch
+                    }
+                }
+
+                profileRepository.deleteRemote()
+                authenticationService.logoutRemotely()
+                dismissDeleteRemoteDialog()
+                loadProfile() // Reload to reflect local-only state
+            } catch (e: Exception) {
+                _remoteDeleteError.value = e.message ?: "Deletion failed"
+            }
+        }
     }
 
     fun canDeleteRemote(): Boolean {
         val profile = _uiState.value.data ?: return false
-        return profile.serverId != null && !profile.isLocalOnly
-    }
-
-    fun dismissDeleteDialog() {
-        _showDeleteDialog.value = false
-    }
-
-    fun deleteProfile(deleteRemote: Boolean) {
-        viewModelScope.launch {
-            try {
-                profileRepository.delete(deleteRemote)
-                authenticationService.logout()
-                navigator.goToLogin()
-            } catch (e: Exception) {
-                // Log error or show message
-            }
-        }
+        return profile.serverId != null || profile.serverUrl != null
     }
 }

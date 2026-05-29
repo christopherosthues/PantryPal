@@ -62,19 +62,36 @@ class ProfileRepository(
         }
     }
 
+    suspend fun deleteLocal() = withContext(Dispatchers.IO) {
+        profileDao.delete()
+    }
+
+    suspend fun deleteRemote() = withContext(Dispatchers.IO) {
+        val prefs = authenticationPreferencesRepository.authenticationPreferencesFlow.firstOrNull()
+        val canSync = prefs?.isLoggedInRemotely == true
+
+        if (canSync) {
+            profileNetworkService.deleteProfile(prefs.serverUrl, remote = true)
+                .onSuccess {
+                    val localProfile = profileDao.getProfile().firstOrNull()?.toProfile()
+                    if (localProfile != null) {
+                        profileDao.upsert(localProfile.copy(serverId = null, lastSyncedAt = null).toProfileEntity())
+                    }
+                }
+                .onFailure { e ->
+                    Logger.withTag(loggerTag).e { "Remote profile deletion failed: ${e.message}" }
+                    throw e
+                }
+        } else {
+            throw Exception("Not logged in to remote server")
+        }
+    }
+
     suspend fun delete(remote: Boolean) = withContext(Dispatchers.IO) {
         if (remote) {
-            val prefs = authenticationPreferencesRepository.authenticationPreferencesFlow.firstOrNull()
-            val canSync = prefs?.isLoggedInRemotely == true
-
-            if (canSync) {
-                profileNetworkService.deleteProfile(prefs.serverUrl, remote = true)
-                    .onFailure { e ->
-                        Logger.withTag(loggerTag).e { "Remote profile deletion failed: ${e.message}" }
-                    }
-            }
+            deleteRemote()
         }
-        profileDao.delete()
+        deleteLocal()
     }
 
     private val _remoteAccountDeleted = MutableSharedFlow<Boolean>()

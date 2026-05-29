@@ -16,8 +16,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -67,8 +67,12 @@ import pantrypal.composeapp.generated.resources.profile_current_password_label
 import pantrypal.composeapp.generated.resources.profile_delete_cancel
 import pantrypal.composeapp.generated.resources.profile_delete_confirm
 import pantrypal.composeapp.generated.resources.profile_delete_dialog_message
-import pantrypal.composeapp.generated.resources.profile_delete_dialog_remote_checkbox
 import pantrypal.composeapp.generated.resources.profile_delete_dialog_title
+import pantrypal.composeapp.generated.resources.profile_delete_remote_button
+import pantrypal.composeapp.generated.resources.profile_delete_remote_confirm
+import pantrypal.composeapp.generated.resources.profile_delete_remote_credentials_message
+import pantrypal.composeapp.generated.resources.profile_delete_remote_dialog_message
+import pantrypal.composeapp.generated.resources.profile_delete_remote_dialog_title
 import pantrypal.composeapp.generated.resources.profile_edit_remote_button
 import pantrypal.composeapp.generated.resources.profile_email_label
 import pantrypal.composeapp.generated.resources.profile_enable_sync_button
@@ -84,6 +88,8 @@ import pantrypal.composeapp.generated.resources.profile_server_url_label
 import pantrypal.composeapp.generated.resources.profile_synchronization_title
 import pantrypal.composeapp.generated.resources.profile_title
 import pantrypal.composeapp.generated.resources.profile_username_label
+import pantrypal.composeapp.generated.resources.remote_login_password_label
+import pantrypal.composeapp.generated.resources.remote_login_username_label
 import kotlin.uuid.ExperimentalUuidApi
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalUuidApi::class)
@@ -136,7 +142,7 @@ fun ProfileView(
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 FloatingActionButton(
-                    onClick = { profileViewModel.showDeleteDialog() },
+                    onClick = { profileViewModel.showDeleteLocalDialog() },
                     containerColor = MaterialTheme.colorScheme.errorContainer,
                     contentColor = MaterialTheme.colorScheme.onErrorContainer
                 ) {
@@ -225,38 +231,14 @@ fun ProfileView(
         }
     }
 
-    val showDeleteDialog by profileViewModel.showDeleteDialog.collectAsState()
-    if (showDeleteDialog) {
-        val canDeleteRemote = profileViewModel.canDeleteRemote()
-        var deleteRemote by remember { mutableStateOf(canDeleteRemote) }
-        AlertDialog(
-            onDismissRequest = { profileViewModel.dismissDeleteDialog() },
-            title = { Text(stringResource(Res.string.profile_delete_dialog_title)) },
-            text = {
-                Column {
-                    Text(stringResource(Res.string.profile_delete_dialog_message))
-                    if (canDeleteRemote) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Checkbox(
-                                checked = deleteRemote,
-                                onCheckedChange = { deleteRemote = it }
-                            )
-                            Text(stringResource(Res.string.profile_delete_dialog_remote_checkbox))
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { profileViewModel.deleteProfile(deleteRemote) }) {
-                    Text(stringResource(Res.string.profile_delete_confirm))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { profileViewModel.dismissDeleteDialog() }) {
-                    Text(stringResource(Res.string.profile_delete_cancel))
-                }
-            }
-        )
+    val showDeleteLocalDialog by profileViewModel.showDeleteLocalDialog.collectAsState()
+    if (showDeleteLocalDialog) {
+        DeleteLocalProfileDialog(profileViewModel)
+    }
+
+    val showDeleteRemoteDialog by profileViewModel.showDeleteRemoteDialog.collectAsState()
+    if (showDeleteRemoteDialog) {
+        DeleteRemoteProfileDialog(profileViewModel)
     }
 
     val showRemoteProfileDialog by profileViewModel.showRemoteProfileDialog.collectAsState()
@@ -269,6 +251,88 @@ fun ProfileView(
             )
         }
     }
+}
+
+@Composable
+private fun DeleteLocalProfileDialog(profileViewModel: ProfileViewModel) {
+    AlertDialog(
+        onDismissRequest = { profileViewModel.dismissDeleteLocalDialog() },
+        title = { Text(stringResource(Res.string.profile_delete_dialog_title)) },
+        text = { Text(stringResource(Res.string.profile_delete_dialog_message)) },
+        confirmButton = {
+            TextButton(onClick = { profileViewModel.deleteLocalProfile() }) {
+                Text(stringResource(Res.string.profile_delete_confirm))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = { profileViewModel.dismissDeleteLocalDialog() }) {
+                Text(stringResource(Res.string.profile_delete_cancel))
+            }
+        }
+    )
+}
+
+@Composable
+private fun DeleteRemoteProfileDialog(profileViewModel: ProfileViewModel) {
+    val isLoggedInRemotely by profileViewModel.isLoggedInRemotely.collectAsState()
+    val username by profileViewModel.remoteDeleteUsername.collectAsState()
+    val password by profileViewModel.remoteDeletePassword.collectAsState()
+    val error by profileViewModel.remoteDeleteError.collectAsState()
+
+    AlertDialog(
+        onDismissRequest = { profileViewModel.dismissDeleteRemoteDialog() },
+        title = { Text(stringResource(Res.string.profile_delete_remote_dialog_title)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(stringResource(Res.string.profile_delete_remote_dialog_message))
+                
+                if (!isLoggedInRemotely) {
+                    Spacer(modifier = Modifier.size(8.dp))
+                    Text(
+                        text = stringResource(Res.string.profile_delete_remote_credentials_message),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.secondary
+                    )
+                    OutlinedTextField(
+                        value = username,
+                        onValueChange = { profileViewModel.onRemoteDeleteUsernameChanged(it) },
+                        label = { Text(stringResource(Res.string.remote_login_username_label)) },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = password,
+                        onValueChange = { profileViewModel.onRemoteDeletePasswordChanged(it) },
+                        label = { Text(stringResource(Res.string.remote_login_password_label)) },
+                        visualTransformation = PasswordVisualTransformation(),
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+                
+                error?.let {
+                    Text(
+                        text = it,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { profileViewModel.deleteRemoteProfile() },
+                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+            ) {
+                Text(stringResource(Res.string.profile_delete_remote_confirm))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = { profileViewModel.dismissDeleteRemoteDialog() }) {
+                Text(stringResource(Res.string.profile_delete_cancel))
+            }
+        }
+    )
 }
 
 @Composable
@@ -398,6 +462,13 @@ private fun RemoteProfileSection(
                     modifier = Modifier.padding(top = 4.dp)
                 ) {
                     Text(stringResource(Res.string.profile_edit_remote_button))
+                }
+
+                TextButton(
+                    onClick = { profileViewModel.showDeleteRemoteDialog() },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text(stringResource(Res.string.profile_delete_remote_button))
                 }
             } else if (profile.serverId != null) {
                 Text(
