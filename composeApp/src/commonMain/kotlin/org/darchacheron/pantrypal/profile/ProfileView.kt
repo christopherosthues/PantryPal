@@ -8,20 +8,20 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -41,6 +41,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import org.darchacheron.pantrypal.authentication.RemoteLoginDialog
 import org.darchacheron.pantrypal.authentication.RemoteLoginViewModel
@@ -48,7 +49,36 @@ import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
-import pantrypal.composeapp.generated.resources.*
+import pantrypal.composeapp.generated.resources.Res
+import pantrypal.composeapp.generated.resources.ic_delete
+import pantrypal.composeapp.generated.resources.ic_logout
+import pantrypal.composeapp.generated.resources.ic_save
+import pantrypal.composeapp.generated.resources.ic_settings
+import pantrypal.composeapp.generated.resources.profile_change_password_title
+import pantrypal.composeapp.generated.resources.profile_content_description_delete
+import pantrypal.composeapp.generated.resources.profile_content_description_logout
+import pantrypal.composeapp.generated.resources.profile_content_description_save
+import pantrypal.composeapp.generated.resources.profile_current_password_label
+import pantrypal.composeapp.generated.resources.profile_delete_cancel
+import pantrypal.composeapp.generated.resources.profile_delete_confirm
+import pantrypal.composeapp.generated.resources.profile_delete_dialog_message
+import pantrypal.composeapp.generated.resources.profile_delete_dialog_remote_checkbox
+import pantrypal.composeapp.generated.resources.profile_delete_dialog_title
+import pantrypal.composeapp.generated.resources.profile_edit_remote_button
+import pantrypal.composeapp.generated.resources.profile_email_label
+import pantrypal.composeapp.generated.resources.profile_enable_sync_button
+import pantrypal.composeapp.generated.resources.profile_local_login_only
+import pantrypal.composeapp.generated.resources.profile_local_only_no_server
+import pantrypal.composeapp.generated.resources.profile_new_password_label
+import pantrypal.composeapp.generated.resources.profile_pending_sync
+import pantrypal.composeapp.generated.resources.profile_personal_information
+import pantrypal.composeapp.generated.resources.profile_remote_logged_in
+import pantrypal.composeapp.generated.resources.profile_remote_logout_button
+import pantrypal.composeapp.generated.resources.profile_repeat_new_password_label
+import pantrypal.composeapp.generated.resources.profile_server_url_label
+import pantrypal.composeapp.generated.resources.profile_synchronization_title
+import pantrypal.composeapp.generated.resources.profile_title
+import pantrypal.composeapp.generated.resources.profile_username_label
 import kotlin.uuid.ExperimentalUuidApi
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalUuidApi::class)
@@ -226,47 +256,59 @@ private fun PersonalInformationSection(
     profileViewModel: ProfileViewModel,
     profileValidationState: ProfileValidationState
 ) {
-    Text(
-        text = stringResource(Res.string.profile_personal_information),
-        style = MaterialTheme.typography.titleMedium,
-        modifier = Modifier.padding(top = 8.dp)
-    )
-
-    OutlinedTextField(
-        value = profile.username,
-        onValueChange = { profileViewModel.updateUsername(it) },
-        label = { Text(stringResource(Res.string.profile_username_label)) },
-        keyboardOptions = KeyboardOptions(
-            keyboardType = KeyboardType.Text,
-            imeAction = ImeAction.Next
-        ),
-        singleLine = true,
+    OutlinedCard(
         modifier = Modifier.fillMaxWidth(),
-        isError = profileValidationState.usernameError != null,
-        supportingText = {
-            profileValidationState.usernameError?.let {
-                Text(stringResource(it))
-            }
-        }
-    )
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = stringResource(Res.string.profile_personal_information),
+                style = MaterialTheme.typography.titleMedium,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
 
-    OutlinedTextField(
-        value = profile.email,
-        onValueChange = { profileViewModel.updateEmail(it) },
-        label = { Text(stringResource(Res.string.profile_email_label)) },
-        keyboardOptions = KeyboardOptions(
-            keyboardType = KeyboardType.Email,
-            imeAction = ImeAction.Next
-        ),
-        singleLine = true,
-        modifier = Modifier.fillMaxWidth(),
-        isError = profileValidationState.emailError != null,
-        supportingText = {
-            profileValidationState.emailError?.let {
-                Text(stringResource(it))
-            }
+            OutlinedTextField(
+                value = profile.username,
+                onValueChange = { profileViewModel.updateUsername(it) },
+                label = { Text(stringResource(Res.string.profile_username_label)) },
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Text,
+                    imeAction = ImeAction.Next
+                ),
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                isError = profileValidationState.usernameError != null,
+                supportingText = {
+                    profileValidationState.usernameError?.let {
+                        Text(stringResource(it))
+                    }
+                }
+            )
+
+            OutlinedTextField(
+                value = profile.email,
+                onValueChange = { profileViewModel.updateEmail(it) },
+                label = { Text(stringResource(Res.string.profile_email_label)) },
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Email,
+                    imeAction = ImeAction.Next
+                ),
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                isError = profileValidationState.emailError != null,
+                supportingText = {
+                    profileValidationState.emailError?.let {
+                        Text(stringResource(it))
+                    }
+                }
+            )
         }
-    )
+    }
 }
 
 @OptIn(ExperimentalUuidApi::class)
@@ -274,80 +316,93 @@ private fun PersonalInformationSection(
 private fun RemoteProfileSection(
     profileViewModel: ProfileViewModel,
     remoteLoginViewModel: RemoteLoginViewModel,
-    profile: Profile) {
+    profile: Profile
+) {
     val isLoggedInRemotely by profileViewModel.isLoggedInRemotely.collectAsState()
     val persistedServerUrl by profileViewModel.persistedServerUrl.collectAsState()
     val profileValidationState by profileViewModel.profileValidationState.collectAsState()
     var showEnableSyncDialog by remember { mutableStateOf(false) }
 
-    Text(
-        text = stringResource(Res.string.profile_synchronization_title),
-        style = MaterialTheme.typography.titleMedium,
-        modifier = Modifier.padding(top = 8.dp)
-    )
-
-    OutlinedTextField(
-        value = profile.serverUrl ?: "",
-        onValueChange = { profileViewModel.updateServerUrl(it) },
-        label = { Text(stringResource(Res.string.profile_server_url_label)) },
-        keyboardOptions = KeyboardOptions(
-            keyboardType = KeyboardType.Uri,
-            imeAction = ImeAction.Next
-        ),
-        singleLine = true,
+    OutlinedCard(
         modifier = Modifier.fillMaxWidth(),
-        isError = profileValidationState.serverUrlError != null,
-        supportingText = {
-            profileValidationState.serverUrlError?.let {
-                Text(stringResource(it))
-            }
-        }
-    )
-
-    if (isLoggedInRemotely) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = stringResource(Res.string.profile_remote_logged_in),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.primary
+                text = stringResource(Res.string.profile_synchronization_title),
+                style = MaterialTheme.typography.titleMedium,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
             )
-            TextButton(onClick = { profileViewModel.logoutRemote() }) {
-                Text(stringResource(Res.string.profile_remote_logout_button))
+
+            OutlinedTextField(
+                value = profile.serverUrl ?: "",
+                onValueChange = { profileViewModel.updateServerUrl(it) },
+                label = { Text(stringResource(Res.string.profile_server_url_label)) },
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Uri,
+                    imeAction = ImeAction.Next
+                ),
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                isError = profileValidationState.serverUrlError != null,
+                supportingText = {
+                    profileValidationState.serverUrlError?.let {
+                        Text(stringResource(it))
+                    }
+                }
+            )
+
+            if (isLoggedInRemotely) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = stringResource(Res.string.profile_remote_logged_in),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    TextButton(onClick = { profileViewModel.logoutRemote() }) {
+                        Text(stringResource(Res.string.profile_remote_logout_button))
+                    }
+                }
+                TextButton(
+                    onClick = { profileViewModel.showRemoteProfileDialog() },
+                    modifier = Modifier.padding(top = 4.dp)
+                ) {
+                    Text(stringResource(Res.string.profile_edit_remote_button))
+                }
+            } else if (profile.serverId != null) {
+                Text(
+                    text = stringResource(Res.string.profile_local_login_only),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.secondary
+                )
+            } else {
+                Text(
+                    text = stringResource(Res.string.profile_local_only_no_server),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+
+                val isServerUrlPersisted = !profile.serverUrl.isNullOrBlank() &&
+                        profile.serverUrl == persistedServerUrl &&
+                        profileValidationState.serverUrlError == null
+
+                Button(
+                    onClick = { showEnableSyncDialog = true },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = isServerUrlPersisted
+                ) {
+                    Text(stringResource(Res.string.profile_enable_sync_button))
+                }
             }
-        }
-        TextButton(
-            onClick = { profileViewModel.showRemoteProfileDialog() },
-            modifier = Modifier.padding(top = 4.dp)
-        ) {
-            Text(stringResource(Res.string.profile_edit_remote_button))
-        }
-    } else if (profile.serverId != null) {
-        Text(
-            text = stringResource(Res.string.profile_local_login_only),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.secondary
-        )
-    } else {
-        Text(
-            text = stringResource(Res.string.profile_local_only_no_server),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.primary
-        )
-
-        val isServerUrlPersisted = !profile.serverUrl.isNullOrBlank() &&
-                profile.serverUrl == persistedServerUrl &&
-                profileValidationState.serverUrlError == null
-
-        Button(
-            onClick = { showEnableSyncDialog = true },
-            modifier = Modifier.fillMaxWidth(),
-            enabled = isServerUrlPersisted
-        ) {
-            Text(stringResource(Res.string.profile_enable_sync_button))
         }
     }
 
@@ -375,64 +430,76 @@ private fun ChangeLocalPasswordSection(profileViewModel: ProfileViewModel) {
     val passwordValidationState by profileViewModel.passwordValidationState.collectAsState()
     val passwordChangeState by profileViewModel.passwordChangeState.collectAsState()
 
-    Text(
-        text = stringResource(Res.string.profile_change_password_title),
-        style = MaterialTheme.typography.titleMedium,
-        modifier = Modifier.padding(top = 8.dp)
-    )
-
-    OutlinedTextField(
-        value = passwordChangeState.data?.current ?: "",
-        onValueChange = { profileViewModel.onCurrentPasswordChanged(it) },
-        label = { Text(stringResource(Res.string.profile_current_password_label)) },
-        visualTransformation = PasswordVisualTransformation(),
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Next),
-        singleLine = true,
+    OutlinedCard(
         modifier = Modifier.fillMaxWidth(),
-        isError = passwordValidationState.currentPasswordError != null,
-        supportingText = {
-            passwordValidationState.currentPasswordError?.let {
-                Text(stringResource(it))
-            }
-        }
-    )
-    OutlinedTextField(
-        value = passwordChangeState.data?.new ?: "",
-        onValueChange = { profileViewModel.onNewPasswordChanged(it) },
-        label = { Text(stringResource(Res.string.profile_new_password_label)) },
-        visualTransformation = PasswordVisualTransformation(),
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Next),
-        singleLine = true,
-        modifier = Modifier.fillMaxWidth(),
-        isError = passwordValidationState.newPasswordError != null,
-        supportingText = {
-            passwordValidationState.newPasswordError?.let {
-                Text(stringResource(it))
-            }
-        }
-    )
-    OutlinedTextField(
-        value = passwordChangeState.data?.repeat ?: "",
-        onValueChange = { profileViewModel.onRepeatPasswordChanged(it) },
-        label = { Text(stringResource(Res.string.profile_repeat_new_password_label)) },
-        visualTransformation = PasswordVisualTransformation(),
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
-        singleLine = true,
-        modifier = Modifier.fillMaxWidth(),
-        isError = passwordValidationState.repeatPasswordError != null,
-        supportingText = {
-            passwordValidationState.repeatPasswordError?.let {
-                Text(stringResource(it))
-            }
-        }
-    )
-
-    Button(
-        onClick = {
-            profileViewModel.changePassword()
-        },
-        modifier = Modifier.fillMaxWidth()
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background)
     ) {
-        Text(stringResource(Res.string.profile_change_password_title))
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = stringResource(Res.string.profile_change_password_title),
+                style = MaterialTheme.typography.titleMedium,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            OutlinedTextField(
+                value = passwordChangeState.data?.current ?: "",
+                onValueChange = { profileViewModel.onCurrentPasswordChanged(it) },
+                label = { Text(stringResource(Res.string.profile_current_password_label)) },
+                visualTransformation = PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Next),
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                isError = passwordValidationState.currentPasswordError != null,
+                supportingText = {
+                    passwordValidationState.currentPasswordError?.let {
+                        Text(stringResource(it))
+                    }
+                }
+            )
+            OutlinedTextField(
+                value = passwordChangeState.data?.new ?: "",
+                onValueChange = { profileViewModel.onNewPasswordChanged(it) },
+                label = { Text(stringResource(Res.string.profile_new_password_label)) },
+                visualTransformation = PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Next),
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                isError = passwordValidationState.newPasswordError != null,
+                supportingText = {
+                    passwordValidationState.newPasswordError?.let {
+                        Text(stringResource(it))
+                    }
+                }
+            )
+            OutlinedTextField(
+                value = passwordChangeState.data?.repeat ?: "",
+                onValueChange = { profileViewModel.onRepeatPasswordChanged(it) },
+                label = { Text(stringResource(Res.string.profile_repeat_new_password_label)) },
+                visualTransformation = PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                isError = passwordValidationState.repeatPasswordError != null,
+                supportingText = {
+                    passwordValidationState.repeatPasswordError?.let {
+                        Text(stringResource(it))
+                    }
+                }
+            )
+
+            Button(
+                onClick = {
+                    profileViewModel.changePassword()
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(stringResource(Res.string.profile_change_password_title))
+            }
+        }
     }
 }
