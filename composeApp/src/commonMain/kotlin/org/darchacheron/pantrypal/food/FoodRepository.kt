@@ -12,8 +12,8 @@ import kotlinx.datetime.todayIn
 import okio.FileSystem
 import okio.Path.Companion.toPath
 import org.darchacheron.pantrypal.authentication.AuthenticationPreferencesRepository
+import org.darchacheron.pantrypal.profile.ProfileDao
 import org.darchacheron.pantrypal.settings.DataSynchronization
-import org.darchacheron.pantrypal.settings.SettingsRepository
 import kotlin.time.Clock
 import kotlin.time.Instant
 import kotlin.uuid.ExperimentalUuidApi
@@ -22,8 +22,8 @@ import kotlin.uuid.Uuid
 @OptIn(ExperimentalUuidApi::class)
 class FoodRepository(
     private val foodDao: FoodDao,
+    private val profileDao: ProfileDao,
     private val foodNetworkService: FoodNetworkService,
-    private val settingsRepository: SettingsRepository,
     private val authenticationPreferencesRepository: AuthenticationPreferencesRepository,
     private val fileSystem: FileSystem,
 ) {
@@ -74,12 +74,13 @@ class FoodRepository(
         foodDao.upsert(food)
         
         // Phase 1: Try push immediately if enabled
-        val settings = settingsRepository.getSettings()
         val prefs = authenticationPreferencesRepository.authenticationPreferencesFlow.firstOrNull()
+        val profileId = prefs?.localProfileId?.let { if (it.isNotBlank()) Uuid.parse(it) else null }
+        val profile = profileId?.let { profileDao.getProfileById(it).firstOrNull() }
         val canSync = prefs?.isLoggedInRemotely == true
 
-        if (canSync && (settings.dataSynchronization == DataSynchronization.UPLOAD_AND_DOWNLOAD || 
-            settings.dataSynchronization == DataSynchronization.ONLY_UPLOAD)) {
+        if (canSync && profile != null && (profile.dataSynchronization == DataSynchronization.UPLOAD_AND_DOWNLOAD || 
+            profile.dataSynchronization == DataSynchronization.ONLY_UPLOAD)) {
             try {
                 val syncedFoods = foodNetworkService.pushFoods(listOf(food), prefs!!.serverUrl)
                 syncedFoods.firstOrNull()?.let { synced ->
@@ -100,12 +101,13 @@ class FoodRepository(
             food.additionalImages.forEach { it.localPath?.let { path -> deleteImageFile(path) } }
             
             // Phase 1: Try delete on server
-            val settings = settingsRepository.getSettings()
             val prefs = authenticationPreferencesRepository.authenticationPreferencesFlow.firstOrNull()
+            val profileId = prefs?.localProfileId?.let { if (it.isNotBlank()) Uuid.parse(it) else null }
+            val profile = profileId?.let { profileDao.getProfileById(it).firstOrNull() }
             val canSync = prefs?.isLoggedInRemotely == true
 
-            if (canSync && food.serverId != null && (settings.dataSynchronization == DataSynchronization.UPLOAD_AND_DOWNLOAD || 
-                settings.dataSynchronization == DataSynchronization.ONLY_UPLOAD)) {
+            if (canSync && profile != null && food.serverId != null && (profile.dataSynchronization == DataSynchronization.UPLOAD_AND_DOWNLOAD || 
+                profile.dataSynchronization == DataSynchronization.ONLY_UPLOAD)) {
                 try {
                     foodNetworkService.deleteFood(food.serverId, prefs!!.serverUrl)
                 } catch (e: Exception) {
@@ -117,19 +119,21 @@ class FoodRepository(
     }
 
     suspend fun syncWithServer() = withContext(Dispatchers.IO) {
-        val settings = settingsRepository.getSettings()
-        if (settings.dataSynchronization == DataSynchronization.NO_SYNCHRONIZATION) return@withContext
-
         val prefs = authenticationPreferencesRepository.authenticationPreferencesFlow.firstOrNull()
-        if (prefs?.isLoggedInRemotely != true) {
+        val profileId = prefs?.localProfileId?.let { if (it.isNotBlank()) Uuid.parse(it) else null }
+        val profile = profileId?.let { profileDao.getProfileById(it).firstOrNull() } ?: return@withContext
+        
+        if (profile.dataSynchronization == DataSynchronization.NO_SYNCHRONIZATION) return@withContext
+
+        if (!prefs.isLoggedInRemotely) {
             Logger.withTag(loggerTag).d { "Skipping sync: Not logged in to remote" }
             return@withContext
         }
 
         try {
             // 1. Upload dirty records (Phase 2)
-            if (settings.dataSynchronization == DataSynchronization.UPLOAD_AND_DOWNLOAD || 
-                settings.dataSynchronization == DataSynchronization.ONLY_UPLOAD) {
+            if (profile.dataSynchronization == DataSynchronization.UPLOAD_AND_DOWNLOAD || 
+                profile.dataSynchronization == DataSynchronization.ONLY_UPLOAD) {
                 
                 val dirtyEntities = foodDao.getDirtyRecords(Instant.fromEpochMilliseconds(0)) // TODO: store instant of last sync
                 if (dirtyEntities.isNotEmpty()) {
@@ -146,8 +150,8 @@ class FoodRepository(
             }
 
             // 2. Download changes
-            if (settings.dataSynchronization == DataSynchronization.UPLOAD_AND_DOWNLOAD || 
-                settings.dataSynchronization == DataSynchronization.ONLY_DOWNLOAD) {
+            if (profile.dataSynchronization == DataSynchronization.UPLOAD_AND_DOWNLOAD || 
+                profile.dataSynchronization == DataSynchronization.ONLY_DOWNLOAD) {
                 val remoteChanges = foodNetworkService.fetchChanges(Instant.fromEpochMilliseconds(0), prefs.serverUrl)
                 remoteChanges.forEach { remoteFood ->
                     val local = foodDao.getByIdWithImages(remoteFood.id)?.toFood()

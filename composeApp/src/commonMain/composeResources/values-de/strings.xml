@@ -1,13 +1,9 @@
 <resources>
     <string name="appName">Pantry Pal</string>
     <string name="settings_title">Einstellungen</string>
-    <string name="settings_data_synchronization">Datensynchronisierung</string>
-    <string name="settings_default_data_synchronization">Synchronisierung</string>
-    <string name="settings_select_data_synchronization">Datensynchronization auswählen</string>
     <string name="settings_theme">Design</string>
     <string name="settings_error_loading">Fehler beim Laden der Einstellungen</string>
     <string name="settings_error_saving">Fehler beim Speichern der Einstellungen</string>
-    <string name="settings_content_description_sync">Jetzt synchronisieren</string>
     <string name="settings_content_description_back">Zurück</string>
     <string name="settings_content_description_reset">Zurücksetzen</string>
     <string name="settings_content_description_save">Speichern</string>
@@ -237,6 +233,9 @@
     <string name="profile_error_current_password_empty">Aktuelles Passwort ist erforderlich</string>
     <string name="profile_error_new_password_empty">Neues Passwort ist erforderlich</string>
     <string name="profile_error_update">Fehler beim Aktualisieren des Profils</string>
+    <string name="profile_default_data_synchronization">Synchronisierung</string>
+    <string name="profile_select_data_synchronization">Datensynchronization auswählen</string>
+    <string name="profile_description_sync">Jetzt synchronisieren</string>
 
     <!-- Remote Login (used in Profile context) -->
     <string name="remote_login_title">Konto verknüpfen</string>

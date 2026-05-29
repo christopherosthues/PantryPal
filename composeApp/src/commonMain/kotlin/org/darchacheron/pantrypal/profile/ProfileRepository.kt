@@ -10,7 +10,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import org.darchacheron.pantrypal.authentication.AuthenticationPreferencesRepository
 import org.darchacheron.pantrypal.settings.DataSynchronization
-import org.darchacheron.pantrypal.settings.SettingsRepository
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -18,7 +17,6 @@ import kotlin.uuid.Uuid
 class ProfileRepository(
     private val profileDao: ProfileDao,
     private val profileNetworkService: ProfileNetworkService,
-    private val settingsRepository: SettingsRepository,
     private val authenticationPreferencesRepository: AuthenticationPreferencesRepository,
 ) {
     private val loggerTag = "ProfileRepository"
@@ -40,12 +38,11 @@ class ProfileRepository(
         profileDao.upsert(profile.toProfileEntity())
 
         // Phase 1: Try push immediately
-        val settings = settingsRepository.getSettings()
         val prefs = authenticationPreferencesRepository.authenticationPreferencesFlow.firstOrNull()
         val canSync = prefs?.isLoggedInRemotely == true
 
-        if (canSync && (settings.dataSynchronization == DataSynchronization.UPLOAD_AND_DOWNLOAD ||
-            settings.dataSynchronization == DataSynchronization.ONLY_UPLOAD
+        if (canSync && (profile.dataSynchronization == DataSynchronization.UPLOAD_AND_DOWNLOAD ||
+            profile.dataSynchronization == DataSynchronization.ONLY_UPLOAD
         )) {
             // TODO: what if the remote profile does not exist yet?
             profileNetworkService.updateProfile(profile, prefs.serverUrl)
@@ -73,7 +70,8 @@ class ProfileRepository(
         if (canSync) {
             profileNetworkService.deleteProfile(prefs.serverUrl, remote = true)
                 .onSuccess {
-                    val localProfile = profileDao.getProfile().firstOrNull()?.toProfile()
+                    val profileId = prefs.localProfileId.let { if (it.isNotBlank()) Uuid.parse(it) else null }
+                    val localProfile = profileId?.let { profileDao.getProfileById(it).firstOrNull() }?.toProfile()
                     if (localProfile != null) {
                         profileDao.upsert(localProfile.copy(serverId = null, lastSyncedAt = null).toProfileEntity())
                     }
@@ -98,22 +96,22 @@ class ProfileRepository(
     val remoteAccountDeleted: Flow<Boolean> = _remoteAccountDeleted
 
     suspend fun syncWithServer() = withContext(Dispatchers.IO) {
-        val settings = settingsRepository.getSettings()
-        if (settings.dataSynchronization == DataSynchronization.NO_SYNCHRONIZATION) {
+        val prefs = authenticationPreferencesRepository.authenticationPreferencesFlow.firstOrNull()
+        val profileId = prefs?.localProfileId?.let { if (it.isNotBlank()) Uuid.parse(it) else null }
+        val localProfile = profileId?.let { profileDao.getProfileById(it).firstOrNull() }?.toProfile() ?: return@withContext
+
+        if (localProfile.dataSynchronization == DataSynchronization.NO_SYNCHRONIZATION) {
             return@withContext
         }
 
-        val prefs = authenticationPreferencesRepository.authenticationPreferencesFlow.firstOrNull()
-        if (prefs?.isLoggedInRemotely != true) {
+        if (!prefs.isLoggedInRemotely) {
             Logger.withTag(loggerTag).d { "Skipping profile sync: Not logged in to remote" }
             return@withContext
         }
 
-        val localProfile = profileDao.getProfile().firstOrNull()?.toProfile() ?: return@withContext
-
         // 1. Push changes if needed
-        if (settings.dataSynchronization == DataSynchronization.UPLOAD_AND_DOWNLOAD ||
-            settings.dataSynchronization == DataSynchronization.ONLY_UPLOAD
+        if (localProfile.dataSynchronization == DataSynchronization.UPLOAD_AND_DOWNLOAD ||
+            localProfile.dataSynchronization == DataSynchronization.ONLY_UPLOAD
         ) {
             if (localProfile.serverId != null && !localProfile.isLocalOnly) {
                 if (localProfile.lastSyncedAt == null || localProfile.lastModifiedAt > localProfile.lastSyncedAt) {
@@ -129,8 +127,8 @@ class ProfileRepository(
         }
 
         // 2. Pull changes
-        if (!localProfile.isLocalOnly && (settings.dataSynchronization == DataSynchronization.UPLOAD_AND_DOWNLOAD ||
-                    settings.dataSynchronization == DataSynchronization.ONLY_DOWNLOAD)
+        if (!localProfile.isLocalOnly && (localProfile.dataSynchronization == DataSynchronization.UPLOAD_AND_DOWNLOAD ||
+                    localProfile.dataSynchronization == DataSynchronization.ONLY_DOWNLOAD)
         ) {
             profileNetworkService.fetchProfile(prefs.serverUrl)
                 .onSuccess { remoteProfileDto ->

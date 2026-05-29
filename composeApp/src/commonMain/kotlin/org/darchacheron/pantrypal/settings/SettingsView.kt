@@ -46,19 +46,12 @@ import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import pantrypal.composeapp.generated.resources.Res
-import pantrypal.composeapp.generated.resources.arrow_drop_down
 import pantrypal.composeapp.generated.resources.ic_back
 import pantrypal.composeapp.generated.resources.ic_reset
 import pantrypal.composeapp.generated.resources.ic_save
-import pantrypal.composeapp.generated.resources.ic_sync
-import pantrypal.composeapp.generated.resources.ic_sync_disabled
 import pantrypal.composeapp.generated.resources.settings_content_description_back
 import pantrypal.composeapp.generated.resources.settings_content_description_reset
 import pantrypal.composeapp.generated.resources.settings_content_description_save
-import pantrypal.composeapp.generated.resources.settings_content_description_sync
-import pantrypal.composeapp.generated.resources.settings_data_synchronization
-import pantrypal.composeapp.generated.resources.settings_default_data_synchronization
-import pantrypal.composeapp.generated.resources.settings_select_data_synchronization
 import pantrypal.composeapp.generated.resources.settings_theme
 import pantrypal.composeapp.generated.resources.settings_title
 
@@ -66,13 +59,9 @@ import pantrypal.composeapp.generated.resources.settings_title
 @Composable
 fun SettingsView(
     viewModel: SettingsViewModel = koinInject(),
-    remoteLoginViewModel: RemoteLoginViewModel = koinInject(),
     onBack: () -> Unit = {}
 ) {
     val uiState by viewModel.settingsFlow.collectAsState()
-    val isSyncing by viewModel.isSyncing.collectAsState()
-    val isLoggedInRemotely by viewModel.isLoggedInRemotely.collectAsState()
-    val showLoginDialog by viewModel.showLoginDialog.collectAsState()
     val shouldClose by viewModel.shouldClose.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -80,14 +69,6 @@ fun SettingsView(
         if (shouldClose) {
             onBack()
         }
-    }
-
-    if (showLoginDialog) {
-        RemoteLoginDialog(
-            viewModel = remoteLoginViewModel,
-            onDismiss = { viewModel.onDismissLoginDialog() },
-            onLoginSuccess = { viewModel.onLoginSuccess() }
-        )
     }
 
     Scaffold(
@@ -104,27 +85,6 @@ fun SettingsView(
                             painter = painterResource(Res.drawable.ic_back),
                             contentDescription = stringResource(Res.string.settings_content_description_back)
                         )
-                    }
-                },
-                actions = {
-                    if (uiState.hasData && uiState.data!!.dataSynchronization != DataSynchronization.NO_SYNCHRONIZATION) {
-                        IconButton(
-                            onClick = { viewModel.triggerSync() },
-                            enabled = !isSyncing
-                        ) {
-                            if (isSyncing) {
-                                CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
-                            } else {
-                                val syncIcon = when {
-                                    isLoggedInRemotely -> Res.drawable.ic_sync
-                                    else -> Res.drawable.ic_sync_disabled
-                                }
-                                Icon(
-                                    painter = painterResource(syncIcon),
-                                    contentDescription = stringResource(Res.string.settings_content_description_sync)
-                                )
-                            }
-                        }
                     }
                 }
             )
@@ -172,7 +132,6 @@ fun SettingsView(
             } else if (uiState.hasData) {
                 SettingsContent(
                     settings = uiState.data!!,
-                    onDataSynchronizationSelected = viewModel::onDataSynchronizationSelected,
                     onThemeModeSelected = viewModel::onThemeModeSelected
                 )
             }
@@ -183,7 +142,6 @@ fun SettingsView(
 @Composable
 private fun SettingsContent(
     settings: Settings,
-    onDataSynchronizationSelected: (DataSynchronization) -> Unit,
     onThemeModeSelected: (ThemeMode) -> Unit
 ) {
     Column(
@@ -193,21 +151,6 @@ private fun SettingsContent(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
-        Column {
-            Text(
-                text = stringResource(Res.string.settings_data_synchronization),
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.primary
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            DataSynchronizationDropdown(
-                selectedDataSynchronization = settings.dataSynchronization,
-                onDataSynchronizationSelected = onDataSynchronizationSelected
-            )
-        }
-
-        HorizontalDivider()
-
         // Theme Section
         Column {
             Text(
@@ -220,52 +163,6 @@ private fun SettingsContent(
                 selectedTheme = settings.themeMode,
                 onThemeSelected = onThemeModeSelected
             )
-        }
-    }
-}
-
-@Composable
-private fun DataSynchronizationDropdown(
-    selectedDataSynchronization: DataSynchronization,
-    onDataSynchronizationSelected: (DataSynchronization) -> Unit
-) {
-    var expanded by remember { mutableStateOf(false) }
-
-    Box {
-        OutlinedTextField(
-            value = stringResource(selectedDataSynchronization.toStringResource()),
-            onValueChange = {},
-            readOnly = true,
-            label = { Text(stringResource(Res.string.settings_default_data_synchronization)) },
-            modifier = Modifier.fillMaxWidth(),
-            trailingIcon = {
-                IconButton(onClick = { expanded = true }) {
-                    Icon(
-                        painter = painterResource(Res.drawable.arrow_drop_down),
-                        contentDescription = stringResource(Res.string.settings_select_data_synchronization)
-                    )
-                }
-            }
-        )
-        Box(
-            modifier = Modifier
-                .matchParentSize()
-                .clickable { expanded = true }
-        )
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
-            modifier = Modifier.fillMaxWidth(0.9f)
-        ) {
-            DataSynchronization.entries.forEach { unit ->
-                DropdownMenuItem(
-                    text = { Text(stringResource(unit.toStringResource())) },
-                    onClick = {
-                        onDataSynchronizationSelected(unit)
-                        expanded = false
-                    }
-                )
-            }
         }
     }
 }

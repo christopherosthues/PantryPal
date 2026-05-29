@@ -1,6 +1,7 @@
 package org.darchacheron.pantrypal.profile
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,8 +21,11 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -50,19 +54,23 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import org.darchacheron.pantrypal.authentication.RemoteLoginDialog
 import org.darchacheron.pantrypal.authentication.RemoteLoginViewModel
+import org.darchacheron.pantrypal.settings.DataSynchronization
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import pantrypal.composeapp.generated.resources.Res
+import pantrypal.composeapp.generated.resources.arrow_drop_down
+import pantrypal.composeapp.generated.resources.ic_check_circle_outline
 import pantrypal.composeapp.generated.resources.ic_delete
+import pantrypal.composeapp.generated.resources.ic_error_outline
 import pantrypal.composeapp.generated.resources.ic_logout
 import pantrypal.composeapp.generated.resources.ic_profile
 import pantrypal.composeapp.generated.resources.ic_save
 import pantrypal.composeapp.generated.resources.ic_settings
+import pantrypal.composeapp.generated.resources.ic_sync
+import pantrypal.composeapp.generated.resources.ic_sync_disabled
 import pantrypal.composeapp.generated.resources.profile_change_password_title
-import pantrypal.composeapp.generated.resources.profile_connection_error
-import pantrypal.composeapp.generated.resources.profile_connection_success
 import pantrypal.composeapp.generated.resources.profile_content_description_delete
 import pantrypal.composeapp.generated.resources.profile_content_description_logout
 import pantrypal.composeapp.generated.resources.profile_content_description_save
@@ -91,10 +99,15 @@ import pantrypal.composeapp.generated.resources.profile_server_url_label
 import pantrypal.composeapp.generated.resources.profile_synchronization_title
 import pantrypal.composeapp.generated.resources.profile_test_connection_button
 import pantrypal.composeapp.generated.resources.profile_testing_connection
+import pantrypal.composeapp.generated.resources.profile_connection_success
+import pantrypal.composeapp.generated.resources.profile_connection_error
 import pantrypal.composeapp.generated.resources.profile_title
 import pantrypal.composeapp.generated.resources.profile_username_label
 import pantrypal.composeapp.generated.resources.remote_login_password_label
 import pantrypal.composeapp.generated.resources.remote_login_username_label
+import pantrypal.composeapp.generated.resources.profile_description_sync
+import pantrypal.composeapp.generated.resources.profile_default_data_synchronization
+import pantrypal.composeapp.generated.resources.profile_select_data_synchronization
 import kotlin.uuid.ExperimentalUuidApi
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalUuidApi::class)
@@ -107,6 +120,9 @@ fun ProfileView(
     val uiState by profileViewModel.uiState.collectAsState()
     val profileValidationState by profileViewModel.profileValidationState.collectAsState()
     val passwordChangeState by profileViewModel.passwordChangeState.collectAsState()
+    val isLoggedInRemotely by profileViewModel.isLoggedInRemotely.collectAsState()
+    val isSyncing by profileViewModel.isSyncing.collectAsState()
+    val showLoginDialog by profileViewModel.showLoginDialog.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(uiState.error) {
@@ -123,12 +139,41 @@ fun ProfileView(
         }
     }
 
+    if (showLoginDialog) {
+        RemoteLoginDialog(
+            viewModel = remoteLoginViewModel,
+            onDismiss = { profileViewModel.onDismissLoginDialog() },
+            onLoginSuccess = { profileViewModel.onLoginSuccess() }
+        )
+    }
+
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(Res.string.profile_title)) },
                 actions = {
+                    val profile = uiState.data
+                    if (profile != null && profile.dataSynchronization != DataSynchronization.NO_SYNCHRONIZATION) {
+                        IconButton(
+                            onClick = { profileViewModel.triggerSync() },
+                            enabled = !isSyncing
+                        ) {
+                            if (isSyncing) {
+                                CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                            } else {
+                                val syncIcon = when {
+                                    isLoggedInRemotely -> Res.drawable.ic_sync
+                                    else -> Res.drawable.ic_sync_disabled
+                                }
+                                Icon(
+                                    painter = painterResource(syncIcon),
+                                    contentDescription = stringResource(Res.string.profile_description_sync)
+                                )
+                            }
+                        }
+                    }
+
                     IconButton(onClick = onGoToSettings) {
                         Icon(
                             painter = painterResource(Res.drawable.ic_settings),
@@ -478,6 +523,9 @@ private fun RemoteProfileSection(
                         if (success) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
                     val text =
                         if (success) Res.string.profile_connection_success else Res.string.profile_connection_error
+                    val icon =
+                        if (success) Res.drawable.ic_check_circle_outline else Res.drawable.ic_error_outline
+                    Icon(painter = painterResource(icon), contentDescription = null, tint = color)
                     Text(
                         text = stringResource(text),
                         color = color,
@@ -485,6 +533,13 @@ private fun RemoteProfileSection(
                     )
                 }
             }
+
+            HorizontalDivider()
+
+            DataSynchronizationDropdown(
+                selectedDataSynchronization = profile.dataSynchronization,
+                onDataSynchronizationSelected = { profileViewModel.updateDataSynchronization(it) }
+            )
 
             if (isLoggedInRemotely) {
                 Row(
@@ -560,6 +615,51 @@ private fun RemoteProfileSection(
     }
 }
 
+@Composable
+private fun DataSynchronizationDropdown(
+    selectedDataSynchronization: DataSynchronization,
+    onDataSynchronizationSelected: (DataSynchronization) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Box {
+        OutlinedTextField(
+            value = stringResource(selectedDataSynchronization.toStringResource()),
+            onValueChange = {},
+            readOnly = true,
+            label = { Text(stringResource(Res.string.profile_default_data_synchronization)) },
+            modifier = Modifier.fillMaxWidth(),
+            trailingIcon = {
+                IconButton(onClick = { expanded = true }) {
+                    Icon(
+                        painter = painterResource(Res.drawable.arrow_drop_down),
+                        contentDescription = stringResource(Res.string.profile_select_data_synchronization)
+                    )
+                }
+            }
+        )
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .clickable { expanded = true }
+        )
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            modifier = Modifier.fillMaxWidth(0.9f)
+        ) {
+            DataSynchronization.entries.forEach { unit ->
+                DropdownMenuItem(
+                    text = { Text(stringResource(unit.toStringResource())) },
+                    onClick = {
+                        onDataSynchronizationSelected(unit)
+                        expanded = false
+                    }
+                )
+            }
+        }
+    }
+}
 
 @Composable
 private fun ChangeLocalPasswordSection(profileViewModel: ProfileViewModel) {

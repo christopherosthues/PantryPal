@@ -10,8 +10,8 @@ import kotlinx.coroutines.withContext
 import okio.FileSystem
 import okio.Path.Companion.toPath
 import org.darchacheron.pantrypal.authentication.AuthenticationPreferencesRepository
+import org.darchacheron.pantrypal.profile.ProfileDao
 import org.darchacheron.pantrypal.settings.DataSynchronization
-import org.darchacheron.pantrypal.settings.SettingsRepository
 import kotlin.time.Instant
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -19,8 +19,8 @@ import kotlin.uuid.Uuid
 @OptIn(ExperimentalUuidApi::class)
 class InventoryRepository(
     private val inventoryItemDao: InventoryItemDao,
+    private val profileDao: ProfileDao,
     private val inventoryNetworkService: InventoryNetworkService,
-    private val settingsRepository: SettingsRepository,
     private val authenticationPreferencesRepository: AuthenticationPreferencesRepository,
     private val fileSystem: FileSystem,
 ) {
@@ -62,12 +62,13 @@ class InventoryRepository(
         inventoryItemDao.upsert(inventoryItem)
 
         // Phase 1: Try push immediately
-        val settings = settingsRepository.getSettings()
         val prefs = authenticationPreferencesRepository.authenticationPreferencesFlow.firstOrNull()
+        val profileId = prefs?.localProfileId?.let { if (it.isNotBlank()) Uuid.parse(it) else null }
+        val profile = profileId?.let { profileDao.getProfileById(it).firstOrNull() }
         val canSync = prefs?.isLoggedInRemotely == true
 
-        if (canSync && (settings.dataSynchronization == DataSynchronization.UPLOAD_AND_DOWNLOAD ||
-            settings.dataSynchronization == DataSynchronization.ONLY_UPLOAD
+        if (canSync && profile != null && (profile.dataSynchronization == DataSynchronization.UPLOAD_AND_DOWNLOAD ||
+            profile.dataSynchronization == DataSynchronization.ONLY_UPLOAD
         )) {
             try {
                 val syncedItems = inventoryNetworkService.pushInventoryItems(listOf(inventoryItem), prefs.serverUrl)
@@ -89,12 +90,13 @@ class InventoryRepository(
             item.additionalImages.forEach { it.localPath?.let { path -> deleteImageFile(path) } }
 
             // Phase 1: Try delete on server
-            val settings = settingsRepository.getSettings()
             val prefs = authenticationPreferencesRepository.authenticationPreferencesFlow.firstOrNull()
+            val profileId = prefs?.localProfileId?.let { if (it.isNotBlank()) Uuid.parse(it) else null }
+            val profile = profileId?.let { profileDao.getProfileById(it).firstOrNull() }
             val canSync = prefs?.isLoggedInRemotely == true
 
-            if (canSync && item.serverId != null && (settings.dataSynchronization == DataSynchronization.UPLOAD_AND_DOWNLOAD ||
-                settings.dataSynchronization == DataSynchronization.ONLY_UPLOAD)
+            if (canSync && profile != null && item.serverId != null && (profile.dataSynchronization == DataSynchronization.UPLOAD_AND_DOWNLOAD ||
+                profile.dataSynchronization == DataSynchronization.ONLY_UPLOAD)
             ) {
                 try {
                     inventoryNetworkService.deleteInventoryItem(item.serverId, prefs.serverUrl)
@@ -107,19 +109,21 @@ class InventoryRepository(
     }
 
     suspend fun syncWithServer() = withContext(Dispatchers.IO) {
-        val settings = settingsRepository.getSettings()
-        if (settings.dataSynchronization == DataSynchronization.NO_SYNCHRONIZATION) return@withContext
-
         val prefs = authenticationPreferencesRepository.authenticationPreferencesFlow.firstOrNull()
-        if (prefs?.isLoggedInRemotely != true) {
+        val profileId = prefs?.localProfileId?.let { if (it.isNotBlank()) Uuid.parse(it) else null }
+        val profile = profileId?.let { profileDao.getProfileById(it).firstOrNull() } ?: return@withContext
+
+        if (profile.dataSynchronization == DataSynchronization.NO_SYNCHRONIZATION) return@withContext
+
+        if (!prefs.isLoggedInRemotely) {
             Logger.withTag(loggerTag).d { "Skipping inventory sync: Not logged in to remote" }
             return@withContext
         }
 
         try {
             // 1. Upload dirty records (Phase 2 - Batch)
-            if (settings.dataSynchronization == DataSynchronization.UPLOAD_AND_DOWNLOAD ||
-                settings.dataSynchronization == DataSynchronization.ONLY_UPLOAD
+            if (profile.dataSynchronization == DataSynchronization.UPLOAD_AND_DOWNLOAD ||
+                profile.dataSynchronization == DataSynchronization.ONLY_UPLOAD
             ) {
                 val dirtyEntities = inventoryItemDao.getDirtyRecords(Instant.fromEpochMilliseconds(0))
                 if (dirtyEntities.isNotEmpty()) {
@@ -136,8 +140,8 @@ class InventoryRepository(
             }
 
             // 2. Download changes
-            if (settings.dataSynchronization == DataSynchronization.UPLOAD_AND_DOWNLOAD ||
-                settings.dataSynchronization == DataSynchronization.ONLY_DOWNLOAD
+            if (profile.dataSynchronization == DataSynchronization.UPLOAD_AND_DOWNLOAD ||
+                profile.dataSynchronization == DataSynchronization.ONLY_DOWNLOAD
             ) {
                 val remoteChanges = inventoryNetworkService.fetchChanges(Instant.fromEpochMilliseconds(0), prefs.serverUrl)
                 remoteChanges.forEach { remoteItem ->

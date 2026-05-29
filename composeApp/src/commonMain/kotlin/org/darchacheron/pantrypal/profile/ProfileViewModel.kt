@@ -4,11 +4,15 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.darchacheron.pantrypal.authentication.AuthenticationPreferencesRepository
 import org.darchacheron.pantrypal.authentication.AuthenticationService
 import org.darchacheron.pantrypal.authentication.hashPassword
 import org.darchacheron.pantrypal.authentication.verifyPassword
+import org.darchacheron.pantrypal.food.FoodRepository
+import org.darchacheron.pantrypal.inventory.InventoryRepository
 import org.darchacheron.pantrypal.navigation.Navigator
 import org.darchacheron.pantrypal.networking.ConnectionNetworkService
 import org.darchacheron.pantrypal.settings.DataSynchronization
@@ -29,6 +33,8 @@ import kotlin.uuid.Uuid
 @OptIn(ExperimentalUuidApi::class)
 class ProfileViewModel(
     private val profileRepository: ProfileRepository,
+    private val foodRepository: FoodRepository,
+    private val inventoryRepository: InventoryRepository,
     private val authenticationPreferencesRepository: AuthenticationPreferencesRepository,
     private val authenticationService: AuthenticationService,
     private val connectionNetworkService: ConnectionNetworkService,
@@ -58,6 +64,12 @@ class ProfileViewModel(
 
     private val _connectionTestSuccess = MutableStateFlow<Boolean?>(null)
     val connectionTestSuccess: StateFlow<Boolean?> = _connectionTestSuccess
+
+    private val _isSyncing = MutableStateFlow(false)
+    val isSyncing: StateFlow<Boolean> = _isSyncing.asStateFlow()
+
+    private val _showLoginDialog = MutableStateFlow(false)
+    val showLoginDialog: StateFlow<Boolean> = _showLoginDialog.asStateFlow()
 
     init {
         loadProfile()
@@ -267,6 +279,38 @@ class ProfileViewModel(
             _connectionTestSuccess.value = result.isSuccess
             _isTestingConnection.value = false
         }
+    }
+
+    fun triggerSync() {
+        viewModelScope.launch {
+            val prefs = authenticationPreferencesRepository.authenticationPreferencesFlow.first()
+            if (!prefs.isLoggedInRemotely) {
+                if (prefs.serverUrl.isNotBlank()) {
+                    _showLoginDialog.value = true
+                    return@launch
+                }
+            }
+
+            _isSyncing.value = true
+            try {
+                foodRepository.syncWithServer()
+                inventoryRepository.syncWithServer()
+                profileRepository.syncWithServer()
+            } catch (e: Exception) {
+                // TODO Log error
+            } finally {
+                _isSyncing.value = false
+            }
+        }
+    }
+
+    fun onDismissLoginDialog() {
+        _showLoginDialog.value = false
+    }
+
+    fun onLoginSuccess() {
+        _showLoginDialog.value = false
+        triggerSync()
     }
 
     private val _showRemoteProfileDialog = MutableStateFlow(false)
