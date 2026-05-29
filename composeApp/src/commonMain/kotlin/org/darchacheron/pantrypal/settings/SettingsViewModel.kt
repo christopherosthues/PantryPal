@@ -117,46 +117,12 @@ class SettingsViewModel(
         }
     }
 
-    fun onDataSynchronizationSelected(dataSynchronization: DataSynchronization) {
-        _settingsFlow.update { state ->
-            state.data?.let { UiState.success(it.copy(dataSynchronization = dataSynchronization)) } ?: state
-        }
-    }
-
-
-    @OptIn(ExperimentalUuidApi::class)
     fun saveSettings(onSuccess: () -> Unit) {
         val currentSettings = settingsFlow.value.data ?: return
         viewModelScope.launch {
             try {
-                val syncEnabled = currentSettings.dataSynchronization != DataSynchronization.NO_SYNCHRONIZATION
-
                 settingsRepository.saveSettings(currentSettings)
-
-                var authRequired = false
-                if (syncEnabled) {
-                    val prefs = authenticationPreferencesRepository.authenticationPreferencesFlow.first()
-                    val profileId = prefs.localProfileId
-                    val syncJustEnabled = _originalSettings.dataSynchronization == DataSynchronization.NO_SYNCHRONIZATION
-
-                    if (syncJustEnabled) {
-                        if (profileId.isNotEmpty()) {
-                            val profile = profileRepository.getProfileById(Uuid.parse(profileId)).first()
-                            if (profile?.serverId == null || profile.isLocalOnly || !prefs.isLoggedInRemotely) {
-                                authRequired = true
-                                _closeAfterLogin = true
-                                _showLoginDialog.value = true
-                            }
-                        } else {
-                            authRequired = true
-                            navigator.goToLogin()
-                        }
-                    }
-                }
-
-                if (!authRequired) {
-                    onSuccess()
-                }
+                onSuccess()
             } catch (e: Exception) {
                 Logger.withTag(loggerTag).e { "Error saving settings: ${e.message}" }
                 _settingsFlow.update { it.copy(error = Res.string.settings_error_saving) }

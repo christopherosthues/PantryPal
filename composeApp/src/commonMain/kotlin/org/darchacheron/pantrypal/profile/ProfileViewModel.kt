@@ -7,12 +7,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import org.darchacheron.pantrypal.authentication.AuthenticationPreferencesRepository
 import org.darchacheron.pantrypal.authentication.AuthenticationService
-import org.darchacheron.pantrypal.authentication.InvalidCredentialsException
-import org.darchacheron.pantrypal.authentication.JwtUtils
-import org.darchacheron.pantrypal.authentication.UserAlreadyExistsException
 import org.darchacheron.pantrypal.authentication.hashPassword
 import org.darchacheron.pantrypal.authentication.verifyPassword
 import org.darchacheron.pantrypal.navigation.Navigator
+import org.darchacheron.pantrypal.settings.DataSynchronization
 import org.darchacheron.pantrypal.ui.UiState
 import pantrypal.composeapp.generated.resources.Res
 import pantrypal.composeapp.generated.resources.profile_error_current_password_empty
@@ -20,14 +18,10 @@ import pantrypal.composeapp.generated.resources.profile_error_email_empty
 import pantrypal.composeapp.generated.resources.profile_error_email_invalid
 import pantrypal.composeapp.generated.resources.profile_error_new_password_empty
 import pantrypal.composeapp.generated.resources.profile_error_password_mismatch
-import pantrypal.composeapp.generated.resources.profile_error_server_url_empty
 import pantrypal.composeapp.generated.resources.profile_error_server_url_invalid
 import pantrypal.composeapp.generated.resources.profile_error_update
 import pantrypal.composeapp.generated.resources.profile_error_username_empty
-import pantrypal.composeapp.generated.resources.profile_error_username_exists
 import pantrypal.composeapp.generated.resources.profile_error_wrong_password
-import pantrypal.composeapp.generated.resources.profile_link_error
-import kotlin.time.Clock
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -94,6 +88,13 @@ class ProfileViewModel(
             null
         }
         _profileValidationState.value = _profileValidationState.value.copy(emailError = error)
+    }
+
+    fun updateDataSynchronization(dataSynchronization: DataSynchronization) {
+        _uiState.value = _uiState.value.copy(
+            data = _uiState.value.data?.copy(dataSynchronization = dataSynchronization),
+            error = null
+        )
     }
 
     fun onCurrentPasswordChanged(current: String) {

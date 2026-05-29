@@ -1,5 +1,6 @@
 package org.darchacheron.pantrypal.profile
 
+import org.darchacheron.pantrypal.settings.DataSynchronization
 import org.darthacheron.pantrypal.shared.profile.ProfileDto
 import kotlin.time.Instant
 import kotlin.uuid.ExperimentalUuidApi
@@ -16,7 +17,8 @@ data class Profile(
     val createdAt: Instant,
     val lastModifiedAt: Instant,
     val lastSyncedAt: Instant? = null,
-    val isLocalOnly: Boolean = false
+    val isLocalOnly: Boolean = false,
+    val dataSynchronization: DataSynchronization = DataSynchronization.NO_SYNCHRONIZATION
 ) {
     fun toDto(): ProfileDto = ProfileDto(
         serverId = serverId,

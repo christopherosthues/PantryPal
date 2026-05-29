@@ -5,6 +5,7 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import org.darchacheron.pantrypal.camera.ImageEntity
+import org.darchacheron.pantrypal.database.converters.DataSynchronizationConverter
 import org.darchacheron.pantrypal.database.converters.InstantConverter
 import org.darchacheron.pantrypal.database.converters.LocalDateConverter
 import org.darchacheron.pantrypal.database.converters.StringListConverter
@@ -23,13 +24,14 @@ import org.darchacheron.pantrypal.profile.ProfileEntity
         InventoryItemEntity::class,
         ImageEntity::class
     ],
-    version = 1
+    version = 2
 )
 @TypeConverters(
     InstantConverter::class,
     LocalDateConverter::class,
     UuidConverter::class,
-    StringListConverter::class
+    StringListConverter::class,
+    DataSynchronizationConverter::class
 )
 @ConstructedBy(PantryPalDatabaseConstructor::class)
 abstract class PantryPalDatabase : RoomDatabase() {

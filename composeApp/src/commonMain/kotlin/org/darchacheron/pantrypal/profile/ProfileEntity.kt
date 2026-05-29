@@ -3,6 +3,7 @@ package org.darchacheron.pantrypal.profile
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import org.darchacheron.pantrypal.settings.DataSynchronization
 import org.darthacheron.pantrypal.shared.profile.ProfileDto
 import kotlin.time.Instant
 import kotlin.uuid.ExperimentalUuidApi
@@ -26,7 +27,8 @@ data class ProfileEntity(
     val createdAt: Instant,
     val lastModifiedAt: Instant,
     val lastSyncedAt: Instant? = null,
-    val isLocalOnly: Boolean = false
+    val isLocalOnly: Boolean = false,
+    val dataSynchronization: DataSynchronization = DataSynchronization.NO_SYNCHRONIZATION
 ) {
     fun toProfile(): Profile = Profile(
         id = id,
@@ -38,7 +40,8 @@ data class ProfileEntity(
         createdAt = createdAt,
         lastModifiedAt = lastModifiedAt,
         lastSyncedAt = lastSyncedAt,
-        isLocalOnly = isLocalOnly
+        isLocalOnly = isLocalOnly,
+        dataSynchronization = dataSynchronization
     )
 }
 
@@ -53,7 +56,8 @@ fun Profile.toProfileEntity(): ProfileEntity = ProfileEntity(
     createdAt = createdAt,
     lastModifiedAt = lastModifiedAt,
     lastSyncedAt = lastSyncedAt,
-    isLocalOnly = isLocalOnly
+    isLocalOnly = isLocalOnly,
+    dataSynchronization = dataSynchronization
 )
 
 @OptIn(ExperimentalUuidApi::class)
@@ -67,5 +71,6 @@ fun ProfileDto.toProfileEntity(baseProfile: Profile): ProfileEntity = ProfileEnt
     createdAt = createdAt,
     lastModifiedAt = lastModifiedAt,
     lastSyncedAt = lastSyncedAt,
-    isLocalOnly = baseProfile.isLocalOnly
+    isLocalOnly = baseProfile.isLocalOnly,
+    dataSynchronization = baseProfile.dataSynchronization
 )
