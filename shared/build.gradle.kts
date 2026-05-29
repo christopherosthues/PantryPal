@@ -1,8 +1,45 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidMultiplatformLibrary)
     alias(libs.plugins.android.lint)
     alias(libs.plugins.jetbrains.kotlin.serialization)
+}
+
+val appTokenProvider = providers.environmentVariable("APP_TOKEN")
+    .orElse(providers.gradleProperty("APP_TOKEN"))
+    .orElse(providers.provider {
+        val file = rootProject.file("local.properties")
+        if (file.exists()) {
+            val props = Properties()
+            file.inputStream().use { props.load(it) }
+            props.getProperty("APP_TOKEN")
+        } else null
+    })
+    .orElse("pantrypal-default-app-token")
+
+val generateNetworkingConstants = tasks.register("generateNetworkingConstants") {
+    val outputDir = layout.buildDirectory.dir("generated/pantrypal/src/commonMain/kotlin")
+    val appToken = appTokenProvider.get()
+    
+    inputs.property("appToken", appToken)
+    outputs.dir(outputDir)
+
+    doLast {
+        val file = outputDir.get().file("org/darthacheron/pantrypal/shared/NetworkingConstants.kt").asFile
+        file.parentFile.mkdirs()
+        file.writeText(
+            """
+            package org.darthacheron.pantrypal.shared
+
+            object NetworkingConstants {
+                const val APP_TOKEN = "$appToken"
+                const val APP_TOKEN_HEADER = "X-App-Token"
+            }
+            """.trimIndent()
+        )
+    }
 }
 
 kotlin {
@@ -65,6 +102,7 @@ kotlin {
     // See: https://kotlinlang.org/docs/multiplatform-hierarchy.html
     sourceSets {
         commonMain {
+            kotlin.srcDir(generateNetworkingConstants)
             dependencies {
                 implementation(libs.kotlin.stdlib)
                 // Add KMP dependencies here
