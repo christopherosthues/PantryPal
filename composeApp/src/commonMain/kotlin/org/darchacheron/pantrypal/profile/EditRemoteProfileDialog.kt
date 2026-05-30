@@ -35,7 +35,7 @@ fun EditRemoteProfileDialog(
     val uiState by viewModel.uiState.collectAsState()
     val username by viewModel.username.collectAsState()
     val email by viewModel.email.collectAsState()
-    val oldPassword by viewModel.oldPassword.collectAsState()
+    val currentPassword by viewModel.currentPassword.collectAsState()
     val newPassword by viewModel.newPassword.collectAsState()
     val repeatNewPassword by viewModel.repeatNewPassword.collectAsState()
 
@@ -67,14 +67,16 @@ fun EditRemoteProfileDialog(
                     singleLine = true
                 )
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-                OutlinedTextField(
-                    value = oldPassword,
-                    onValueChange = { viewModel.onOldPasswordChanged(it) },
-                    label = { Text(stringResource(Res.string.profile_remote_old_password_label)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    visualTransformation = PasswordVisualTransformation(),
-                    singleLine = true
-                )
+                if (newPassword.isNotBlank() || repeatNewPassword.isNotBlank()) {
+                    OutlinedTextField(
+                        value = currentPassword,
+                        onValueChange = { viewModel.onCurrentPasswordChanged(it) },
+                        label = { Text(stringResource(Res.string.profile_remote_old_password_label)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        visualTransformation = PasswordVisualTransformation(),
+                        singleLine = true
+                    )
+                }
                 OutlinedTextField(
                     value = newPassword,
                     onValueChange = { viewModel.onNewPasswordChanged(it) },
@@ -103,6 +105,13 @@ fun EditRemoteProfileDialog(
             }
         },
         confirmButton = {
+            val isUsernameChanged = username != profile.username && username.isNotBlank()
+            val isEmailChanged = email != profile.email && email.isNotBlank()
+            val isPasswordChanged = newPassword.isNotBlank()
+            
+            val isDataChanged = isUsernameChanged || isEmailChanged || isPasswordChanged
+            val isPasswordChangeValid = !isPasswordChanged || (currentPassword.isNotBlank() && newPassword == repeatNewPassword)
+            
             Button(
                 onClick = {
                     profile.serverUrl?.let {
@@ -113,11 +122,7 @@ fun EditRemoteProfileDialog(
                         )
                     }
                 },
-                enabled = !uiState.isLoading &&
-                        username.isNotBlank() &&
-                        email.isNotBlank() &&
-                        oldPassword.isNotBlank() &&
-                        (newPassword.isEmpty() || newPassword == repeatNewPassword)
+                enabled = !uiState.isLoading && isDataChanged && isPasswordChangeValid
             ) {
                 if (uiState.isLoading) {
                     CircularProgressIndicator(

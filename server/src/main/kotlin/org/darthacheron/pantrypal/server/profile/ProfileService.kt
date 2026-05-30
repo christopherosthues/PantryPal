@@ -1,5 +1,6 @@
 package org.darthacheron.pantrypal.server.profile
 
+import org.darthacheron.pantrypal.server.keycloak.InvalidCredentialsException
 import org.darthacheron.pantrypal.server.keycloak.KeycloakService
 import org.darthacheron.pantrypal.shared.auth.UpdateUserDto
 import org.darthacheron.pantrypal.shared.profile.ProfileDto
@@ -43,6 +44,17 @@ class ProfileService(
         if (existingProfile.deletedAt != null) {
             logger.warn("Attempted to update a deleted profile for user ID: {}", userId)
             return Result.failure(ProfileDeletedException("Profile is deleted"))
+        }
+
+        // TODO: update still not working. Current password is a requirement for username and email which is not correct
+
+        // 0. Verify current password if password is being changed
+        if (updateDto.password != null) {
+            if (updateDto.currentPassword == null) {
+                return Result.failure(InvalidCredentialsException("Current password is required to change password"))
+            }
+            keycloakService.getAccessToken(existingProfile.username, updateDto.currentPassword!!)
+                .onFailure { return Result.failure(InvalidCredentialsException("Invalid current password")) }
         }
 
         // 1. Update Keycloak if credentials changed

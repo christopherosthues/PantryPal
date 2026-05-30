@@ -27,8 +27,8 @@ class EditRemoteProfileViewModel(
     private val _email = MutableStateFlow("")
     val email: StateFlow<String> = _email
 
-    private val _oldPassword = MutableStateFlow("")
-    val oldPassword: StateFlow<String> = _oldPassword
+    private val _currentPassword = MutableStateFlow("")
+    val currentPassword: StateFlow<String> = _currentPassword
 
     private val _newPassword = MutableStateFlow("")
     val newPassword: StateFlow<String> = _newPassword
@@ -44,8 +44,8 @@ class EditRemoteProfileViewModel(
         _email.value = email
     }
 
-    fun onOldPasswordChanged(password: String) {
-        _oldPassword.value = password
+    fun onCurrentPasswordChanged(password: String) {
+        _currentPassword.value = password
     }
 
     fun onNewPasswordChanged(password: String) {
@@ -65,7 +65,7 @@ class EditRemoteProfileViewModel(
                     username = if (_username.value != currentProfile.username) _username.value else null,
                     email = if (_email.value != currentProfile.email) _email.value else null,
                     password = _newPassword.value.takeIf { it.isNotBlank() },
-                    currentPassword = _oldPassword.value
+                    currentPassword = _currentPassword.value.takeIf { it.isNotBlank() }
                 )
 
                 if (result.isSuccess) {
