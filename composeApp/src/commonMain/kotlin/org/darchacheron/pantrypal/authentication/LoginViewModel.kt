@@ -70,6 +70,7 @@ class LoginViewModel(
             val data = uiState.data ?: return@launch
             val localUsername = data.username
             val localPassword = data.password
+            val stayLoggedIn = data.stayLoggedIn
 
             try {
                 loginState.emit(UiState.loading())
@@ -79,7 +80,7 @@ class LoginViewModel(
 
                 if (existingProfile != null) {
                     if (verifyPassword(localPassword, existingProfile.passwordHash)) {
-                        loginLocally(existingProfile, localUsername, localPassword)
+                        loginLocally(existingProfile, localUsername, localPassword, stayLoggedIn)
                     } else {
                         loginState.emit(uiState.copy(error = Res.string.login_error_wrong_username_or_password))
                     }
@@ -94,8 +95,7 @@ class LoginViewModel(
         }
     }
 
-    private suspend fun loginLocally(profile: Profile, username: String, password: String) {
-        val stayLoggedIn = loginState.value.data?.stayLoggedIn ?: false
+    private suspend fun loginLocally(profile: Profile, username: String, password: String, stayLoggedIn: Boolean) {
         authenticationService.loginLocally(profile.id, profile.serverUrl, stayLoggedIn)
         loginState.emit(UiState.success(Login(username, password, stayLoggedIn = stayLoggedIn)))
         navigator.goToMain()
