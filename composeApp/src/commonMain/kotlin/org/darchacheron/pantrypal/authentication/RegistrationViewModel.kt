@@ -47,6 +47,7 @@ class RegistrationViewModel(
                 emailError = null,
                 passwordError = null,
                 repeatedPasswordError = null,
+                stayLoggedIn = false,
                 canRegister = false
             )
         )
@@ -132,6 +133,10 @@ class RegistrationViewModel(
         }
     }
 
+    fun onStayLoggedInChanged(stayLoggedIn: Boolean) {
+        updateRegistration { it.copy(stayLoggedIn = stayLoggedIn) }
+    }
+
     fun goToLogin() {
         navigator.goToLogin()
     }
@@ -150,7 +155,7 @@ class RegistrationViewModel(
 
             createLocalProfile(userName, email, password)
                 .onSuccess { localProfile ->
-                    authenticationService.loginLocally(localProfile.id, localProfile.serverUrl)
+                    authenticationService.loginLocally(localProfile.id, localProfile.serverUrl, registrationData.stayLoggedIn)
                     registrationState.emit(UiState.success(registrationData.copy(userName = userName, email = email, password = password)))
                     navigator.goToMain()
                 }

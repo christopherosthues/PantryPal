@@ -11,5 +11,6 @@ data class Registration(
     val emailError: StringResource? = null,
     val passwordError: StringResource? = null,
     val repeatedPasswordError: StringResource? = null,
+    val stayLoggedIn: Boolean = false,
     val canRegister: Boolean = false,
 )

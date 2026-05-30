@@ -3,6 +3,7 @@ package org.darchacheron.pantrypal.authentication
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,14 +14,15 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -39,9 +41,7 @@ import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import pantrypal.composeapp.generated.resources.Res
 import pantrypal.composeapp.generated.resources.ic_fridge
-import pantrypal.composeapp.generated.resources.login_login_or_register
-import pantrypal.composeapp.generated.resources.login_register
-import pantrypal.composeapp.generated.resources.login_title
+import pantrypal.composeapp.generated.resources.login_stay_logged_in
 import pantrypal.composeapp.generated.resources.registration_email
 import pantrypal.composeapp.generated.resources.registration_login
 import pantrypal.composeapp.generated.resources.registration_password
@@ -145,6 +145,22 @@ fun RegistrationView(registrationViewModel: RegistrationViewModel) {
                 isError = data.repeatedPasswordError != null,
                 supportingText = data.repeatedPasswordError?.let { { Text(text = stringResource(it)) } },
             )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Checkbox(
+                    checked = data.stayLoggedIn,
+                    onCheckedChange = { registrationViewModel.onStayLoggedInChanged(it) }
+                )
+                Text(
+                    text = stringResource(Res.string.login_stay_logged_in),
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
 
             Spacer(modifier = Modifier.height(32.dp))
 
