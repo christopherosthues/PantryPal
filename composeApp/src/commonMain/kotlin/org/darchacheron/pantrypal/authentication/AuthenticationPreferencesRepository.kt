@@ -25,14 +25,16 @@ class AuthenticationPreferencesRepository(private val dataStore: DataStore<Prefe
             val localProfileId = it[AuthenticationPreferencesKeys.LOCAL_PROFILE_ID] ?: ""
             val isLoggedInRemotely = it[AuthenticationPreferencesKeys.IS_LOGGED_IN_REMOTELY] ?: false
             val serverUrl = it[AuthenticationPreferencesKeys.SERVER_URL] ?: ""
-            AuthenticationPreferences(accessToken, refreshToken, expiresIn, refreshExpiresIn, localProfileId, isLoggedInRemotely, serverUrl)
+            val stayLoggedIn = it[AuthenticationPreferencesKeys.STAY_LOGGED_IN] ?: false
+            AuthenticationPreferences(accessToken, refreshToken, expiresIn, refreshExpiresIn, localProfileId, isLoggedInRemotely, serverUrl, stayLoggedIn)
         }
 
-    suspend fun loginLocally(localProfileId: String, serverUrl: String?) {
+    suspend fun loginLocally(localProfileId: String, serverUrl: String?, stayLoggedIn: Boolean) {
         dataStore.edit {
             it[AuthenticationPreferencesKeys.LOCAL_PROFILE_ID] = localProfileId
             it[AuthenticationPreferencesKeys.IS_LOGGED_IN_REMOTELY] = false
             it[AuthenticationPreferencesKeys.SERVER_URL] = serverUrl ?: ""
+            it[AuthenticationPreferencesKeys.STAY_LOGGED_IN] = stayLoggedIn
         }
     }
 
@@ -85,6 +87,7 @@ class AuthenticationPreferencesRepository(private val dataStore: DataStore<Prefe
             it[AuthenticationPreferencesKeys.REFRESH_EXPIRES_IN] = 0
             it[AuthenticationPreferencesKeys.IS_LOGGED_IN_REMOTELY] = false
             it[AuthenticationPreferencesKeys.SERVER_URL] = ""
+            it[AuthenticationPreferencesKeys.STAY_LOGGED_IN] = false
             it.remove(AuthenticationPreferencesKeys.LOCAL_PROFILE_ID)
         }
     }

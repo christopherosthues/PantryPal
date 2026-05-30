@@ -12,4 +12,5 @@ internal object AuthenticationPreferencesKeys {
     val LOCAL_PROFILE_ID = stringPreferencesKey("local_profile_id")
     val IS_LOGGED_IN_REMOTELY = booleanPreferencesKey("is_logged_in_remotely")
     val SERVER_URL = stringPreferencesKey("server_url")
+    val STAY_LOGGED_IN = booleanPreferencesKey("stay_logged_in")
 }

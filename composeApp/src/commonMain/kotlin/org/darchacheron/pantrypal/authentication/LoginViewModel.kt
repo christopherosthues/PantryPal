@@ -60,6 +60,10 @@ class LoginViewModel(
         updateLogin { it.copy(password = password, passwordError = error) }
     }
 
+    fun onStayLoggedInChanged(stayLoggedIn: Boolean) {
+        updateLogin { it.copy(stayLoggedIn = stayLoggedIn) }
+    }
+
     fun login() {
         viewModelScope.launch {
             val uiState = loginState.value
@@ -91,8 +95,9 @@ class LoginViewModel(
     }
 
     private suspend fun loginLocally(profile: Profile, username: String, password: String) {
-        authenticationService.loginLocally(profile.id, profile.serverUrl)
-        loginState.emit(UiState.success(Login(username, password)))
+        val stayLoggedIn = loginState.value.data?.stayLoggedIn ?: false
+        authenticationService.loginLocally(profile.id, profile.serverUrl, stayLoggedIn)
+        loginState.emit(UiState.success(Login(username, password, stayLoggedIn = stayLoggedIn)))
         navigator.goToMain()
     }
 

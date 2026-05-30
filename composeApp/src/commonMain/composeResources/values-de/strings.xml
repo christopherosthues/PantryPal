@@ -143,6 +143,7 @@
     <string name="login_local_username_placeholder">Lokaler Name / E-Mail</string>
     <string name="login_error">Ein unerwarteter Fehler ist aufgetreten</string>
     <string name="login_error_wrong_username_or_password">Falscher Benutzername oder Passwort</string>
+    <string name="login_stay_logged_in">Angemeldet bleiben</string>
 
     <!-- Registration -->
     <string name="registration_title">Registrierung</string>

@@ -7,5 +7,6 @@ data class Login(
     val password: String,
     val usernameError: StringResource? = null,
     val passwordError: StringResource? = null,
+    val stayLoggedIn: Boolean = false,
     val canLogin: Boolean = false
 )

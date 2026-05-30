@@ -13,7 +13,7 @@ import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 
-internal fun createHttpClient(accessToken: String): HttpClient = HttpClient(CIO) {
+internal fun createHttpClient(accessToken: String? = null): HttpClient = HttpClient(CIO) {
     install(ContentNegotiation) {
         json(Json {
             ignoreUnknownKeys = true
@@ -26,7 +26,9 @@ internal fun createHttpClient(accessToken: String): HttpClient = HttpClient(CIO)
         sanitizeHeader { header -> header == HttpHeaders.Authorization }
     }
     defaultRequest {
-        header(HttpHeaders.Authorization, "Bearer $accessToken")
+        if (accessToken != null) {
+            header(HttpHeaders.Authorization, "Bearer $accessToken")
+        }
         // Required for server CSRF/CORS validation
         header(HttpHeaders.Origin, "http://localhost:8081")
         header("X-CSRF-Token", "PantryPal") // TODO: provide csrf token

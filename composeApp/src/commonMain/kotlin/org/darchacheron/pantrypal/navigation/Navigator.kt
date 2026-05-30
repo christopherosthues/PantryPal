@@ -7,6 +7,11 @@ import androidx.compose.runtime.setValue
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.rememberNavBackStack
+import org.darchacheron.pantrypal.authentication.AuthenticationPreferencesRepository
+import org.koin.compose.koinInject
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
+import androidx.compose.runtime.remember
 
 class Navigator {
     private var _mainBackStack: NavBackStack<NavKey>? = null
@@ -25,8 +30,21 @@ class Navigator {
     private var ocrCameraCallback: ((String) -> Unit)? = null
 
     @Composable
-    fun Initialize() {
-        _mainBackStack = rememberNavBackStack(navConfig, NavRoute.Login)
+    fun Initialize(
+        authenticationPreferencesRepository: AuthenticationPreferencesRepository = koinInject()
+    ) {
+        val startRoute = remember {
+            runBlocking {
+                val prefs = authenticationPreferencesRepository.authenticationPreferencesFlow.first()
+                if (prefs.stayLoggedIn && prefs.localProfileId.isNotEmpty()) {
+                    NavRoute.Main
+                } else {
+                    NavRoute.Login
+                }
+            }
+        }
+
+        _mainBackStack = rememberNavBackStack(navConfig, startRoute)
         _foodBackStack = rememberNavBackStack(navConfig, BottomNavRoute.FoodList)
         _inventoryBackStack = rememberNavBackStack(navConfig, BottomNavRoute.InventoryList)
         _profileBackStack = rememberNavBackStack(navConfig, BottomNavRoute.Profile)

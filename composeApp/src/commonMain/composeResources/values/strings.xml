@@ -146,6 +146,7 @@
     <string name="login_error_wrong_username_or_password">Wrong username or password</string>
     <string name="login_error_empty_username_or_email">Username or Email cannot be empty</string>
     <string name="login_error_empty_password">Password cannot be empty</string>
+    <string name="login_stay_logged_in">Stay logged in</string>
 
     <!-- Registration -->
     <string name="registration_title">Registration</string>

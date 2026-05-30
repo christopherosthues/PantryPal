@@ -22,6 +22,7 @@ import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.serialization.json.Json
+import org.darchacheron.pantrypal.utils.createHttpClient
 import org.darthacheron.pantrypal.shared.auth.LoginDto
 import org.darthacheron.pantrypal.shared.auth.LoginResponse
 import org.darthacheron.pantrypal.shared.auth.ProblemDetails
@@ -38,6 +39,7 @@ class ProfileNotFoundException(message: String) : Exception(message)
 class ServerUnreachableException(message: String, cause: Throwable? = null) : Exception(message, cause)
 class UserAlreadyExistsException(message: String) : Exception(message)
 class ServerErrorException(message: String) : Exception(message)
+class NotAuthenticatedException(message: String) : Exception(message)
 
 @OptIn(ExperimentalUuidApi::class)
 class AuthenticationService(
@@ -45,8 +47,8 @@ class AuthenticationService(
 ) {
     private val authenticationTag = "Authentication"
 
-    suspend fun loginLocally(profileId: Uuid, serverUrl: String?) {
-        authenticationPreferencesRepository.loginLocally(profileId.toString(), serverUrl)
+    suspend fun loginLocally(profileId: Uuid, serverUrl: String?, stayLoggedIn: Boolean) {
+        authenticationPreferencesRepository.loginLocally(profileId.toString(), serverUrl, stayLoggedIn)
     }
 
     suspend fun loginRemotely(username: String, password: String, serverUrl: String): Result<LoginResponse?> {
@@ -89,27 +91,6 @@ class AuthenticationService(
         }
     }
 
-    private fun createHttpClient(): HttpClient = HttpClient(CIO) {
-        install(ContentNegotiation) {
-            json(Json {
-                ignoreUnknownKeys = true
-                prettyPrint = true
-                isLenient = true
-            })
-        }
-        install(Logging) {
-            level = LogLevel.INFO
-            sanitizeHeader { header -> header == HttpHeaders.Authorization }
-        }
-        defaultRequest {
-            // Required for server CSRF/CORS validation if enabled
-            header(HttpHeaders.Origin, "http://localhost:8081")
-            header("X-CSRF-Token", "PantryPal") // TODO provide CSRF token
-            contentType(ContentType.Application.Json)
-        }
-        expectSuccess = false
-    }
-
     suspend fun logoutRemotely(): Result<Boolean> {
         try {
             authenticationPreferencesRepository.logoutRemotely()
@@ -137,8 +118,10 @@ class AuthenticationService(
             val authenticationPreferences =
                 authenticationPreferencesRepository.authenticationPreferencesFlow.firstOrNull()
                     ?: return Result.success(false)
+            val token = authenticationPreferences.accessToken
+            if (token.isBlank()) return Result.failure(NotAuthenticatedException("No access token found"))
 
-            val response: HttpResponse = createHttpClient().use {
+            val response: HttpResponse = createHttpClient(token).use {
                 it.post(refreshUrl) {
                     contentType(ContentType.Application.Json)
                     setBody(
@@ -218,8 +201,12 @@ class AuthenticationService(
         val updateUrl = "$serverUrl/profile"
 
         try {
-            val prefs = authenticationPreferencesRepository.authenticationPreferencesFlow.firstOrNull() ?: return Result.failure(Exception("Not authenticated"))
-            val response: HttpResponse = createHttpClient().use {
+            val prefs = authenticationPreferencesRepository.authenticationPreferencesFlow.firstOrNull()
+                ?: return Result.failure(NotAuthenticatedException("Not authenticated"))
+            val token = prefs.accessToken
+            if (token.isBlank()) return Result.failure(NotAuthenticatedException("No access token found"))
+
+            val response: HttpResponse = createHttpClient(token).use {
                 it.patch(updateUrl) {
                     header(HttpHeaders.Authorization, "Bearer ${prefs.accessToken}")
                     contentType(ContentType.Application.Json)
