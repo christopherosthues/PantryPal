@@ -183,7 +183,7 @@ class AuthenticationService(
                 }
             }
 
-            if (response.status == HttpStatusCode.OK) {
+            if (response.status == HttpStatusCode.Created) {
                 val registrationResponse = response.body<RegistrationResponse>()
                 authenticationPreferencesRepository.loginRemotely(
                     registrationResponse.tokenResponse.accessToken,
