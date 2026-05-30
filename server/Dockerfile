@@ -1,5 +1,5 @@
 # Stage 1: Build
-FROM gradle:9.4.1-jdk25 AS build
+FROM gradle:9.5.1-jdk25 AS build
 COPY --chown=gradle:gradle . /home/gradle/src
 WORKDIR /home/gradle/src
 RUN chmod +x gradlew
