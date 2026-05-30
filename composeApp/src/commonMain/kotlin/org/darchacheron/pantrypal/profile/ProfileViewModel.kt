@@ -2,10 +2,15 @@ package org.darchacheron.pantrypal.profile
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import org.darchacheron.pantrypal.authentication.AuthenticationPreferencesRepository
 import org.darchacheron.pantrypal.authentication.AuthenticationService
@@ -75,20 +80,32 @@ class ProfileViewModel(
         loadProfile()
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     internal fun loadProfile() {
         viewModelScope.launch {
-            authenticationPreferencesRepository.authenticationPreferencesFlow.collect { prefs ->
-                _isLoggedInRemotely.value = prefs.isLoggedInRemotely
-                val profileId = prefs.localProfileId
-                if (profileId.isNotEmpty()) {
-                    profileRepository.getProfileById(Uuid.parse(profileId)).collect { profile ->
-                        if (profile != null) {
-                            _persistedServerUrl.value = profile.serverUrl
-                            _uiState.value = UiState.success(profile)
-                        }
+            authenticationPreferencesRepository.authenticationPreferencesFlow
+                .map { it.isLoggedInRemotely }
+                .distinctUntilChanged()
+                .collect { _isLoggedInRemotely.value = it }
+        }
+
+        viewModelScope.launch {
+            authenticationPreferencesRepository.authenticationPreferencesFlow
+                .map { it.localProfileId }
+                .distinctUntilChanged()
+                .flatMapLatest { profileId ->
+                    if (profileId.isNotEmpty()) {
+                        profileRepository.getProfileById(Uuid.parse(profileId))
+                    } else {
+                        flowOf(null)
                     }
                 }
-            }
+                .collect { profile ->
+                    if (profile != null) {
+                        _persistedServerUrl.value = profile.serverUrl
+                        _uiState.value = UiState.success(profile)
+                    }
+                }
         }
     }
 
