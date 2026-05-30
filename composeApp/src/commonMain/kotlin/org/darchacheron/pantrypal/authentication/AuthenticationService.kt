@@ -21,6 +21,7 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.flow.firstOrNull
+import kotlin.time.Clock
 import kotlinx.serialization.json.Json
 import org.darchacheron.pantrypal.utils.createHttpClient
 import org.darthacheron.pantrypal.shared.auth.LoginDto
@@ -71,7 +72,8 @@ class AuthenticationService(
                     loginResponse.tokenResponse.refreshToken,
                     loginResponse.tokenResponse.expiresIn,
                     loginResponse.tokenResponse.refreshExpiresIn,
-                    serverUrl
+                    serverUrl,
+                    Clock.System.now().toEpochMilliseconds()
                 )
                 Logger.withTag(authenticationTag).d("Login successful")
 
@@ -136,9 +138,13 @@ class AuthenticationService(
                     tokenResponse.accessToken,
                     tokenResponse.refreshToken,
                     tokenResponse.expiresIn,
-                    tokenResponse.refreshExpiresIn
+                    tokenResponse.refreshExpiresIn,
+                    Clock.System.now().toEpochMilliseconds()
                 )
                 return Result.success(true)
+            } else if (response.status == HttpStatusCode.Unauthorized) {
+                logoutRemotely()
+                return Result.success(false)
             }
         } catch (e: Exception) {
             Logger.withTag(authenticationTag).e(e) { "Error refreshing token" }
@@ -173,7 +179,8 @@ class AuthenticationService(
                     registrationResponse.tokenResponse.refreshToken,
                     registrationResponse.tokenResponse.expiresIn,
                     registrationResponse.tokenResponse.refreshExpiresIn,
-                    serverUrl
+                    serverUrl,
+                    Clock.System.now().toEpochMilliseconds()
                 )
                 return Result.success(registrationResponse)
             } else {

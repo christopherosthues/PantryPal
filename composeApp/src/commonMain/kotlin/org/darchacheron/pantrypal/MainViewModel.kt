@@ -33,6 +33,13 @@ class MainViewModel(
                 }
             }
         }
+
+        viewModelScope.launch {
+            val prefs = authenticationPreferencesRepository.authenticationPreferencesFlow.first()
+            if (prefs.stayLoggedIn && prefs.isLoggedInRemotely && prefs.serverUrl.isNotBlank()) {
+                authenticationService.refreshToken(prefs.serverUrl)
+            }
+        }
     }
 
     fun dismissRemoteDeletedDialog() {
