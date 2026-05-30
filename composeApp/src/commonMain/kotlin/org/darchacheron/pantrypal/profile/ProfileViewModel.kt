@@ -281,6 +281,10 @@ class ProfileViewModel(
         }
     }
 
+    fun showLoginDialog() {
+        _showLoginDialog.value = true
+    }
+
     fun triggerSync() {
         viewModelScope.launch {
             val prefs = authenticationPreferencesRepository.authenticationPreferencesFlow.first()

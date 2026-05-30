@@ -207,6 +207,7 @@
     <string name="profile_remote_new_password_label">Neues Passwort</string>
     <string name="profile_remote_repeat_new_password_label">Neues Passwort wiederholen</string>
     <string name="profile_local_login_only">Mit dem Server verbunden, aber nur lokal angemeldet. Bitte melden Sie sich remote an, um die Synchronisierung zu aktivieren.</string>
+    <string name="profile_remote_login_button">Remote anmelden</string>
     <string name="profile_local_only_no_server">Nur lokales Profil. Aktivieren Sie die Synchronisierung, um Ihre Daten zu sichern.</string>
     <string name="profile_enable_sync_button">Synchronisierung aktivieren</string>
     <string name="profile_link_account_title">Mit vorhandenem Konto verknüpfen</string>

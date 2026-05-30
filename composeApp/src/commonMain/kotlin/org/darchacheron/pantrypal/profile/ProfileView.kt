@@ -52,6 +52,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import org.darchacheron.pantrypal.authentication.RemoteAccountLinkDialog
+import org.darchacheron.pantrypal.authentication.RemoteAccountLinkViewModel
 import org.darchacheron.pantrypal.authentication.RemoteLoginDialog
 import org.darchacheron.pantrypal.authentication.RemoteLoginViewModel
 import org.darchacheron.pantrypal.settings.DataSynchronization
@@ -93,6 +95,7 @@ import pantrypal.composeapp.generated.resources.profile_new_password_label
 import pantrypal.composeapp.generated.resources.profile_pending_sync
 import pantrypal.composeapp.generated.resources.profile_personal_information
 import pantrypal.composeapp.generated.resources.profile_remote_logged_in
+import pantrypal.composeapp.generated.resources.profile_remote_login_button
 import pantrypal.composeapp.generated.resources.profile_remote_logout_button
 import pantrypal.composeapp.generated.resources.profile_repeat_new_password_label
 import pantrypal.composeapp.generated.resources.profile_server_url_label
@@ -115,6 +118,7 @@ import kotlin.uuid.ExperimentalUuidApi
 fun ProfileView(
     profileViewModel: ProfileViewModel = koinInject(),
     remoteLoginViewModel: RemoteLoginViewModel = koinInject(),
+    remoteAccountLinkViewModel: RemoteAccountLinkViewModel = koinInject(),
     onGoToSettings: () -> Unit = {}
 ) {
     val uiState by profileViewModel.uiState.collectAsState()
@@ -140,6 +144,14 @@ fun ProfileView(
     }
 
     if (showLoginDialog) {
+        LaunchedEffect(showLoginDialog) {
+            val profile = uiState.data
+            if (profile != null) {
+                remoteLoginViewModel.onUsernameChanged(profile.username)
+                profile.serverUrl?.let { remoteLoginViewModel.setServerUrl(it) }
+            }
+        }
+
         RemoteLoginDialog(
             viewModel = remoteLoginViewModel,
             onDismiss = { profileViewModel.onDismissLoginDialog() },
@@ -264,7 +276,7 @@ fun ProfileView(
 
                         PersonalInformationSection(profile, profileViewModel, profileValidationState)
 
-                        RemoteProfileSection(profileViewModel, remoteLoginViewModel, profile)
+                        RemoteProfileSection(profileViewModel, remoteAccountLinkViewModel, profile)
 
                         ChangeLocalPasswordSection(profileViewModel)
 
@@ -450,7 +462,7 @@ private fun PersonalInformationSection(
 @Composable
 private fun RemoteProfileSection(
     profileViewModel: ProfileViewModel,
-    remoteLoginViewModel: RemoteLoginViewModel,
+    remoteAccountLinkViewModel: RemoteAccountLinkViewModel,
     profile: Profile
 ) {
     val isLoggedInRemotely by profileViewModel.isLoggedInRemotely.collectAsState()
@@ -575,6 +587,15 @@ private fun RemoteProfileSection(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.secondary
                 )
+
+                Button(
+                    onClick = { profileViewModel.showLoginDialog() },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(stringResource(Res.string.profile_remote_login_button))
+                }
+                // TODO delete not working
+                // TODO edit not working
             } else {
                 Text(
                     text = stringResource(Res.string.profile_local_only_no_server),
@@ -599,13 +620,13 @@ private fun RemoteProfileSection(
 
     if (showEnableSyncDialog) {
         LaunchedEffect(showEnableSyncDialog) {
-            remoteLoginViewModel.onUsernameChanged(profile.username)
-            remoteLoginViewModel.onEmailChanged(profile.email)
-            profile.serverUrl?.let { remoteLoginViewModel.onServerUrlChanged(it) }
+            remoteAccountLinkViewModel.onUsernameChanged(profile.username)
+            remoteAccountLinkViewModel.onEmailChanged(profile.email)
+            profile.serverUrl?.let { remoteAccountLinkViewModel.onServerUrlChanged(it) }
         }
 
-        RemoteLoginDialog(
-            viewModel = remoteLoginViewModel,
+        RemoteAccountLinkDialog(
+            viewModel = remoteAccountLinkViewModel,
             onDismiss = { showEnableSyncDialog = false },
             onLoginSuccess = {
                 showEnableSyncDialog = false

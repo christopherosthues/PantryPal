@@ -1,10 +1,27 @@
 package org.darchacheron.pantrypal.authentication
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SecondaryTabRow
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -20,8 +37,8 @@ import org.jetbrains.compose.resources.stringResource
 import pantrypal.composeapp.generated.resources.*
 
 @Composable
-fun RemoteLoginDialog(
-    viewModel: RemoteLoginViewModel,
+fun RemoteAccountLinkDialog(
+    viewModel: RemoteAccountLinkViewModel,
     onDismiss: () -> Unit,
     onLoginSuccess: () -> Unit
 ) {
@@ -48,10 +65,23 @@ fun RemoteLoginDialog(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Text(
-                    text = stringResource(Res.string.login_title),
+                    text = stringResource(Res.string.remote_login_title),
                     style = MaterialTheme.typography.headlineSmall,
                     color = MaterialTheme.colorScheme.onSurface
                 )
+
+                SecondaryTabRow(selectedTabIndex = if (data.isCreatingNew) 1 else 0) {
+                    Tab(
+                        selected = !data.isCreatingNew,
+                        onClick = { viewModel.setIsCreatingNew(false) },
+                        text = { Text(stringResource(Res.string.profile_link_account_title)) }
+                    )
+                    Tab(
+                        selected = data.isCreatingNew,
+                        onClick = { viewModel.setIsCreatingNew(true) },
+                        text = { Text(stringResource(Res.string.profile_create_account_title)) }
+                    )
+                }
 
                 if (uiState.hasError) {
                     val errorMessage = stringResource(uiState.error!!)
@@ -86,6 +116,22 @@ fun RemoteLoginDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
 
+                if (data.isCreatingNew) {
+                    OutlinedTextField(
+                        value = data.email,
+                        onValueChange = { viewModel.onEmailChanged(it) },
+                        label = { Text(stringResource(Res.string.registration_email)) },
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Email,
+                            imeAction = ImeAction.Next
+                        ),
+                        isError = data.emailError != null,
+                        supportingText = { data.emailError?.let { Text(stringResource(it)) } },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
                 OutlinedTextField(
                     value = data.password,
                     onValueChange = { viewModel.onPasswordChanged(it) },
@@ -93,13 +139,30 @@ fun RemoteLoginDialog(
                     visualTransformation = PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Password,
-                        imeAction = ImeAction.Done
+                        imeAction = if (data.isCreatingNew) ImeAction.Next else ImeAction.Done
                     ),
                     isError = data.passwordError != null,
                     supportingText = { data.passwordError?.let { Text(stringResource(it)) } },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
+
+                if (data.isCreatingNew) {
+                    OutlinedTextField(
+                        value = data.repeatedPassword,
+                        onValueChange = { viewModel.onRepeatedPasswordChanged(it) },
+                        label = { Text(stringResource(Res.string.registration_repeat_password)) },
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Password,
+                            imeAction = ImeAction.Done
+                        ),
+                        isError = data.repeatedPasswordError != null,
+                        supportingText = { data.repeatedPasswordError?.let { Text(stringResource(it)) } },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -111,7 +174,7 @@ fun RemoteLoginDialog(
                     }
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(
-                        onClick = { viewModel.login(onSuccess = onLoginSuccess) },
+                        onClick = { viewModel.submit(onSuccess = onLoginSuccess) },
                         enabled = !uiState.isLoading && data.canSubmit
                     ) {
                         if (uiState.isLoading) {
@@ -121,7 +184,10 @@ fun RemoteLoginDialog(
                                 color = MaterialTheme.colorScheme.onPrimary
                             )
                         } else {
-                            Text(stringResource(Res.string.login_login))
+                            Text(
+                                if (data.isCreatingNew) stringResource(Res.string.profile_create_account_button)
+                                else stringResource(Res.string.profile_link_account_button)
+                            )
                         }
                     }
                 }
