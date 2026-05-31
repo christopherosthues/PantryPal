@@ -145,6 +145,7 @@ class AuthenticationService(
                 return Result.success(false)
             }
         } catch (e: Exception) {
+            logoutRemotely()
             Logger.withTag(authenticationTag).e(e) { "Error refreshing token" }
             return Result.failure(e)
         }
