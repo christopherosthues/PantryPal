@@ -14,7 +14,7 @@ import kotlin.uuid.Uuid
 class ProfileRepository {
     fun createProfile(profileDto: ProfileDto): ProfileDto {
         return transaction {
-            val profile = ProfileDAO.new {
+            val profile = ProfileDAO.new(profileDto.serverId) {
                 username = profileDto.username
                 email = profileDto.email
                 createdAt = profileDto.createdAt

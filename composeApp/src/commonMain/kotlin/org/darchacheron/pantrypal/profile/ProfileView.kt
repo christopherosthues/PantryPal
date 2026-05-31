@@ -594,8 +594,6 @@ private fun RemoteProfileSection(
                 ) {
                     Text(stringResource(Res.string.profile_remote_login_button))
                 }
-                // TODO delete not working
-                // TODO edit not working
             } else {
                 Text(
                     text = stringResource(Res.string.profile_local_only_no_server),

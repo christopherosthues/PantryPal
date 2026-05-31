@@ -59,7 +59,7 @@ class AuthenticationService(
         // 3. Create local profile
         val profileResult = profileService.createProfile(
             ProfileDto(
-                serverId = null,
+                serverId = keycloakUserId,
                 clientId = Uuid.random(),
                 username = registrationDto.username,
                 email = registrationDto.email,

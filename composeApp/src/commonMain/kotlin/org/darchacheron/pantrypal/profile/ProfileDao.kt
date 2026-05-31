@@ -10,9 +10,6 @@ import kotlin.uuid.Uuid
 @OptIn(ExperimentalUuidApi::class)
 @Dao
 interface ProfileDao {
-    @Query("SELECT * FROM profile LIMIT 1")
-    fun getProfile(): Flow<ProfileEntity?> // TODO: This is not the correct profile -> retrieve it from the settings
-
     @Query("SELECT * FROM profile WHERE id = :id")
     fun getProfileById(id: Uuid): Flow<ProfileEntity?>
 

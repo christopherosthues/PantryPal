@@ -58,7 +58,6 @@ class AuthenticationService(
         try {
             val response: HttpResponse = createHttpClient().use { client ->
                 client.post(loginUrl) {
-                    contentType(ContentType.Application.Json)
                     setBody(
                         LoginDto(username, password)
                     )
@@ -125,7 +124,6 @@ class AuthenticationService(
 
             val response: HttpResponse = createHttpClient(token).use {
                 it.post(refreshUrl) {
-                    contentType(ContentType.Application.Json)
                     setBody(
                         RefreshTokenDto(authenticationPreferences.refreshToken)
                     )
@@ -165,7 +163,6 @@ class AuthenticationService(
         try {
             val response: HttpResponse = createHttpClient().use {
                 it.post(registerUrl) {
-                    contentType(ContentType.Application.Json)
                     setBody(
                         RegistrationDto(username, email, password)
                     )
@@ -215,8 +212,6 @@ class AuthenticationService(
 
             val response: HttpResponse = createHttpClient(token).use {
                 it.patch(updateUrl) {
-                    header(HttpHeaders.Authorization, "Bearer ${prefs.accessToken}")
-                    contentType(ContentType.Application.Json)
                     setBody(UpdateUserDto(username, email, password, currentPassword))
                 }
             }

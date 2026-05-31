@@ -29,44 +29,39 @@ fun Application.configureMonitoring() {
         }
     }
 //    install(KHealth)
-    install(DropwizardMetrics) {
-        Slf4jReporter.forRegistry(registry)
-            .outputTo(this@configureMonitoring.log)
-            .convertRatesTo(TimeUnit.SECONDS)
-            .convertDurationsTo(TimeUnit.MILLISECONDS)
-            .build()
-            .start(10, TimeUnit.SECONDS)
-    }
-    val openTelemetry = getOpenTelemetry(serviceName = "opentelemetry-ktor-sample-server")
-
-    install(KtorServerTelemetry) {
-        setOpenTelemetry(openTelemetry)
-
-        capturedRequestHeaders(HttpHeaders.UserAgent)
-
-        spanKindExtractor {
-            if (httpMethod == HttpMethod.Post) {
-                SpanKind.PRODUCER
-            } else {
-                SpanKind.CLIENT
-            }
-        }
-
-        attributesExtractor {
-            onStart {
-                attributes.put("start-time", System.currentTimeMillis())
-            }
-            onEnd {
-                attributes.put("end-time", System.currentTimeMillis())
-            }
-        }
-    }
+//    install(DropwizardMetrics) {
+//        Slf4jReporter.forRegistry(registry)
+//            .outputTo(this@configureMonitoring.log)
+//            .convertRatesTo(TimeUnit.SECONDS)
+//            .convertDurationsTo(TimeUnit.MILLISECONDS)
+//            .build()
+//            .start(10, TimeUnit.SECONDS)
+//    }
+//    val openTelemetry = getOpenTelemetry(serviceName = "opentelemetry-ktor-sample-server")
+//
+//    install(KtorServerTelemetry) {
+//        setOpenTelemetry(openTelemetry)
+//
+//        capturedRequestHeaders(HttpHeaders.UserAgent)
+//
+//        spanKindExtractor {
+//            if (httpMethod == HttpMethod.Post) {
+//                SpanKind.PRODUCER
+//            } else {
+//                SpanKind.CLIENT
+//            }
+//        }
+//
+//        attributesExtractor {
+//            onStart {
+//                attributes.put("start-time", System.currentTimeMillis())
+//            }
+//            onEnd {
+//                attributes.put("end-time", System.currentTimeMillis())
+//            }
+//        }
+//    }
     install(CallLogging) {
         callIdMdc("call-id")
-    }
-    routing {
-        get("/hello") {
-            call.respondText("Hello World!")
-        }
     }
 }
