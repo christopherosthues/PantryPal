@@ -6,6 +6,8 @@ import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import org.darchacheron.pantrypal.authentication.AuthenticationPreferencesRepository
@@ -13,29 +15,53 @@ import org.darchacheron.pantrypal.settings.DataSynchronization
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
-@OptIn(ExperimentalUuidApi::class)
+@OptIn(ExperimentalUuidApi::class, kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 class ProfileRepository(
     private val profileDao: ProfileDao,
+    private val remoteProfileDao: RemoteProfileDao,
     private val profileNetworkService: ProfileNetworkService,
     private val authenticationPreferencesRepository: AuthenticationPreferencesRepository,
 ) {
     private val loggerTag = "ProfileRepository"
 
     fun getProfileById(id: Uuid): Flow<Profile?> =
-        profileDao.getProfileById(id).map { it?.toProfile() }
+        profileDao.getProfileById(id).flatMapLatest { entity ->
+            if (entity == null) flowOf(null)
+            else remoteProfileDao.getRemoteProfilesByLocalProfileId(id).map { remotes ->
+                entity.toProfile().copy(remoteProfiles = remotes.map { it.toRemoteProfile() })
+            }
+        }
 
     fun getProfileByUsername(username: String): Flow<Profile?> =
-        profileDao.getProfileByUsername(username).map { it?.toProfile() }
+        profileDao.getProfileByUsername(username).flatMapLatest { entity ->
+            if (entity == null) flowOf(null)
+            else remoteProfileDao.getRemoteProfilesByLocalProfileId(entity.id).map { remotes ->
+                entity.toProfile().copy(remoteProfiles = remotes.map { it.toRemoteProfile() })
+            }
+        }
 
     fun getProfileByEmail(email: String): Flow<Profile?> =
-        profileDao.getProfileByEmail(email).map { it?.toProfile() }
+        profileDao.getProfileByEmail(email).flatMapLatest { entity ->
+            if (entity == null) flowOf(null)
+            else remoteProfileDao.getRemoteProfilesByLocalProfileId(entity.id).map { remotes ->
+                entity.toProfile().copy(remoteProfiles = remotes.map { it.toRemoteProfile() })
+            }
+        }
 
     fun getProfileByIdentifier(identifier: String): Flow<Profile?> =
-        profileDao.getProfileByIdentifier(identifier).map { it?.toProfile() }
+        profileDao.getProfileByIdentifier(identifier).flatMapLatest { entity ->
+            if (entity == null) flowOf(null)
+            else remoteProfileDao.getRemoteProfilesByLocalProfileId(entity.id).map { remotes ->
+                entity.toProfile().copy(remoteProfiles = remotes.map { it.toRemoteProfile() })
+            }
+        }
 
     suspend fun upsert(profile: Profile) = withContext(Dispatchers.IO) {
         // Phase 1: Save locally
         profileDao.upsert(profile.toProfileEntity())
+        profile.remoteProfiles.forEach {
+            remoteProfileDao.upsert(it.toRemoteProfileEntity())
+        }
 
         // Phase 1: Try push immediately
         val prefs = authenticationPreferencesRepository.authenticationPreferencesFlow.firstOrNull()
@@ -44,10 +70,13 @@ class ProfileRepository(
         if (canSync && (profile.dataSynchronization == DataSynchronization.UPLOAD_AND_DOWNLOAD ||
             profile.dataSynchronization == DataSynchronization.ONLY_UPLOAD
         )) {
-            // TODO: what if the remote profile does not exist yet?
-            profileNetworkService.updateProfile(profile, prefs.serverUrl)
+            val serverUrl = prefs!!.serverUrl
+            val remoteProfile = remoteProfileDao.getRemoteProfile(profile.id, serverUrl).firstOrNull()
+            profileNetworkService.updateProfile(profile, serverUrl, remoteProfile?.username, remoteProfile?.email)
                 .onSuccess { syncedDto ->
-                    syncedDto?.let { profileDao.upsert(it.toProfileEntity(profile)) }
+                    syncedDto?.let {
+                        remoteProfileDao.upsert(it.toRemoteProfileEntity(profile.id, serverUrl))
+                    }
                 }
                 .onFailure { e ->
                     if (e is ProfileNetworkService.RemoteAccountDeletedException) {
@@ -57,6 +86,10 @@ class ProfileRepository(
                     }
                 }
         }
+    }
+
+    suspend fun upsertRemoteProfile(remoteProfile: RemoteProfile) = withContext(Dispatchers.IO) {
+        remoteProfileDao.upsert(remoteProfile.toRemoteProfileEntity())
     }
 
     suspend fun deleteLocal() = withContext(Dispatchers.IO) {
@@ -109,15 +142,20 @@ class ProfileRepository(
             return@withContext
         }
 
+        val serverUrl = prefs.serverUrl
+        val remoteProfile = remoteProfileDao.getRemoteProfile(localProfile.id, serverUrl).firstOrNull()
+
         // 1. Push changes if needed
         if (localProfile.dataSynchronization == DataSynchronization.UPLOAD_AND_DOWNLOAD ||
             localProfile.dataSynchronization == DataSynchronization.ONLY_UPLOAD
         ) {
-            if (localProfile.serverId != null && !localProfile.isLocalOnly) {
+            if (remoteProfile != null && !localProfile.isLocalOnly) {
                 if (localProfile.lastSyncedAt == null || localProfile.lastModifiedAt > localProfile.lastSyncedAt) {
-                    profileNetworkService.updateProfile(localProfile, prefs.serverUrl)
+                    profileNetworkService.updateProfile(localProfile, serverUrl, remoteProfile.username, remoteProfile.email)
                         .onSuccess { syncedDto ->
-                            syncedDto?.let { profileDao.upsert(it.toProfileEntity(localProfile)) }
+                            syncedDto?.let {
+                                remoteProfileDao.upsert(it.toRemoteProfileEntity(localProfile.id, serverUrl))
+                            }
                         }
                         .onFailure { e ->
                             handleSyncError(e)
@@ -130,9 +168,11 @@ class ProfileRepository(
         if (!localProfile.isLocalOnly && (localProfile.dataSynchronization == DataSynchronization.UPLOAD_AND_DOWNLOAD ||
                     localProfile.dataSynchronization == DataSynchronization.ONLY_DOWNLOAD)
         ) {
-            profileNetworkService.fetchProfile(prefs.serverUrl)
+            profileNetworkService.fetchProfile(serverUrl)
                 .onSuccess { remoteProfileDto ->
-                    remoteProfileDto?.let { profileDao.upsert(it.toProfileEntity(localProfile)) }
+                    remoteProfileDto?.let {
+                        remoteProfileDao.upsert(it.toRemoteProfileEntity(localProfile.id, serverUrl))
+                    }
                 }
                 .onFailure { e ->
                     handleSyncError(e)

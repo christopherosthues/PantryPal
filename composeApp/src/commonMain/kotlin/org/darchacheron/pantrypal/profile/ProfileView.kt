@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -553,7 +554,27 @@ private fun RemoteProfileSection(
                 onDataSynchronizationSelected = { profileViewModel.updateDataSynchronization(it) }
             )
 
+            val remoteProfile = profile.remoteProfiles.firstOrNull { it.serverUrl == profile.serverUrl }
+
             if (isLoggedInRemotely) {
+                if (remoteProfile != null) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                        horizontalAlignment = Alignment.Start
+                    ) {
+                        Text(
+                            text = "${stringResource(Res.string.profile_username_label)} (Remote): ${remoteProfile.username}",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Text(
+                            text = "${stringResource(Res.string.profile_email_label)} (Remote): ${remoteProfile.email}",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,

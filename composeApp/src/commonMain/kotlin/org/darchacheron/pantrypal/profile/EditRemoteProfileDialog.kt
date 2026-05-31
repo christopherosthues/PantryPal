@@ -19,13 +19,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import pantrypal.composeapp.generated.resources.*
+import kotlin.uuid.ExperimentalUuidApi
 
+@OptIn(ExperimentalUuidApi::class)
 @Composable
 fun EditRemoteProfileDialog(
     profile: Profile,
@@ -39,9 +42,16 @@ fun EditRemoteProfileDialog(
     val newPassword by viewModel.newPassword.collectAsState()
     val repeatNewPassword by viewModel.repeatNewPassword.collectAsState()
 
-    LaunchedEffect(Unit) {
-        viewModel.onUsernameChanged(profile.username)
-        viewModel.onEmailChanged(profile.email)
+    val remoteProfile = remember(profile) { profile.remoteProfiles.firstOrNull { it.serverUrl == profile.serverUrl } }
+
+    LaunchedEffect(remoteProfile) {
+        if (remoteProfile != null) {
+            viewModel.onUsernameChanged(remoteProfile.username)
+            viewModel.onEmailChanged(remoteProfile.email)
+        } else {
+            viewModel.onUsernameChanged(profile.username)
+            viewModel.onEmailChanged(profile.email)
+        }
     }
 
     AlertDialog(
@@ -105,8 +115,11 @@ fun EditRemoteProfileDialog(
             }
         },
         confirmButton = {
-            val isUsernameChanged = username != profile.username && username.isNotBlank()
-            val isEmailChanged = email != profile.email && email.isNotBlank()
+            val currentRemoteUsername = remoteProfile?.username ?: profile.username
+            val currentRemoteEmail = remoteProfile?.email ?: profile.email
+            
+            val isUsernameChanged = username != currentRemoteUsername && username.isNotBlank()
+            val isEmailChanged = email != currentRemoteEmail && email.isNotBlank()
             val isPasswordChanged = newPassword.isNotBlank()
             
             val isDataChanged = isUsernameChanged || isEmailChanged || isPasswordChanged

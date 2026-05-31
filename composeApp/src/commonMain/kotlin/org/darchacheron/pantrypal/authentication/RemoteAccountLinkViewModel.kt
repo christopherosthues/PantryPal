@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.darchacheron.pantrypal.profile.ProfileRepository
+import org.darchacheron.pantrypal.profile.RemoteProfile
 import org.darchacheron.pantrypal.ui.UiState
 import pantrypal.composeapp.generated.resources.Res
 import pantrypal.composeapp.generated.resources.remote_login_error_credentials
@@ -142,13 +143,21 @@ class RemoteAccountLinkViewModel(
                             val serverIdFromToken = JwtUtils.getUserIdFromToken(response.tokenResponse.accessToken)
                             val serverUuid = serverIdFromToken?.let { Uuid.parse(it) } ?: Uuid.parse(response.user.id)
 
-                            val profile = existingProfile.copy(
-                                serverId = serverUuid,
-                                serverUrl = data.serverUrl,
+                            profileRepository.upsert(existingProfile.copy(
+                                serverId = serverUuid, // TODO: AI removed this
+                                serverUrl = data.serverUrl, // TODO: AI removed this
                                 isLocalOnly = false,
                                 lastSyncedAt = Clock.System.now()
-                            )
-                            profileRepository.upsert(profile)
+                            ))
+
+                            profileRepository.upsertRemoteProfile(RemoteProfile(
+                                localProfileId = existingProfile.id,
+                                serverUrl = data.serverUrl,
+                                serverId = serverUuid,
+                                username = response.user.username,
+                                email = response.user.email,
+                                lastSyncedAt = Clock.System.now()
+                            ))
                         }
                         state.emit(UiState.success(data))
                         onSuccess()
@@ -163,13 +172,21 @@ class RemoteAccountLinkViewModel(
                             val serverIdFromToken = JwtUtils.getUserIdFromToken(response.tokenResponse.accessToken)
                             val serverUuid = serverIdFromToken?.let { Uuid.parse(it) } ?: Uuid.parse(response.user.id)
 
-                            val profile = existingProfile.copy(
-                                serverId = serverUuid,
-                                serverUrl = data.serverUrl,
+                            profileRepository.upsert(existingProfile.copy(
+                                serverId = serverUuid, // TODO: AI removed this
+                                serverUrl = data.serverUrl, // TODO: AI removed this
                                 isLocalOnly = false,
                                 lastSyncedAt = Clock.System.now()
-                            )
-                            profileRepository.upsert(profile)
+                            ))
+
+                            profileRepository.upsertRemoteProfile(RemoteProfile(
+                                localProfileId = existingProfile.id,
+                                serverUrl = data.serverUrl,
+                                serverId = serverUuid,
+                                username = response.user.username,
+                                email = response.user.email,
+                                lastSyncedAt = Clock.System.now()
+                            ))
                         }
                         state.emit(UiState.success(data))
                         onSuccess()

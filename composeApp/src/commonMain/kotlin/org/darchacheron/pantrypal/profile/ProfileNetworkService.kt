@@ -34,7 +34,12 @@ class ProfileNetworkService(private val preferencesRepository: AuthenticationPre
         }
     }
 
-    suspend fun updateProfile(profile: Profile, serverUrl: String): Result<ProfileDto?> {
+    suspend fun updateProfile(
+        profile: Profile,
+        serverUrl: String,
+        usernameOverride: String? = null,
+        emailOverride: String? = null
+    ): Result<ProfileDto?> {
         val auth = preferencesRepository.authenticationPreferencesFlow.firstOrNull()
         val token = auth?.accessToken
         if (token.isNullOrBlank()) return Result.failure(Exception("Not authenticated"))
@@ -43,7 +48,7 @@ class ProfileNetworkService(private val preferencesRepository: AuthenticationPre
             createHttpClient(token).use { client ->
                 val response = client.put("$serverUrl/profile") {
                     contentType(ContentType.Application.Json)
-                    setBody(profile.toDto())
+                    setBody(profile.toDto(usernameOverride, emailOverride))
                 }
                 if (response.status == HttpStatusCode.NotFound || response.status == HttpStatusCode.Gone) {
                     throw RemoteAccountDeletedException()

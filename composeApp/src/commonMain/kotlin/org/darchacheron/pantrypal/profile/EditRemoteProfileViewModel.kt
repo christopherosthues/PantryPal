@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlin.time.Clock
 import org.darchacheron.pantrypal.authentication.AuthenticationService
 import org.darchacheron.pantrypal.authentication.InvalidCredentialsException
 import org.darchacheron.pantrypal.authentication.UserAlreadyExistsException
@@ -13,9 +14,12 @@ import pantrypal.composeapp.generated.resources.Res
 import pantrypal.composeapp.generated.resources.profile_error_update
 import pantrypal.composeapp.generated.resources.profile_error_username_exists
 import pantrypal.composeapp.generated.resources.profile_error_wrong_password
+import kotlin.uuid.ExperimentalUuidApi
 
+@OptIn(ExperimentalUuidApi::class)
 class EditRemoteProfileViewModel(
-    private val authenticationService: AuthenticationService
+    private val authenticationService: AuthenticationService,
+    private val profileRepository: ProfileRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(UiState.success(false))
@@ -60,15 +64,28 @@ class EditRemoteProfileViewModel(
         viewModelScope.launch {
             _uiState.value = UiState.loading()
             try {
+                val newUsername = _username.value
+                val newEmail = _email.value
+                val newPassword = _newPassword.value.takeIf { it.isNotBlank() }
+
                 val result = authenticationService.updateUser(
                     serverUrl = serverUrl,
-                    username = if (_username.value != currentProfile.username) _username.value else null,
-                    email = if (_email.value != currentProfile.email) _email.value else null,
-                    password = _newPassword.value.takeIf { it.isNotBlank() },
+                    username = if (newUsername != currentProfile.username) newUsername else null,
+                    email = if (newEmail != currentProfile.email) newEmail else null,
+                    password = newPassword,
                     currentPassword = _currentPassword.value.takeIf { it.isNotBlank() }
                 )
 
                 if (result.isSuccess) {
+                    val remoteProfile = currentProfile.remoteProfiles.firstOrNull { it.serverUrl == serverUrl }
+                    if (remoteProfile != null) {
+                        profileRepository.upsertRemoteProfile(remoteProfile.copy(
+                            username = newUsername,
+                            email = newEmail,
+                            lastSyncedAt = Clock.System.now()
+                        ))
+                    }
+
                     _uiState.value = UiState.success(true)
                     onDismiss()
                 } else {

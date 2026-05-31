@@ -4,8 +4,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import co.touchlab.kermit.Logger
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.darchacheron.pantrypal.profile.ProfileRepository
+import org.darchacheron.pantrypal.profile.RemoteProfile
 import org.darchacheron.pantrypal.ui.UiState
 import pantrypal.composeapp.generated.resources.Res
 import pantrypal.composeapp.generated.resources.remote_login_error_credentials
@@ -14,9 +18,15 @@ import pantrypal.composeapp.generated.resources.remote_login_error_password_empt
 import pantrypal.composeapp.generated.resources.remote_login_error_profile_not_found
 import pantrypal.composeapp.generated.resources.remote_login_error_unreachable
 import pantrypal.composeapp.generated.resources.remote_login_error_username_empty
+import kotlin.time.Clock
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
+@OptIn(ExperimentalUuidApi::class)
 class RemoteLoginViewModel(
     private val authenticationService: AuthenticationService,
+    private val profileRepository: ProfileRepository,
+    private val preferencesRepository: AuthenticationPreferencesRepository,
 ) : ViewModel() {
     private val loginTag = "RemoteLogin"
 
@@ -56,11 +66,26 @@ class RemoteLoginViewModel(
             val data = uiState.data ?: return@launch
             if (!data.canSubmit) return@launch
 
+            val localProfileId = preferencesRepository.authenticationPreferencesFlow.map { it.localProfileId }.firstOrNull() ?: ""
+            if (localProfileId.isBlank()) return@launch
+            val existingProfile = profileRepository.getProfileById(Uuid.parse(localProfileId)).firstOrNull() ?: return@launch
+
             try {
                 state.emit(UiState.loading())
 
                 val result = authenticationService.loginRemotely(data.username, data.password, data.serverUrl)
                 if (result.isSuccess) {
+                    val response = result.getOrNull()
+                    if (response != null) {
+                        profileRepository.upsertRemoteProfile(RemoteProfile(
+                            localProfileId = existingProfile.id,
+                            serverUrl = data.serverUrl,
+                            serverId = Uuid.parse(response.user.id),
+                            username = response.user.username,
+                            email = response.user.email,
+                            lastSyncedAt = Clock.System.now()
+                        ))
+                    }
                     state.emit(UiState.success(data))
                     onSuccess()
                 } else {

@@ -35,6 +35,7 @@ import org.darchacheron.pantrypal.camera.OcrCameraViewModel
 import org.darchacheron.pantrypal.camera.SimpleCameraView
 import org.darchacheron.pantrypal.camera.SimpleCameraViewModel
 import org.darchacheron.pantrypal.database.MIGRATION_1_2
+import org.darchacheron.pantrypal.database.MIGRATION_2_3
 import org.darchacheron.pantrypal.database.PantryPalDatabase
 import org.darchacheron.pantrypal.database.PantryPalDatabaseFactory
 import org.darchacheron.pantrypal.food.FoodDetailView
@@ -230,7 +231,8 @@ val sharedModule =
             get<PantryPalDatabaseFactory>()
                 .create()
                 .addMigrations(
-                    MIGRATION_1_2
+                    MIGRATION_1_2,
+                    MIGRATION_2_3
                 )
                 .setDriver(BundledSQLiteDriver())
                 .build()
@@ -238,6 +240,7 @@ val sharedModule =
 
         single { get<PantryPalDatabase>().foodDao }
         single { get<PantryPalDatabase>().profileDao }
+        single { get<PantryPalDatabase>().remoteProfileDao }
         single { get<PantryPalDatabase>().inventoryItemDao }
 
         viewModelOf(::SettingsViewModel)

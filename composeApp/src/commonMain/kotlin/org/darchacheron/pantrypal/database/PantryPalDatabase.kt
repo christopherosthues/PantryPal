@@ -16,15 +16,18 @@ import org.darchacheron.pantrypal.inventory.InventoryItemDao
 import org.darchacheron.pantrypal.inventory.InventoryItemEntity
 import org.darchacheron.pantrypal.profile.ProfileDao
 import org.darchacheron.pantrypal.profile.ProfileEntity
+import org.darchacheron.pantrypal.profile.RemoteProfileDao
+import org.darchacheron.pantrypal.profile.RemoteProfileEntity
 
 @Database(
     entities = [
         FoodEntity::class,
         ProfileEntity::class,
         InventoryItemEntity::class,
-        ImageEntity::class
+        ImageEntity::class,
+        RemoteProfileEntity::class
     ],
-    version = 2
+    version = 3
 )
 @TypeConverters(
     InstantConverter::class,
@@ -37,6 +40,7 @@ import org.darchacheron.pantrypal.profile.ProfileEntity
 abstract class PantryPalDatabase : RoomDatabase() {
     abstract val foodDao: FoodDao
     abstract val profileDao: ProfileDao
+    abstract val remoteProfileDao: RemoteProfileDao
     abstract val inventoryItemDao: InventoryItemDao
 
     companion object {
