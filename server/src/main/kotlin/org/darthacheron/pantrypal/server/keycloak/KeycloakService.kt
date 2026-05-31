@@ -160,18 +160,20 @@ class KeycloakService(private val configurationService: ConfigurationService) {
                 setBody(KeycloakUserRequest(
                     username = username,
                     email = email,
-                    credentials = password?.let {
-                        listOf(KeycloakCredential(
-                            type = "password",
-                            value = it,
-                            temporary = false
-                        ))
-                    }
+                    // TODO: handle credentials
+//                    credentials = password?.let {
+//                        listOf(KeycloakCredential(
+//                            type = "password",
+//                            value = it,
+//                            temporary = false
+//                        ))
+//                    }
                 ))
             }
         }.getOrElse { return Result.failure(it) }
 
         return if (response.status != HttpStatusCode.NoContent && response.status != HttpStatusCode.OK) {
+            // TODO: handle conflict case where username/email already exists for another user
             logger.error("Failed to update Keycloak user ID: {}, status: {}", userId, response.status)
             Result.failure(KeycloakException(response.status, "Failed to update user in Keycloak"))
         } else {
