@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:18.3
+    image: postgres:18.4
     environment:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=${POSTGRES_USER}
@@ -34,7 +34,7 @@ services:
       timeout: 5s
 
   pgadmin:
-    image: dpage/pgadmin4:9.14.0
+    image: dpage/pgadmin4:9.15.0
     environment:
       - PGADMIN_DEFAULT_EMAIL=${PGADMIN_MAIL}
       - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASSWORD}
