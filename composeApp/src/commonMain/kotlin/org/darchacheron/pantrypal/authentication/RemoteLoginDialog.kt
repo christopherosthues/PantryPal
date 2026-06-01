@@ -64,10 +64,12 @@ fun RemoteLoginDialog(
 
                 OutlinedTextField(
                     value = data.serverUrl,
-                    onValueChange = { },
+                    onValueChange = { viewModel.onServerUrlChanged(it) },
                     label = { Text(stringResource(Res.string.profile_server_url_label)) },
-                    readOnly = true,
-                    enabled = false,
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Uri,
+                        imeAction = ImeAction.Next
+                    ),
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )

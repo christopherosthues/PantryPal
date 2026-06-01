@@ -8,5 +8,6 @@ data class RemoteLogin(
     val serverUrl: String = "",
     val usernameError: StringResource? = null,
     val passwordError: StringResource? = null,
+    val serverUrlError: StringResource? = null,
     val canSubmit: Boolean = false
 )

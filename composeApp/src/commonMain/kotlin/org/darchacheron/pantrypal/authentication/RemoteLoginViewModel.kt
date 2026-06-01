@@ -14,8 +14,10 @@ import org.darchacheron.pantrypal.ui.UiState
 import pantrypal.composeapp.generated.resources.Res
 import pantrypal.composeapp.generated.resources.remote_login_error_credentials
 import pantrypal.composeapp.generated.resources.remote_login_error_generic
+import pantrypal.composeapp.generated.resources.remote_login_error_invalid_server_url
 import pantrypal.composeapp.generated.resources.remote_login_error_password_empty
 import pantrypal.composeapp.generated.resources.remote_login_error_profile_not_found
+import pantrypal.composeapp.generated.resources.remote_login_error_server_url_empty
 import pantrypal.composeapp.generated.resources.remote_login_error_unreachable
 import pantrypal.composeapp.generated.resources.remote_login_error_username_empty
 import kotlin.time.Clock
@@ -37,10 +39,11 @@ class RemoteLoginViewModel(
             val currentData = currentUiState.data ?: return@update currentUiState
             val nextData = block(currentData)
             
+            val isServerUrlValid = nextData.serverUrl.isNotBlank() && nextData.serverUrlError == null
             val isUsernameValid = nextData.username.isNotBlank() && nextData.usernameError == null
             val isPasswordValid = nextData.password.isNotBlank() && nextData.passwordError == null
             
-            val canSubmit = isUsernameValid && isPasswordValid
+            val canSubmit = isServerUrlValid && isUsernameValid && isPasswordValid
 
             currentUiState.copy(data = nextData.copy(canSubmit = canSubmit), error = null)
         }
@@ -56,8 +59,24 @@ class RemoteLoginViewModel(
         updateState { it.copy(password = password, passwordError = error) }
     }
 
-    fun setServerUrl(serverUrl: String) {
-        updateState { it.copy(serverUrl = serverUrl) }
+    fun onServerUrlChanged(serverUrl: String) {
+        val error = if (serverUrl.isBlank()) {
+            Res.string.remote_login_error_server_url_empty
+        } else if (!isValidUri(serverUrl)) {
+            Res.string.remote_login_error_invalid_server_url
+        } else {
+            null
+        }
+        updateState { it.copy(serverUrl = serverUrl, serverUrlError = error) }
+    }
+
+    private fun isValidUri(uri: String): Boolean {
+        return try {
+            val regex = "^https?://[-a-zA-Z0-9+&@/%~_|!:,.;]*[-a-zA-Z0-9+&@/%=~_|]".toRegex()
+            regex.matches(uri)
+        } catch (e: Exception) {
+            false
+        }
     }
 
     fun login(onSuccess: () -> Unit) {
@@ -77,6 +96,12 @@ class RemoteLoginViewModel(
                 if (result.isSuccess) {
                     val response = result.getOrNull()
                     if (response != null) {
+                        // Update profile with the potentially new serverUrl
+                        profileRepository.upsert(existingProfile.copy(
+                            serverUrl = data.serverUrl,
+                            lastSyncedAt = Clock.System.now()
+                        ))
+
                         profileRepository.upsertRemoteProfile(RemoteProfile(
                             localProfileId = existingProfile.id,
                             serverUrl = data.serverUrl,

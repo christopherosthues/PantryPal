@@ -62,6 +62,12 @@ fun EditRemoteProfileDialog(
                 modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                Text(
+                    text = "${stringResource(Res.string.profile_server_url_label)}: ${profile.serverUrl ?: ""}",
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+
                 OutlinedTextField(
                     value = username,
                     onValueChange = { viewModel.onUsernameChanged(it) },

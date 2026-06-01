@@ -149,7 +149,6 @@ fun ProfileView(
             val profile = uiState.data
             if (profile != null) {
                 remoteLoginViewModel.onUsernameChanged(profile.username)
-                profile.serverUrl?.let { remoteLoginViewModel.setServerUrl(it) }
             }
         }
 
@@ -487,22 +486,10 @@ private fun RemoteProfileSection(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            OutlinedTextField(
-                value = profile.serverUrl ?: "",
-                onValueChange = { profileViewModel.updateServerUrl(it) },
-                label = { Text(stringResource(Res.string.profile_server_url_label)) },
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Uri,
-                    imeAction = ImeAction.Next
-                ),
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-                isError = profileValidationState.serverUrlError != null,
-                supportingText = {
-                    profileValidationState.serverUrlError?.let {
-                        Text(stringResource(it))
-                    }
-                }
+            Text(
+                text = "${stringResource(Res.string.profile_server_url_label)}: ${profile.serverUrl ?: ""}",
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
             )
 
             val isTestingConnection by profileViewModel.isTestingConnection.collectAsState()

@@ -28,7 +28,6 @@ import pantrypal.composeapp.generated.resources.profile_error_email_empty
 import pantrypal.composeapp.generated.resources.profile_error_email_invalid
 import pantrypal.composeapp.generated.resources.profile_error_new_password_empty
 import pantrypal.composeapp.generated.resources.profile_error_password_mismatch
-import pantrypal.composeapp.generated.resources.profile_error_server_url_invalid
 import pantrypal.composeapp.generated.resources.profile_error_update
 import pantrypal.composeapp.generated.resources.profile_error_username_empty
 import pantrypal.composeapp.generated.resources.profile_error_wrong_password
@@ -183,12 +182,6 @@ class ProfileViewModel(
                 hasValidationError = true
             }
 
-            val serverUrl = profile.serverUrl
-            if (!serverUrl.isNullOrBlank() && !isValidUri(serverUrl)) {
-                validationState = validationState.copy(serverUrlError = Res.string.profile_error_server_url_invalid)
-                hasValidationError = true
-            }
-
             if (hasValidationError) {
                 _profileValidationState.value = validationState
                 return@launch
@@ -198,14 +191,8 @@ class ProfileViewModel(
                 _uiState.value = UiState.loading()
                 _profileValidationState.value = ProfileValidationState()
 
-                val profileToSave = if (profile.serverUrl?.isBlank() == true) {
-                    profile.copy(serverUrl = null)
-                } else {
-                    profile
-                }
-
-                profileRepository.upsert(profileToSave)
-                _uiState.value = UiState.success(profileToSave)
+                profileRepository.upsert(profile)
+                _uiState.value = UiState.success(profile)
             } catch (e: Exception) {
                 _uiState.value = capturedState.copy(error = Res.string.profile_error_update)
             }
@@ -265,29 +252,9 @@ class ProfileViewModel(
         return emailRegex.matches(email)
     }
 
-    fun isValidUri(uri: String): Boolean {
-        return try {
-            val regex = "^https?://[-a-zA-Z0-9+&@/%~_|!:,.;]*[-a-zA-Z0-9+&@/%=~_|]".toRegex()
-            regex.matches(uri)
-        } catch (e: Exception) {
-            false
-        }
-    }
-
-    fun updateServerUrl(url: String) {
-        _uiState.value = _uiState.value.copy(data = _uiState.value.data?.copy(serverUrl = url), error = null)
-        val error = if (url.isNotEmpty() && !isValidUri(url)) {
-            Res.string.profile_error_server_url_invalid
-        } else {
-            null
-        }
-        _profileValidationState.value = _profileValidationState.value.copy(serverUrlError = error)
-        _connectionTestSuccess.value = null
-    }
-
     fun testConnection() {
         val serverUrl = _uiState.value.data?.serverUrl ?: return
-        if (serverUrl.isBlank() || _profileValidationState.value.serverUrlError != null) return
+        if (serverUrl.isBlank()) return
 
         viewModelScope.launch {
             _isTestingConnection.value = true
