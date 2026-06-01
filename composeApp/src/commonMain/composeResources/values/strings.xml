@@ -216,6 +216,7 @@
     <string name="profile_remote_repeat_new_password_label">Repeat New Password</string>
     <string name="profile_local_login_only">Connected to server, but logged in locally. Please login remotely to enable synchronization.</string>
     <string name="profile_remote_login_button">Login Remotely</string>
+    <string name="profile_unlink_account_button">Unlink Account (Local Only)</string>
     <string name="profile_local_only_no_server">Local only profile. Enable synchronization to back up your data.</string>
     <string name="profile_enable_sync_button">Enable Synchronization</string>
     <string name="profile_link_account_title">Link to Existing Account</string>

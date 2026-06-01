@@ -265,6 +265,22 @@ class ProfileViewModel(
         }
     }
 
+    fun unlinkAccount() {
+        viewModelScope.launch {
+            val currentProfile = _uiState.value.data ?: return@launch
+            val updatedProfile = currentProfile.copy(
+                serverId = null,
+                serverUrl = null,
+                isLocalOnly = true,
+                lastSyncedAt = null
+            )
+            profileRepository.upsert(updatedProfile)
+            // Also ensure remote login state is cleared
+            authenticationService.logoutRemotely()
+            loadProfile()
+        }
+    }
+
     fun showLoginDialog() {
         _showLoginDialog.value = true
     }

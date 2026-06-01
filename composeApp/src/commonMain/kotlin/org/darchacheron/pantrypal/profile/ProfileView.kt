@@ -106,6 +106,7 @@ import pantrypal.composeapp.generated.resources.profile_testing_connection
 import pantrypal.composeapp.generated.resources.profile_connection_success
 import pantrypal.composeapp.generated.resources.profile_connection_error
 import pantrypal.composeapp.generated.resources.profile_title
+import pantrypal.composeapp.generated.resources.profile_unlink_account_button
 import pantrypal.composeapp.generated.resources.profile_username_label
 import pantrypal.composeapp.generated.resources.remote_login_password_label
 import pantrypal.composeapp.generated.resources.remote_login_username_label
@@ -466,7 +467,6 @@ private fun RemoteProfileSection(
     profile: Profile
 ) {
     val isLoggedInRemotely by profileViewModel.isLoggedInRemotely.collectAsState()
-    val persistedServerUrl by profileViewModel.persistedServerUrl.collectAsState()
     val profileValidationState by profileViewModel.profileValidationState.collectAsState()
     var showEnableSyncDialog by remember { mutableStateOf(false) }
 
@@ -602,6 +602,13 @@ private fun RemoteProfileSection(
                 ) {
                     Text(stringResource(Res.string.profile_remote_login_button))
                 }
+
+                TextButton(
+                    onClick = { profileViewModel.unlinkAccount() },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(stringResource(Res.string.profile_unlink_account_button))
+                }
             } else {
                 Text(
                     text = stringResource(Res.string.profile_local_only_no_server),
@@ -609,14 +616,9 @@ private fun RemoteProfileSection(
                     color = MaterialTheme.colorScheme.primary
                 )
 
-                val isServerUrlPersisted = !profile.serverUrl.isNullOrBlank() &&
-                        profile.serverUrl == persistedServerUrl &&
-                        profileValidationState.serverUrlError == null
-
                 Button(
                     onClick = { showEnableSyncDialog = true },
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = isServerUrlPersisted
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(stringResource(Res.string.profile_enable_sync_button))
                 }
