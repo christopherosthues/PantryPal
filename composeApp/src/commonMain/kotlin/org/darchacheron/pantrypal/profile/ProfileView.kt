@@ -149,7 +149,8 @@ fun ProfileView(
         LaunchedEffect(showLoginDialog) {
             val profile = uiState.data
             if (profile != null) {
-                remoteLoginViewModel.onUsernameChanged(profile.username)
+                val remoteProfile = profile.remoteProfiles.find { it.serverUrl == profile.serverUrl }
+                remoteLoginViewModel.onUsernameChanged(remoteProfile?.username ?: profile.username)
                 remoteLoginViewModel.onServerUrlChanged(profile.serverUrl ?: "")
             }
         }
@@ -629,8 +630,9 @@ private fun RemoteProfileSection(
 
     if (showEnableSyncDialog) {
         LaunchedEffect(showEnableSyncDialog) {
-            remoteAccountLinkViewModel.onUsernameChanged(profile.username)
-            remoteAccountLinkViewModel.onEmailChanged(profile.email)
+            val remoteProfile = profile.remoteProfiles.find { it.serverUrl == profile.serverUrl }
+            remoteAccountLinkViewModel.onUsernameChanged(remoteProfile?.username ?: profile.username)
+            remoteAccountLinkViewModel.onEmailChanged(remoteProfile?.email ?: profile.email)
             profile.serverUrl?.let { remoteAccountLinkViewModel.onServerUrlChanged(it) }
         }
 
