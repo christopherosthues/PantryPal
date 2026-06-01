@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.darchacheron.pantrypal.networking.ConnectionNetworkService
 import org.darchacheron.pantrypal.profile.ProfileRepository
 import org.darchacheron.pantrypal.profile.RemoteProfile
 import org.darchacheron.pantrypal.ui.UiState
@@ -32,6 +33,7 @@ class RemoteAccountLinkViewModel(
     private val authenticationService: AuthenticationService,
     private val profileRepository: ProfileRepository,
     private val preferencesRepository: AuthenticationPreferencesRepository,
+    private val connectionNetworkService: ConnectionNetworkService,
 ) : ViewModel() {
     private val loginTag = "RemoteAccountLink"
 
@@ -106,7 +108,7 @@ class RemoteAccountLinkViewModel(
         } else {
             null
         }
-        updateState { it.copy(serverUrl = serverUrl, serverUrlError = error) }
+        updateState { it.copy(serverUrl = serverUrl, serverUrlError = error, connectionTestSuccess = null) }
     }
 
     private fun isValidUri(uri: String): Boolean {
@@ -115,6 +117,17 @@ class RemoteAccountLinkViewModel(
             regex.matches(uri)
         } catch (e: Exception) {
             false
+        }
+    }
+
+    fun testConnection() {
+        val serverUrl = state.value.data?.serverUrl ?: return
+        if (serverUrl.isBlank()) return
+
+        viewModelScope.launch {
+            updateState { it.copy(isTestingConnection = true, connectionTestSuccess = null) }
+            val result = connectionNetworkService.testConnection(serverUrl)
+            updateState { it.copy(isTestingConnection = false, connectionTestSuccess = result.isSuccess) }
         }
     }
 

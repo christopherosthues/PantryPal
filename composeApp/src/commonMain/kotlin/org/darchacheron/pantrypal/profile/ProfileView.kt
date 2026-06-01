@@ -150,6 +150,7 @@ fun ProfileView(
             val profile = uiState.data
             if (profile != null) {
                 remoteLoginViewModel.onUsernameChanged(profile.username)
+                remoteLoginViewModel.onServerUrlChanged(profile.serverUrl ?: "")
             }
         }
 

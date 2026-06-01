@@ -33,6 +33,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.material3.Icon
+import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import pantrypal.composeapp.generated.resources.*
 
@@ -105,6 +107,45 @@ fun RemoteAccountLinkDialog(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Button(
+                        onClick = { viewModel.testConnection() },
+                        modifier = Modifier.weight(1f),
+                        enabled = !data.isTestingConnection && data.serverUrl.isNotBlank() && data.serverUrlError == null
+                    ) {
+                        if (data.isTestingConnection) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(18.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.onPrimary
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(stringResource(Res.string.profile_testing_connection))
+                        } else {
+                            Text(stringResource(Res.string.profile_test_connection_button))
+                        }
+                    }
+
+                    data.connectionTestSuccess?.let { success ->
+                        val color =
+                            if (success) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+                        val text =
+                            if (success) Res.string.profile_connection_success else Res.string.profile_connection_error
+                        val icon =
+                            if (success) Res.drawable.ic_check_circle_outline else Res.drawable.ic_error_outline
+                        Icon(painter = painterResource(icon), contentDescription = null, tint = color)
+                        Text(
+                            text = stringResource(text),
+                            color = color,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                }
 
                 OutlinedTextField(
                     value = data.username,

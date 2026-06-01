@@ -14,5 +14,7 @@ data class RemoteAccountLink(
     val passwordError: StringResource? = null,
     val repeatedPasswordError: StringResource? = null,
     val serverUrlError: StringResource? = null,
+    val isTestingConnection: Boolean = false,
+    val connectionTestSuccess: Boolean? = null,
     val canSubmit: Boolean = false
 )
