@@ -10,9 +10,12 @@ import kotlinx.coroutines.withContext
 import okio.FileSystem
 import okio.Path.Companion.toPath
 import org.darchacheron.pantrypal.authentication.AuthenticationPreferencesRepository
+import org.darchacheron.pantrypal.camera.RemoteImageDao
+import org.darchacheron.pantrypal.camera.RemoteImageEntity
 import org.darchacheron.pantrypal.networking.ImageNetworkService
 import org.darchacheron.pantrypal.profile.ProfileDao
 import org.darchacheron.pantrypal.settings.DataSynchronization
+import kotlin.time.Clock
 import kotlin.time.Instant
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -20,9 +23,11 @@ import kotlin.uuid.Uuid
 @OptIn(ExperimentalUuidApi::class)
 class InventoryRepository(
     private val inventoryItemDao: InventoryItemDao,
+    private val remoteInventoryItemDao: RemoteInventoryItemDao,
     private val profileDao: ProfileDao,
     private val inventoryNetworkService: InventoryNetworkService,
     private val imageNetworkService: ImageNetworkService,
+    private val remoteImageDao: RemoteImageDao,
     private val authenticationPreferencesRepository: AuthenticationPreferencesRepository,
     private val fileSystem: FileSystem,
 ) {
@@ -91,7 +96,7 @@ class InventoryRepository(
                 val serverItem = syncedItems.firstOrNull()
                 if (serverItem != null) {
                     val serverItemId = serverItem.serverId!!
-                    inventoryItemDao.updateServerId(inventoryItem.id, serverItemId)
+                    remoteInventoryItemDao.upsert(RemoteInventoryItemEntity(inventoryItem.id, prefs.serverUrl, serverItemId, Clock.System.now()))
                     
                     // Delete removed images from server
                     imagesToDeleteOnServer.forEach { imageServerId ->
@@ -104,13 +109,14 @@ class InventoryRepository(
                     inventoryItem.additionalImages.forEach { imagesToUpload.add(it to false) }
 
                     imagesToUpload.forEach { (image, isPrimary) ->
-                        if (image.serverId == null && image.localPath != null) {
+                        val existingRemoteImage = image.getServerId(prefs.serverUrl)
+                        if (existingRemoteImage == null && image.localPath != null) {
                             val path = image.localPath.toPath()
                             if (fileSystem.exists(path)) {
                                 val bytes = fileSystem.read(path) { readByteArray() }
                                 imageNetworkService.uploadInventoryImage(serverItemId, bytes, isPrimary, prefs.serverUrl)
                                     .onSuccess { imageDto ->
-                                        inventoryItemDao.updateImageServerId(image.id, imageDto.serverId)
+                                        remoteImageDao.upsert(RemoteImageEntity(image.id, prefs.serverUrl, imageDto.serverId, Clock.System.now()))
                                     }
                             }
                         }
@@ -136,11 +142,12 @@ class InventoryRepository(
             val profile = profileId?.let { profileDao.getProfileById(it).firstOrNull() }
             val canSync = prefs?.isLoggedInRemotely == true
 
-            if (canSync && profile != null && item.serverId != null && (profile.dataSynchronization == DataSynchronization.UPLOAD_AND_DOWNLOAD ||
+            val serverId = item.getServerId(prefs?.serverUrl ?: "")
+            if (canSync && profile != null && serverId != null && (profile.dataSynchronization == DataSynchronization.UPLOAD_AND_DOWNLOAD ||
                 profile.dataSynchronization == DataSynchronization.ONLY_UPLOAD)
             ) {
                 try {
-                    inventoryNetworkService.deleteInventoryItem(item.serverId, prefs.serverUrl)
+                    inventoryNetworkService.deleteInventoryItem(serverId, prefs!!.serverUrl)
                 } catch (e: Exception) {
                     Logger.withTag(loggerTag).w { "Failed to delete item ${item.name} from server. Error: ${e.message}" }
                 }
@@ -172,7 +179,7 @@ class InventoryRepository(
                     try {
                         val syncedItems = inventoryNetworkService.pushInventoryItems(dirtyItems, prefs.serverUrl)
                         syncedItems.forEach { synced ->
-                            inventoryItemDao.updateServerId(synced.id, synced.serverId!!)
+                            remoteInventoryItemDao.upsert(RemoteInventoryItemEntity(synced.id, prefs.serverUrl, synced.serverId!!, Clock.System.now()))
                         }
                     } catch (e: Exception) {
                         Logger.withTag(loggerTag).e { "Failed to upload inventory batch: ${e.message}" }

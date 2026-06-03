@@ -15,11 +15,11 @@ data class RemoteImage(
 @OptIn(ExperimentalUuidApi::class)
 data class Image(
     val id: Uuid = Uuid.generateV7(),
-    val serverId: Uuid? = null,
-    val serverUrl: String? = null,
     val profileId: Uuid,
     val localPath: String? = null,
     val createdAt: Instant,
     val lastModifiedAt: Instant,
     val remoteImages: List<RemoteImage> = emptyList()
-)
+) {
+    fun getServerId(serverUrl: String): Uuid? = remoteImages.find { it.serverUrl == serverUrl }?.serverId
+}

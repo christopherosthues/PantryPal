@@ -96,7 +96,7 @@ class LoginViewModel(
     }
 
     private suspend fun loginLocally(profile: Profile, username: String, password: String, stayLoggedIn: Boolean) {
-        authenticationService.loginLocally(profile.id, profile.serverUrl, stayLoggedIn)
+        authenticationService.loginLocally(profile.id, stayLoggedIn)
         loginState.emit(UiState.success(Login(username, password, stayLoggedIn = stayLoggedIn)))
         navigator.goToMain()
     }

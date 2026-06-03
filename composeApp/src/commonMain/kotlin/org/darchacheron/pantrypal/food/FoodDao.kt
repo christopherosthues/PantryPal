@@ -87,15 +87,17 @@ interface FoodDao {
     @Query("DELETE FROM food WHERE id = :id")
     suspend fun delete(id: Uuid)
 
-    @Query("SELECT * FROM food WHERE serverId IS NULL OR lastModifiedAt > :lastSyncTime")
+    @Query("""
+        SELECT * FROM food 
+        WHERE id NOT IN (SELECT localFoodId FROM remote_food) 
+        OR lastModifiedAt > :lastSyncTime
+    """)
     suspend fun getDirtyRecords(lastSyncTime: Instant): List<FoodEntity>
 
-    @Query("UPDATE food SET serverId = :serverId WHERE id = :id")
-    suspend fun updateServerId(id: Uuid, serverId: Uuid)
-
-    @Query("UPDATE images SET serverId = :serverId WHERE id = :id")
-    suspend fun updateImageServerId(id: Uuid, serverId: Uuid)
-
-    @Query("SELECT * FROM images WHERE profileId = :profileId AND (serverId IS NULL OR lastModifiedAt > :lastSyncTime)")
+    @Query("""
+        SELECT * FROM images 
+        WHERE profileId = :profileId 
+        AND (id NOT IN (SELECT localImageId FROM remote_image) OR lastModifiedAt > :lastSyncTime)
+    """)
     suspend fun getDirtyImages(profileId: Uuid, lastSyncTime: Instant): List<ImageEntity>
 }

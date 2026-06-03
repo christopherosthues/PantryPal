@@ -12,6 +12,9 @@ import kotlinx.datetime.todayIn
 import okio.FileSystem
 import okio.Path.Companion.toPath
 import org.darchacheron.pantrypal.authentication.AuthenticationPreferencesRepository
+import org.darchacheron.pantrypal.camera.RemoteImageDao
+import org.darchacheron.pantrypal.camera.RemoteImageEntity
+import org.darchacheron.pantrypal.common.RemoteProduct
 import org.darchacheron.pantrypal.networking.ImageNetworkService
 import org.darchacheron.pantrypal.profile.ProfileDao
 import org.darchacheron.pantrypal.settings.DataSynchronization
@@ -23,9 +26,11 @@ import kotlin.uuid.Uuid
 @OptIn(ExperimentalUuidApi::class)
 class FoodRepository(
     private val foodDao: FoodDao,
+    private val remoteFoodDao: RemoteFoodDao,
     private val profileDao: ProfileDao,
     private val foodNetworkService: FoodNetworkService,
     private val imageNetworkService: ImageNetworkService,
+    private val remoteImageDao: RemoteImageDao,
     private val authenticationPreferencesRepository: AuthenticationPreferencesRepository,
     private val fileSystem: FileSystem,
 ) {
@@ -98,7 +103,7 @@ class FoodRepository(
                 val serverFood = syncedFoods.firstOrNull()
                 if (serverFood != null) {
                     val serverFoodId = serverFood.serverId!!
-                    foodDao.updateServerId(food.id, serverFoodId)
+                    remoteFoodDao.upsert(RemoteFoodEntity(food.id, prefs.serverUrl, serverFoodId, Clock.System.now()))
 
                     // Delete removed images from server
                     imagesToDeleteOnServer.forEach { imageServerId ->
@@ -111,13 +116,14 @@ class FoodRepository(
                     food.additionalImages.forEach { imagesToUpload.add(it to false) }
                     
                     imagesToUpload.forEach { (image, isPrimary) ->
-                        if (image.serverId == null && image.localPath != null) {
+                        val existingRemoteImage = image.getServerId(prefs.serverUrl)
+                        if (existingRemoteImage == null && image.localPath != null) {
                             val path = image.localPath.toPath()
                             if (fileSystem.exists(path)) {
                                 val bytes = fileSystem.read(path) { readByteArray() }
                                 imageNetworkService.uploadFoodImage(serverFoodId, bytes, isPrimary, prefs.serverUrl)
                                     .onSuccess { imageDto ->
-                                        foodDao.updateImageServerId(image.id, imageDto.serverId)
+                                        remoteImageDao.upsert(RemoteImageEntity(image.id, prefs.serverUrl, imageDto.serverId, Clock.System.now()))
                                     }
                             }
                         }
@@ -143,10 +149,11 @@ class FoodRepository(
             val profile = profileId?.let { profileDao.getProfileById(it).firstOrNull() }
             val canSync = prefs?.isLoggedInRemotely == true
 
-            if (canSync && profile != null && food.serverId != null && (profile.dataSynchronization == DataSynchronization.UPLOAD_AND_DOWNLOAD || 
+            val serverId = food.getServerId(prefs?.serverUrl ?: "")
+            if (canSync && profile != null && serverId != null && (profile.dataSynchronization == DataSynchronization.UPLOAD_AND_DOWNLOAD || 
                 profile.dataSynchronization == DataSynchronization.ONLY_UPLOAD)) {
                 try {
-                    foodNetworkService.deleteFood(food.serverId, prefs.serverUrl)
+                    foodNetworkService.deleteFood(serverId, prefs!!.serverUrl)
                 } catch (e: Exception) {
                     Logger.withTag(loggerTag).w { "Failed to delete food ${food.name} from server. Error: ${e.message}" }
                 }
@@ -178,7 +185,7 @@ class FoodRepository(
                     try {
                         val syncedFoods = foodNetworkService.pushFoods(dirtyFoods, prefs.serverUrl)
                         syncedFoods.forEach { synced ->
-                            foodDao.updateServerId(synced.id, synced.serverId!!)
+                            remoteFoodDao.upsert(RemoteFoodEntity(synced.id, prefs.serverUrl, synced.serverId!!, Clock.System.now()))
                         }
                     } catch (e: Exception) {
                         Logger.withTag(loggerTag).e { "Failed to upload batch: ${e.message}" }

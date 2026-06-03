@@ -155,7 +155,7 @@ class RegistrationViewModel(
 
             createLocalProfile(userName, email, password)
                 .onSuccess { localProfile ->
-                    authenticationService.loginLocally(localProfile.id, localProfile.serverUrl, registrationData.stayLoggedIn)
+                    authenticationService.loginLocally(localProfile.id, registrationData.stayLoggedIn)
                     registrationState.emit(UiState.success(registrationData.copy(userName = userName, email = email, password = password)))
                     navigator.goToMain()
                 }
@@ -182,7 +182,6 @@ class RegistrationViewModel(
             val now = Clock.System.now()
             val profile = Profile(
                 id = Uuid.generateV7(),
-                serverId = null,
                 username = userName,
                 email = email,
                 passwordHash = hashPassword(password),

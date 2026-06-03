@@ -141,11 +141,11 @@ class FoodListViewModel(
                 foodRepository.upsert(
                     food.copy(
                         id = Uuid.generateV7(),
-                        serverId = null,
                         createdAt = Clock.System.now(),
                         lastModifiedAt = Clock.System.now(),
                         image = null,
-                        additionalImages = emptyList()
+                        additionalImages = emptyList(),
+                        remoteProducts = emptyList()
                     )
                 )
                 _messages.value = Message(Res.string.food_list_card_copy_success, food.name)

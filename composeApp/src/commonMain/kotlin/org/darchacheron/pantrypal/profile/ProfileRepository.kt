@@ -104,9 +104,8 @@ class ProfileRepository(
             profileNetworkService.deleteProfile(prefs.serverUrl, remote = true)
                 .onSuccess {
                     val profileId = prefs.localProfileId.let { if (it.isNotBlank()) Uuid.parse(it) else null }
-                    val localProfile = profileId?.let { profileDao.getProfileById(it).firstOrNull() }?.toProfile()
-                    if (localProfile != null) {
-                        profileDao.upsert(localProfile.copy(serverId = null, lastSyncedAt = null).toProfileEntity())
+                    if (profileId != null) {
+                        remoteProfileDao.delete(profileId, prefs.serverUrl)
                     }
                 }
                 .onFailure { e ->

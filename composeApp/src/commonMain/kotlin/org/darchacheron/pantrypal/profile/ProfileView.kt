@@ -149,9 +149,10 @@ fun ProfileView(
         LaunchedEffect(showLoginDialog) {
             val profile = uiState.data
             if (profile != null) {
-                val remoteProfile = profile.remoteProfiles.find { it.serverUrl == profile.serverUrl }
+                val serverUrl = profileViewModel.persistedServerUrl.value ?: ""
+                val remoteProfile = profile.remoteProfiles.find { it.serverUrl == serverUrl }
                 remoteLoginViewModel.onUsernameChanged(remoteProfile?.username ?: profile.username)
-                remoteLoginViewModel.onServerUrlChanged(profile.serverUrl ?: "")
+                remoteLoginViewModel.onServerUrlChanged(serverUrl)
             }
         }
 
@@ -469,6 +470,7 @@ private fun RemoteProfileSection(
     profile: Profile
 ) {
     val isLoggedInRemotely by profileViewModel.isLoggedInRemotely.collectAsState()
+    val persistedServerUrl by profileViewModel.persistedServerUrl.collectAsState()
     val profileValidationState by profileViewModel.profileValidationState.collectAsState()
     var showEnableSyncDialog by remember { mutableStateOf(false) }
 
@@ -489,7 +491,7 @@ private fun RemoteProfileSection(
             )
 
             Text(
-                text = "${stringResource(Res.string.profile_server_url_label)}: ${profile.serverUrl ?: ""}",
+                text = "${stringResource(Res.string.profile_server_url_label)}: ${persistedServerUrl ?: ""}",
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
             )
@@ -505,7 +507,7 @@ private fun RemoteProfileSection(
                 Button(
                     onClick = { profileViewModel.testConnection() },
                     modifier = Modifier.weight(1f),
-                    enabled = !isTestingConnection && !profile.serverUrl.isNullOrBlank() && profileValidationState.serverUrlError == null
+                    enabled = !isTestingConnection && !persistedServerUrl.isNullOrBlank() && profileValidationState.serverUrlError == null
                 ) {
                     if (isTestingConnection) {
                         CircularProgressIndicator(
@@ -543,7 +545,7 @@ private fun RemoteProfileSection(
                 onDataSynchronizationSelected = { profileViewModel.updateDataSynchronization(it) }
             )
 
-            val remoteProfile = profile.remoteProfiles.firstOrNull { it.serverUrl == profile.serverUrl }
+            val remoteProfile = profile.remoteProfiles.firstOrNull { it.serverUrl == persistedServerUrl }
 
             if (isLoggedInRemotely) {
                 if (remoteProfile != null) {
@@ -591,7 +593,7 @@ private fun RemoteProfileSection(
                 ) {
                     Text(stringResource(Res.string.profile_delete_remote_button))
                 }
-            } else if (profile.serverId != null) {
+            } else if (remoteProfile != null) {
                 Text(
                     text = stringResource(Res.string.profile_local_login_only),
                     style = MaterialTheme.typography.bodySmall,
@@ -630,10 +632,10 @@ private fun RemoteProfileSection(
 
     if (showEnableSyncDialog) {
         LaunchedEffect(showEnableSyncDialog) {
-            val remoteProfile = profile.remoteProfiles.find { it.serverUrl == profile.serverUrl }
+            val remoteProfile = profile.remoteProfiles.find { it.serverUrl == persistedServerUrl }
             remoteAccountLinkViewModel.onUsernameChanged(remoteProfile?.username ?: profile.username)
             remoteAccountLinkViewModel.onEmailChanged(remoteProfile?.email ?: profile.email)
-            profile.serverUrl?.let { remoteAccountLinkViewModel.onServerUrlChanged(it) }
+            persistedServerUrl?.let { remoteAccountLinkViewModel.onServerUrlChanged(it) }
         }
 
         RemoteAccountLinkDialog(

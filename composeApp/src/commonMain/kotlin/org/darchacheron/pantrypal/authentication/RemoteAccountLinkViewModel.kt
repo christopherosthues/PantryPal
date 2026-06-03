@@ -157,8 +157,6 @@ class RemoteAccountLinkViewModel(
                             val serverUuid = serverIdFromToken?.let { Uuid.parse(it) } ?: Uuid.parse(response.user.id)
 
                             profileRepository.upsert(existingProfile.copy(
-                                serverId = serverUuid, // TODO: AI removed this
-                                serverUrl = data.serverUrl, // TODO: AI removed this
                                 isLocalOnly = false,
                                 lastSyncedAt = Clock.System.now()
                             ))
@@ -186,8 +184,6 @@ class RemoteAccountLinkViewModel(
                             val serverUuid = serverIdFromToken?.let { Uuid.parse(it) } ?: Uuid.parse(response.user.id)
 
                             profileRepository.upsert(existingProfile.copy(
-                                serverId = serverUuid, // TODO: AI removed this
-                                serverUrl = data.serverUrl, // TODO: AI removed this
                                 isLocalOnly = false,
                                 lastSyncedAt = Clock.System.now()
                             ))

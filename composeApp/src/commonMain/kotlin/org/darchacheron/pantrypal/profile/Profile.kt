@@ -12,8 +12,6 @@ data class Profile(
     val username: String,
     val email: String,
     val passwordHash: String? = null,
-    val serverUrl: String? = null,
-    val serverId: Uuid? = null,
     val createdAt: Instant,
     val lastModifiedAt: Instant,
     val lastSyncedAt: Instant? = null,
@@ -21,7 +19,7 @@ data class Profile(
     val dataSynchronization: DataSynchronization = DataSynchronization.NO_SYNCHRONIZATION,
     val remoteProfiles: List<RemoteProfile> = emptyList()
 ) {
-    fun toDto(usernameOverride: String? = null, emailOverride: String? = null): ProfileDto = ProfileDto(
+    fun toDto(serverId: Uuid?, usernameOverride: String? = null, emailOverride: String? = null): ProfileDto = ProfileDto(
         serverId = serverId,
         clientId = id,
         username = usernameOverride ?: username,

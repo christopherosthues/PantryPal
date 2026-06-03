@@ -34,7 +34,9 @@ class AuthenticationPreferencesRepository(private val dataStore: DataStore<Prefe
         dataStore.edit {
             it[AuthenticationPreferencesKeys.LOCAL_PROFILE_ID] = localProfileId
             it[AuthenticationPreferencesKeys.IS_LOGGED_IN_REMOTELY] = false
-            it[AuthenticationPreferencesKeys.SERVER_URL] = serverUrl ?: ""
+            if (serverUrl != null) {
+                it[AuthenticationPreferencesKeys.SERVER_URL] = serverUrl
+            }
             it[AuthenticationPreferencesKeys.STAY_LOGGED_IN] = stayLoggedIn
             // Clear remote tokens to ensure they don't leak between different local profile sessions
             it[AuthenticationPreferencesKeys.ACCESS_TOKEN] = ""

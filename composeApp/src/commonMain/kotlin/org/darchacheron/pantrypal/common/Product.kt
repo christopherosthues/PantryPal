@@ -16,8 +16,6 @@ data class RemoteProduct(
 @OptIn(ExperimentalUuidApi::class)
 open class Product(
     open val id: Uuid = Uuid.generateV7(),
-    open val serverId: Uuid? = null,
-    open val serverUrl: String? = null,
     open val profileId: Uuid,
     open val name: String,
     open val kiloCalories: Int?,
@@ -36,4 +34,6 @@ open class Product(
     open val image: Image? = null,
     open val additionalImages: List<Image> = emptyList(),
     open val remoteProducts: List<RemoteProduct> = emptyList(),
-)
+) {
+    fun getServerId(serverUrl: String): Uuid? = remoteProducts.find { it.serverUrl == serverUrl }?.serverId
+}

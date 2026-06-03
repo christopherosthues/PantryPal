@@ -19,11 +19,9 @@ import kotlin.uuid.Uuid
 )
 data class ProfileEntity(
     @PrimaryKey val id: Uuid = Uuid.generateV7(),
-    val serverId: Uuid?,
     val username: String,
     val email: String,
     val passwordHash: String? = null,
-    val serverUrl: String? = null,
     val createdAt: Instant,
     val lastModifiedAt: Instant,
     val lastSyncedAt: Instant? = null,
@@ -32,11 +30,9 @@ data class ProfileEntity(
 ) {
     fun toProfile(): Profile = Profile(
         id = id,
-        serverId = serverId,
         username = username,
         email = email,
         passwordHash = passwordHash,
-        serverUrl = serverUrl,
         createdAt = createdAt,
         lastModifiedAt = lastModifiedAt,
         lastSyncedAt = lastSyncedAt,
@@ -48,11 +44,9 @@ data class ProfileEntity(
 @OptIn(ExperimentalUuidApi::class)
 fun Profile.toProfileEntity(): ProfileEntity = ProfileEntity(
     id = id,
-    serverId = serverId,
     username = username,
     email = email,
     passwordHash = passwordHash,
-    serverUrl = serverUrl,
     createdAt = createdAt,
     lastModifiedAt = lastModifiedAt,
     lastSyncedAt = lastSyncedAt,
@@ -63,11 +57,9 @@ fun Profile.toProfileEntity(): ProfileEntity = ProfileEntity(
 @OptIn(ExperimentalUuidApi::class)
 fun ProfileDto.toProfileEntity(baseProfile: Profile): ProfileEntity = ProfileEntity(
     id = baseProfile.id,
-    serverId = serverId,
     username = username,
     email = email,
     passwordHash = baseProfile.passwordHash,
-    serverUrl = baseProfile.serverUrl,
     createdAt = createdAt,
     lastModifiedAt = lastModifiedAt,
     lastSyncedAt = lastSyncedAt,

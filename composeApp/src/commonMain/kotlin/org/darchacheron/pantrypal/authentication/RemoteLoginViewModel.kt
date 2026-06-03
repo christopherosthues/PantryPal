@@ -109,9 +109,8 @@ class RemoteLoginViewModel(
                 if (result.isSuccess) {
                     val response = result.getOrNull()
                     if (response != null) {
-                        // Update profile with the potentially new serverUrl
+                        // Update profile sync timestamp
                         profileRepository.upsert(existingProfile.copy(
-                            serverUrl = data.serverUrl,
                             lastSyncedAt = Clock.System.now()
                         ))
 

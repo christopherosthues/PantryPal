@@ -14,8 +14,6 @@ import kotlin.uuid.Uuid
 @OptIn(ExperimentalUuidApi::class)
 data class Food(
     override val id: Uuid = Uuid.generateV7(),
-    override val serverId: Uuid? = null,
-    override val serverUrl: String? = null,
     override val profileId: Uuid,
     override val name: String,
     override val kiloCalories: Int?,
@@ -39,8 +37,6 @@ data class Food(
     val openedAt: LocalDate?,
 ) : Product(
     id,
-    serverId,
-    serverUrl,
     profileId,
     name,
     kiloCalories,

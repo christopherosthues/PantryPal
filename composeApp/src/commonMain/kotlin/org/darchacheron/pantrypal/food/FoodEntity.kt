@@ -27,8 +27,6 @@ import kotlin.uuid.Uuid
 )
 data class FoodEntity(
     @PrimaryKey(autoGenerate = false) val id: Uuid = Uuid.generateV7(),
-    val serverId: Uuid?,
-    val serverUrl: String?,
     val profileId: Uuid,
     val name: String,
     val kiloCalories: Int?,
@@ -50,8 +48,6 @@ data class FoodEntity(
 ) {
     fun toFood(image: Image?, additionalImages: List<Image>, remoteProducts: List<RemoteProduct>): Food = Food(
         id = id,
-        serverId = serverId,
-        serverUrl = serverUrl,
         profileId = profileId,
         name = name,
         kiloCalories = kiloCalories,
@@ -79,8 +75,6 @@ data class FoodEntity(
 @OptIn(ExperimentalUuidApi::class)
 fun Food.toFoodEntity(): FoodEntity = FoodEntity(
     id = id,
-    serverId = serverId,
-    serverUrl = serverUrl,
     profileId = profileId,
     name = name,
     kiloCalories = kiloCalories,

@@ -83,9 +83,10 @@ class ProfileViewModel(
     internal fun loadProfile() {
         viewModelScope.launch {
             authenticationPreferencesRepository.authenticationPreferencesFlow
-                .map { it.isLoggedInRemotely }
-                .distinctUntilChanged()
-                .collect { _isLoggedInRemotely.value = it }
+                .collect { prefs ->
+                    _isLoggedInRemotely.value = prefs.isLoggedInRemotely
+                    _persistedServerUrl.value = prefs.serverUrl
+                }
         }
 
         viewModelScope.launch {
@@ -101,7 +102,6 @@ class ProfileViewModel(
                 }
                 .collect { profile ->
                     if (profile != null) {
-                        _persistedServerUrl.value = profile.serverUrl
                         _uiState.value = UiState.success(profile)
                     }
                 }
@@ -253,7 +253,7 @@ class ProfileViewModel(
     }
 
     fun testConnection() {
-        val serverUrl = _uiState.value.data?.serverUrl ?: return
+        val serverUrl = _persistedServerUrl.value ?: return
         if (serverUrl.isBlank()) return
 
         viewModelScope.launch {
@@ -269,8 +269,6 @@ class ProfileViewModel(
         viewModelScope.launch {
             val currentProfile = _uiState.value.data ?: return@launch
             val updatedProfile = currentProfile.copy(
-                serverId = null,
-                serverUrl = null,
                 isLocalOnly = true,
                 lastSyncedAt = null
             )
@@ -400,8 +398,7 @@ class ProfileViewModel(
 
     fun deleteRemoteProfile() {
         viewModelScope.launch {
-            val profile = _uiState.value.data ?: return@launch
-            val serverUrl = profile.serverUrl ?: return@launch
+            val serverUrl = _persistedServerUrl.value ?: return@launch
 
             try {
                 if (!_isLoggedInRemotely.value) {
@@ -428,6 +425,6 @@ class ProfileViewModel(
 
     fun canDeleteRemote(): Boolean {
         val profile = _uiState.value.data ?: return false
-        return profile.serverId != null || profile.serverUrl != null
+        return profile.remoteProfiles.isNotEmpty() || _persistedServerUrl.value != null
     }
 }

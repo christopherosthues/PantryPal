@@ -71,15 +71,17 @@ interface InventoryItemDao {
     @Query("DELETE FROM inventory_item WHERE id = :id")
     suspend fun delete(id: Uuid)
 
-    @Query("SELECT * FROM inventory_item WHERE serverId IS NULL OR lastModifiedAt > :lastSyncTime")
+    @Query("""
+        SELECT * FROM inventory_item 
+        WHERE id NOT IN (SELECT localInventoryItemId FROM remote_inventory_item) 
+        OR lastModifiedAt > :lastSyncTime
+    """)
     suspend fun getDirtyRecords(lastSyncTime: Instant): List<InventoryItemEntity>
 
-    @Query("UPDATE inventory_item SET serverId = :serverId WHERE id = :id")
-    suspend fun updateServerId(id: Uuid, serverId: Uuid)
-
-    @Query("UPDATE images SET serverId = :serverId WHERE id = :id")
-    suspend fun updateImageServerId(id: Uuid, serverId: Uuid)
-
-    @Query("SELECT * FROM images WHERE profileId = :profileId AND (serverId IS NULL OR lastModifiedAt > :lastSyncTime)")
+    @Query("""
+        SELECT * FROM images 
+        WHERE profileId = :profileId 
+        AND (id NOT IN (SELECT localImageId FROM remote_image) OR lastModifiedAt > :lastSyncTime)
+    """)
     suspend fun getDirtyImages(profileId: Uuid, lastSyncTime: Instant): List<ImageEntity>
 }

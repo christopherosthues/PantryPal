@@ -48,7 +48,7 @@ class AuthenticationService(
 ) {
     private val authenticationTag = "Authentication"
 
-    suspend fun loginLocally(profileId: Uuid, serverUrl: String?, stayLoggedIn: Boolean) {
+    suspend fun loginLocally(profileId: Uuid, stayLoggedIn: Boolean, serverUrl: String? = null) {
         authenticationPreferencesRepository.loginLocally(profileId.toString(), serverUrl, stayLoggedIn)
     }
 

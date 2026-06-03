@@ -42,8 +42,6 @@ import kotlin.uuid.Uuid
 )
 data class ImageEntity(
     @PrimaryKey val id: Uuid = Uuid.generateV7(),
-    val serverId: Uuid?,
-    val serverUrl: String?,
     val profileId: Uuid,
     val localPath: String?,
     val foodId: Uuid? = null,
@@ -54,8 +52,6 @@ data class ImageEntity(
 ) {
     fun toImage(remoteImages: List<RemoteImage>): Image = Image(
         id = id,
-        serverId = serverId,
-        serverUrl = serverUrl,
         profileId = profileId,
         localPath = localPath,
         createdAt = createdAt,
@@ -71,8 +67,6 @@ fun Image.toImageEntity(
     isPrimary: Boolean = false
 ): ImageEntity = ImageEntity(
     id = id,
-    serverId = serverId,
-    serverUrl = serverUrl,
     profileId = profileId,
     localPath = localPath,
     foodId = foodId,
