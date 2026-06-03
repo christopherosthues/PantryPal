@@ -12,11 +12,17 @@ data class InventoryItemWithImages(
         parentColumn = "id",
         entityColumn = "inventoryItemId"
     )
-    val images: List<ImageEntity>
+    val images: List<ImageEntity>,
+    @Relation(
+        parentColumn = "id",
+        entityColumn = "localInventoryItemId"
+    )
+    val remoteInventoryItems: List<RemoteInventoryItemEntity>
 ) {
     fun toInventoryItem(): InventoryItem {
-        val primaryImage = images.find { it.isPrimary }?.toImage()
-        val additionalImages = images.filter { !it.isPrimary }.map { it.toImage() }
-        return inventoryItem.toInventoryItem(primaryImage, additionalImages)
+        val primaryImage = images.find { it.isPrimary }?.toImage(emptyList())
+        val additionalImages = images.filter { !it.isPrimary }.map { it.toImage(emptyList()) }
+        val remoteProducts = remoteInventoryItems.map { it.toRemoteProduct() }
+        return inventoryItem.toInventoryItem(primaryImage, additionalImages, remoteProducts)
     }
 }

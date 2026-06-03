@@ -2,6 +2,7 @@ package org.darchacheron.pantrypal.inventory
 
 import org.darchacheron.pantrypal.camera.Image
 import org.darchacheron.pantrypal.common.Product
+import org.darchacheron.pantrypal.common.RemoteProduct
 import kotlin.time.Instant
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -10,6 +11,7 @@ import kotlin.uuid.Uuid
 data class InventoryItem(
     override val id: Uuid = Uuid.generateV7(),
     override val serverId: Uuid? = null,
+    override val serverUrl: String? = null,
     override val profileId: Uuid,
     override val name: String,
     override val kiloCalories: Int?,
@@ -27,9 +29,11 @@ data class InventoryItem(
     override val lastModifiedAt: Instant,
     override val image: Image? = null,
     override val additionalImages: List<Image> = emptyList(),
+    override val remoteProducts: List<RemoteProduct> = emptyList(),
 ) : Product(
     id,
     serverId,
+    serverUrl,
     profileId,
     name,
     kiloCalories,
@@ -47,4 +51,5 @@ data class InventoryItem(
     lastModifiedAt,
     image,
     additionalImages,
+    remoteProducts,
 )

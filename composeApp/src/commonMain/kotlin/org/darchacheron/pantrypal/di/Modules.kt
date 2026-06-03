@@ -241,9 +241,12 @@ val sharedModule =
         }
 
         single { get<PantryPalDatabase>().foodDao }
+        single { get<PantryPalDatabase>().remoteFoodDao }
         single { get<PantryPalDatabase>().profileDao }
         single { get<PantryPalDatabase>().remoteProfileDao }
         single { get<PantryPalDatabase>().inventoryItemDao }
+        single { get<PantryPalDatabase>().remoteInventoryItemDao }
+        single { get<PantryPalDatabase>().remoteImageDao }
 
         viewModelOf(::SettingsViewModel)
         viewModelOf(::FoodListViewModel)

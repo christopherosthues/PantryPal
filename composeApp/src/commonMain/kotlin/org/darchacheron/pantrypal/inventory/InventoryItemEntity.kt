@@ -5,6 +5,7 @@ import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import org.darchacheron.pantrypal.camera.Image
+import org.darchacheron.pantrypal.common.RemoteProduct
 import org.darchacheron.pantrypal.profile.ProfileEntity
 import kotlin.time.Instant
 import kotlin.uuid.ExperimentalUuidApi
@@ -26,6 +27,7 @@ import kotlin.uuid.Uuid
 data class InventoryItemEntity(
     @PrimaryKey(autoGenerate = false) val id: Uuid = Uuid.generateV7(),
     val serverId: Uuid?,
+    val serverUrl: String?,
     val profileId: Uuid,
     val name: String,
     val kiloCalories: Int?,
@@ -42,9 +44,10 @@ data class InventoryItemEntity(
     val createdAt: Instant,
     val lastModifiedAt: Instant
 ) {
-    fun toInventoryItem(image: Image?, additionalImages: List<Image>): InventoryItem = InventoryItem(
+    fun toInventoryItem(image: Image?, additionalImages: List<Image>, remoteProducts: List<RemoteProduct>): InventoryItem = InventoryItem(
         id = id,
         serverId = serverId,
+        serverUrl = serverUrl,
         profileId = profileId,
         name = name,
         kiloCalories = kiloCalories,
@@ -61,7 +64,8 @@ data class InventoryItemEntity(
         createdAt = createdAt,
         lastModifiedAt = lastModifiedAt,
         image = image,
-        additionalImages = additionalImages
+        additionalImages = additionalImages,
+        remoteProducts = remoteProducts
     )
 }
 
@@ -69,6 +73,7 @@ data class InventoryItemEntity(
 fun InventoryItem.toInventoryItemEntity(): InventoryItemEntity = InventoryItemEntity(
     id = id,
     serverId = serverId,
+    serverUrl = serverUrl,
     profileId = profileId,
     name = name,
     kiloCalories = kiloCalories,

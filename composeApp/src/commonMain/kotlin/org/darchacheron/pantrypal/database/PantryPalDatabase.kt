@@ -5,6 +5,8 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import org.darchacheron.pantrypal.camera.ImageEntity
+import org.darchacheron.pantrypal.camera.RemoteImageDao
+import org.darchacheron.pantrypal.camera.RemoteImageEntity
 import org.darchacheron.pantrypal.database.converters.DataSynchronizationConverter
 import org.darchacheron.pantrypal.database.converters.InstantConverter
 import org.darchacheron.pantrypal.database.converters.LocalDateConverter
@@ -12,8 +14,12 @@ import org.darchacheron.pantrypal.database.converters.StringListConverter
 import org.darchacheron.pantrypal.database.converters.UuidConverter
 import org.darchacheron.pantrypal.food.FoodDao
 import org.darchacheron.pantrypal.food.FoodEntity
+import org.darchacheron.pantrypal.food.RemoteFoodDao
+import org.darchacheron.pantrypal.food.RemoteFoodEntity
 import org.darchacheron.pantrypal.inventory.InventoryItemDao
 import org.darchacheron.pantrypal.inventory.InventoryItemEntity
+import org.darchacheron.pantrypal.inventory.RemoteInventoryItemDao
+import org.darchacheron.pantrypal.inventory.RemoteInventoryItemEntity
 import org.darchacheron.pantrypal.profile.ProfileDao
 import org.darchacheron.pantrypal.profile.ProfileEntity
 import org.darchacheron.pantrypal.profile.RemoteProfileDao
@@ -25,9 +31,12 @@ import org.darchacheron.pantrypal.profile.RemoteProfileEntity
         ProfileEntity::class,
         InventoryItemEntity::class,
         ImageEntity::class,
-        RemoteProfileEntity::class
+        RemoteProfileEntity::class,
+        RemoteFoodEntity::class,
+        RemoteInventoryItemEntity::class,
+        RemoteImageEntity::class
     ],
-    version = 3
+    version = 4
 )
 @TypeConverters(
     InstantConverter::class,
@@ -39,9 +48,12 @@ import org.darchacheron.pantrypal.profile.RemoteProfileEntity
 @ConstructedBy(PantryPalDatabaseConstructor::class)
 abstract class PantryPalDatabase : RoomDatabase() {
     abstract val foodDao: FoodDao
+    abstract val remoteFoodDao: RemoteFoodDao
     abstract val profileDao: ProfileDao
     abstract val remoteProfileDao: RemoteProfileDao
     abstract val inventoryItemDao: InventoryItemDao
+    abstract val remoteInventoryItemDao: RemoteInventoryItemDao
+    abstract val remoteImageDao: RemoteImageDao
 
     companion object {
         const val DB_NAME = "pantrypal.db"

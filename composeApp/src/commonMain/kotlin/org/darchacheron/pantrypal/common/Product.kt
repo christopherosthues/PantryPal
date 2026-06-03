@@ -6,9 +6,18 @@ import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 @OptIn(ExperimentalUuidApi::class)
+data class RemoteProduct(
+    val localProductId: Uuid,
+    val serverUrl: String,
+    val serverId: Uuid,
+    val lastSyncedAt: Instant? = null
+)
+
+@OptIn(ExperimentalUuidApi::class)
 open class Product(
     open val id: Uuid = Uuid.generateV7(),
     open val serverId: Uuid? = null,
+    open val serverUrl: String? = null,
     open val profileId: Uuid,
     open val name: String,
     open val kiloCalories: Int?,
@@ -26,4 +35,5 @@ open class Product(
     open val lastModifiedAt: Instant,
     open val image: Image? = null,
     open val additionalImages: List<Image> = emptyList(),
+    open val remoteProducts: List<RemoteProduct> = emptyList(),
 )
