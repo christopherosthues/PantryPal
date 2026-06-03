@@ -12,6 +12,7 @@ import kotlinx.datetime.todayIn
 import okio.FileSystem
 import okio.Path.Companion.toPath
 import org.darchacheron.pantrypal.authentication.AuthenticationPreferencesRepository
+import org.darchacheron.pantrypal.networking.ImageNetworkService
 import org.darchacheron.pantrypal.profile.ProfileDao
 import org.darchacheron.pantrypal.settings.DataSynchronization
 import kotlin.time.Clock
@@ -24,6 +25,7 @@ class FoodRepository(
     private val foodDao: FoodDao,
     private val profileDao: ProfileDao,
     private val foodNetworkService: FoodNetworkService,
+    private val imageNetworkService: ImageNetworkService,
     private val authenticationPreferencesRepository: AuthenticationPreferencesRepository,
     private val fileSystem: FileSystem,
 ) {
@@ -53,6 +55,8 @@ class FoodRepository(
 
     suspend fun upsert(food: Food) = withContext(Dispatchers.IO) {
         val existingWithImages = foodDao.getByIdWithImages(food.id)
+        val imagesToDeleteOnServer = mutableListOf<Uuid>()
+
         if (existingWithImages != null) {
             val existingFood = existingWithImages.toFood()
             
@@ -60,12 +64,20 @@ class FoodRepository(
             if (existingFood.image?.localPath != null && existingFood.image.localPath != food.image?.localPath) {
                 deleteImageFile(existingFood.image.localPath)
             }
+            if (existingFood.image?.serverId != null && existingFood.image.serverId != food.image?.serverId) {
+                imagesToDeleteOnServer.add(existingFood.image.serverId)
+            }
             
             // Delete old additional images if they were removed
             val newPaths = food.additionalImages.mapNotNull { it.localPath }
+            val newServerIds = food.additionalImages.mapNotNull { it.serverId }
+
             existingFood.additionalImages.forEach { existingImage ->
                 if (existingImage.localPath != null && existingImage.localPath !in newPaths) {
                     deleteImageFile(existingImage.localPath)
+                }
+                if (existingImage.serverId != null && existingImage.serverId !in newServerIds) {
+                    imagesToDeleteOnServer.add(existingImage.serverId)
                 }
             }
         }
@@ -82,9 +94,34 @@ class FoodRepository(
         if (canSync && profile != null && (profile.dataSynchronization == DataSynchronization.UPLOAD_AND_DOWNLOAD || 
             profile.dataSynchronization == DataSynchronization.ONLY_UPLOAD)) {
             try {
-                val syncedFoods = foodNetworkService.pushFoods(listOf(food), prefs!!.serverUrl)
-                syncedFoods.firstOrNull()?.let { synced ->
-                    foodDao.updateServerId(food.id, synced.serverId!!)
+                val syncedFoods = foodNetworkService.pushFoods(listOf(food), prefs.serverUrl)
+                val serverFood = syncedFoods.firstOrNull()
+                if (serverFood != null) {
+                    val serverFoodId = serverFood.serverId!!
+                    foodDao.updateServerId(food.id, serverFoodId)
+
+                    // Delete removed images from server
+                    imagesToDeleteOnServer.forEach { imageServerId ->
+                        imageNetworkService.deleteFoodImage(serverFoodId, imageServerId, prefs.serverUrl)
+                    }
+                    
+                    // Upload images if any
+                    val imagesToUpload = mutableListOf<Pair<org.darchacheron.pantrypal.camera.Image, Boolean>>()
+                    food.image?.let { imagesToUpload.add(it to true) }
+                    food.additionalImages.forEach { imagesToUpload.add(it to false) }
+                    
+                    imagesToUpload.forEach { (image, isPrimary) ->
+                        if (image.serverId == null && image.localPath != null) {
+                            val path = image.localPath.toPath()
+                            if (fileSystem.exists(path)) {
+                                val bytes = fileSystem.read(path) { readByteArray() }
+                                imageNetworkService.uploadFoodImage(serverFoodId, bytes, isPrimary, prefs.serverUrl)
+                                    .onSuccess { imageDto ->
+                                        foodDao.updateImageServerId(image.id, imageDto.serverId)
+                                    }
+                            }
+                        }
+                    }
                 }
                 Logger.withTag(loggerTag).i { "Successfully synced food ${food.name} to server" }
             } catch (e: Exception) {
@@ -109,7 +146,7 @@ class FoodRepository(
             if (canSync && profile != null && food.serverId != null && (profile.dataSynchronization == DataSynchronization.UPLOAD_AND_DOWNLOAD || 
                 profile.dataSynchronization == DataSynchronization.ONLY_UPLOAD)) {
                 try {
-                    foodNetworkService.deleteFood(food.serverId, prefs!!.serverUrl)
+                    foodNetworkService.deleteFood(food.serverId, prefs.serverUrl)
                 } catch (e: Exception) {
                     Logger.withTag(loggerTag).w { "Failed to delete food ${food.name} from server. Error: ${e.message}" }
                 }

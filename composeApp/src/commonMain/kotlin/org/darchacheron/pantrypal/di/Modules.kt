@@ -56,6 +56,7 @@ import org.darchacheron.pantrypal.navigation.InventoryNavRoute
 import org.darchacheron.pantrypal.navigation.NavRoute
 import org.darchacheron.pantrypal.navigation.Navigator
 import org.darchacheron.pantrypal.networking.ConnectionNetworkService
+import org.darchacheron.pantrypal.networking.ImageNetworkService
 import org.darchacheron.pantrypal.profile.EditRemoteProfileViewModel
 import org.darchacheron.pantrypal.profile.ProfileNetworkService
 import org.darchacheron.pantrypal.profile.ProfileRepository
@@ -222,6 +223,7 @@ val sharedModule =
         factoryOf(::InventoryNetworkService)
         factoryOf(::ProfileNetworkService)
         factoryOf(::ConnectionNetworkService)
+        factoryOf(::ImageNetworkService)
         factoryOf(::FoodRepository)
         factoryOf(::InventoryRepository)
         factoryOf(::ProfileRepository)

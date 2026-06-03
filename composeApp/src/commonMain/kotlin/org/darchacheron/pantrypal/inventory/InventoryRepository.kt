@@ -10,6 +10,7 @@ import kotlinx.coroutines.withContext
 import okio.FileSystem
 import okio.Path.Companion.toPath
 import org.darchacheron.pantrypal.authentication.AuthenticationPreferencesRepository
+import org.darchacheron.pantrypal.networking.ImageNetworkService
 import org.darchacheron.pantrypal.profile.ProfileDao
 import org.darchacheron.pantrypal.settings.DataSynchronization
 import kotlin.time.Instant
@@ -21,6 +22,7 @@ class InventoryRepository(
     private val inventoryItemDao: InventoryItemDao,
     private val profileDao: ProfileDao,
     private val inventoryNetworkService: InventoryNetworkService,
+    private val imageNetworkService: ImageNetworkService,
     private val authenticationPreferencesRepository: AuthenticationPreferencesRepository,
     private val fileSystem: FileSystem,
 ) {
@@ -45,15 +47,29 @@ class InventoryRepository(
 
     suspend fun upsert(inventoryItem: InventoryItem) = withContext(Dispatchers.IO) {
         val existingWithImages = inventoryItemDao.getByIdWithImages(inventoryItem.id)
+        val imagesToDeleteOnServer = mutableListOf<Uuid>()
+
         if (existingWithImages != null) {
             val existingItem = existingWithImages.toInventoryItem()
+            
+            // Main image
             if (existingItem.image?.localPath != null && existingItem.image.localPath != inventoryItem.image?.localPath) {
                 deleteImageFile(existingItem.image.localPath)
             }
+            if (existingItem.image?.serverId != null && existingItem.image.serverId != inventoryItem.image?.serverId) {
+                imagesToDeleteOnServer.add(existingItem.image.serverId)
+            }
+
+            // Additional images
             val newPaths = inventoryItem.additionalImages.mapNotNull { it.localPath }
+            val newServerIds = inventoryItem.additionalImages.mapNotNull { it.serverId }
+
             existingItem.additionalImages.forEach { existingImage ->
                 if (existingImage.localPath != null && existingImage.localPath !in newPaths) {
                     deleteImageFile(existingImage.localPath)
+                }
+                if (existingImage.serverId != null && existingImage.serverId !in newServerIds) {
+                    imagesToDeleteOnServer.add(existingImage.serverId)
                 }
             }
         }
@@ -72,8 +88,33 @@ class InventoryRepository(
         )) {
             try {
                 val syncedItems = inventoryNetworkService.pushInventoryItems(listOf(inventoryItem), prefs.serverUrl)
-                syncedItems.firstOrNull()?.let { synced ->
-                    inventoryItemDao.updateServerId(inventoryItem.id, synced.serverId!!)
+                val serverItem = syncedItems.firstOrNull()
+                if (serverItem != null) {
+                    val serverItemId = serverItem.serverId!!
+                    inventoryItemDao.updateServerId(inventoryItem.id, serverItemId)
+                    
+                    // Delete removed images from server
+                    imagesToDeleteOnServer.forEach { imageServerId ->
+                        imageNetworkService.deleteInventoryImage(serverItemId, imageServerId, prefs.serverUrl)
+                    }
+
+                    // Upload images if any
+                    val imagesToUpload = mutableListOf<Pair<org.darchacheron.pantrypal.camera.Image, Boolean>>()
+                    inventoryItem.image?.let { imagesToUpload.add(it to true) }
+                    inventoryItem.additionalImages.forEach { imagesToUpload.add(it to false) }
+
+                    imagesToUpload.forEach { (image, isPrimary) ->
+                        if (image.serverId == null && image.localPath != null) {
+                            val path = image.localPath.toPath()
+                            if (fileSystem.exists(path)) {
+                                val bytes = fileSystem.read(path) { readByteArray() }
+                                imageNetworkService.uploadInventoryImage(serverItemId, bytes, isPrimary, prefs.serverUrl)
+                                    .onSuccess { imageDto ->
+                                        inventoryItemDao.updateImageServerId(image.id, imageDto.serverId)
+                                    }
+                            }
+                        }
+                    }
                 }
                 Logger.withTag(loggerTag).i { "Successfully synced inventory item ${inventoryItem.name} to server" }
             } catch (e: Exception) {

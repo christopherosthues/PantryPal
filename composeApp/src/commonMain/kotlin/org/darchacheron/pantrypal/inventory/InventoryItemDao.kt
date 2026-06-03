@@ -77,6 +77,9 @@ interface InventoryItemDao {
     @Query("UPDATE inventory_item SET serverId = :serverId WHERE id = :id")
     suspend fun updateServerId(id: Uuid, serverId: Uuid)
 
+    @Query("UPDATE images SET serverId = :serverId WHERE id = :id")
+    suspend fun updateImageServerId(id: Uuid, serverId: Uuid)
+
     @Query("SELECT * FROM images WHERE profileId = :profileId AND (serverId IS NULL OR lastModifiedAt > :lastSyncTime)")
     suspend fun getDirtyImages(profileId: Uuid, lastSyncTime: Instant): List<ImageEntity>
 }
