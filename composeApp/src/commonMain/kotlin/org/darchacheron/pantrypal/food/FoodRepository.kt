@@ -14,7 +14,6 @@ import okio.Path.Companion.toPath
 import org.darchacheron.pantrypal.authentication.AuthenticationPreferencesRepository
 import org.darchacheron.pantrypal.camera.RemoteImageDao
 import org.darchacheron.pantrypal.camera.RemoteImageEntity
-import org.darchacheron.pantrypal.common.RemoteProduct
 import org.darchacheron.pantrypal.networking.ImageNetworkService
 import org.darchacheron.pantrypal.profile.ProfileDao
 import org.darchacheron.pantrypal.settings.DataSynchronization
@@ -106,7 +105,7 @@ class FoodRepository(
         if (canSync && profile != null && (profile.dataSynchronization == DataSynchronization.UPLOAD_AND_DOWNLOAD || 
             profile.dataSynchronization == DataSynchronization.ONLY_UPLOAD)) {
             try {
-                val syncedFoods = foodNetworkService.pushFoods(listOf(food), serverUrl)
+                val syncedFoods = foodNetworkService.pushFoods(listOf(food.toDto(serverUrl)), serverUrl)
                 val serverFood = syncedFoods.firstOrNull()
                 if (serverFood != null) {
                     val serverFoodId = serverFood.serverId!!
@@ -190,9 +189,9 @@ class FoodRepository(
                 if (dirtyEntities.isNotEmpty()) {
                     val dirtyFoods = dirtyEntities.mapNotNull { foodDao.getByIdWithImages(it.id)?.toFood() }
                     try {
-                        val syncedFoods = foodNetworkService.pushFoods(dirtyFoods, prefs.serverUrl)
+                        val syncedFoods = foodNetworkService.pushFoods(dirtyFoods.map { it.toDto(prefs.serverUrl) }, prefs.serverUrl)
                         syncedFoods.forEach { synced ->
-                            remoteFoodDao.upsert(RemoteFoodEntity(synced.id, prefs.serverUrl, synced.serverId!!, Clock.System.now()))
+                            remoteFoodDao.upsert(RemoteFoodEntity(synced.clientId, prefs.serverUrl, synced.serverId!!, Clock.System.now()))
                         }
                     } catch (e: Exception) {
                         Logger.withTag(loggerTag).e { "Failed to upload batch: ${e.message}" }
@@ -205,9 +204,9 @@ class FoodRepository(
                 profile.dataSynchronization == DataSynchronization.ONLY_DOWNLOAD) {
                 val remoteChanges = foodNetworkService.fetchChanges(Instant.fromEpochMilliseconds(0), prefs.serverUrl)
                 remoteChanges.forEach { remoteFood ->
-                    val local = foodDao.getByIdWithImages(remoteFood.id)?.toFood()
+                    val local = foodDao.getByIdWithImages(remoteFood.clientId)?.toFood()
                     if (local == null || remoteFood.lastModifiedAt > local.lastModifiedAt) {
-                        foodDao.upsert(remoteFood)
+                        foodDao.upsert(remoteFood.toFood())
                     }
                 }
             }

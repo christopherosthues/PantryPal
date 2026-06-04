@@ -19,7 +19,7 @@ import kotlin.uuid.Uuid
 @OptIn(ExperimentalUuidApi::class)
 class FoodNetworkService(private val preferencesRepository: AuthenticationPreferencesRepository) {
 
-    suspend fun pushFoods(foods: List<Food>, serverUrl: String): List<FoodDto> {
+    suspend fun pushFoods(foods: List<FoodDto>, serverUrl: String): List<FoodDto> {
         val auth = preferencesRepository.authenticationPreferencesFlow.firstOrNull()
         val token = auth?.accessToken
         if (token.isNullOrBlank()) return emptyList()

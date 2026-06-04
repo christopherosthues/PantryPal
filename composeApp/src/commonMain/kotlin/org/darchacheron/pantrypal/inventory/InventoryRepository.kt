@@ -37,7 +37,7 @@ class InventoryRepository(
         profileId: Uuid,
         query: String,
         sort: InventorySortOrder = InventorySortOrder.Name,
-        direction: InventorySortDirection = InventorySortDirection.Ascending
+        direction: InventorySortDirection = InventorySortDirection.Ascending,
     ): Flow<List<InventoryItem>> =
         inventoryItemDao.getFilteredAndSortedWithImages(
             profileId = profileId,
@@ -99,7 +99,7 @@ class InventoryRepository(
             profile.dataSynchronization == DataSynchronization.ONLY_UPLOAD
         )) {
             try {
-                val syncedItems = inventoryNetworkService.pushInventoryItems(listOf(inventoryItem), serverUrl)
+                val syncedItems = inventoryNetworkService.pushInventoryItems(listOf(inventoryItem.toDto(serverUrl)), serverUrl)
                 val serverItem = syncedItems.firstOrNull()
                 if (serverItem != null) {
                     val serverItemId = serverItem.serverId!!
@@ -184,9 +184,9 @@ class InventoryRepository(
                 if (dirtyEntities.isNotEmpty()) {
                     val dirtyItems = dirtyEntities.mapNotNull { inventoryItemDao.getByIdWithImages(it.id)?.toInventoryItem() }
                     try {
-                        val syncedItems = inventoryNetworkService.pushInventoryItems(dirtyItems, prefs.serverUrl)
+                        val syncedItems = inventoryNetworkService.pushInventoryItems(dirtyItems.map { it.toDto(prefs.serverUrl) }, prefs.serverUrl)
                         syncedItems.forEach { synced ->
-                            remoteInventoryItemDao.upsert(RemoteInventoryItemEntity(synced.id, prefs.serverUrl, synced.serverId!!, Clock.System.now()))
+                            remoteInventoryItemDao.upsert(RemoteInventoryItemEntity(synced.clientId, prefs.serverUrl, synced.serverId!!, Clock.System.now()))
                         }
                     } catch (e: Exception) {
                         Logger.withTag(loggerTag).e { "Failed to upload inventory batch: ${e.message}" }
@@ -200,9 +200,9 @@ class InventoryRepository(
             ) {
                 val remoteChanges = inventoryNetworkService.fetchChanges(Instant.fromEpochMilliseconds(0), prefs.serverUrl)
                 remoteChanges.forEach { remoteItem ->
-                    val local = inventoryItemDao.getByIdWithImages(remoteItem.id)?.toInventoryItem()
+                    val local = inventoryItemDao.getByIdWithImages(remoteItem.clientId)?.toInventoryItem()
                     if (local == null || remoteItem.lastModifiedAt > local.lastModifiedAt) {
-                        inventoryItemDao.upsert(remoteItem)
+                        inventoryItemDao.upsert(remoteItem.toInventoryItem())
                     }
                 }
             }

@@ -19,7 +19,7 @@ import kotlin.uuid.Uuid
 @OptIn(ExperimentalUuidApi::class)
 class InventoryNetworkService(private val preferencesRepository: AuthenticationPreferencesRepository) {
 
-    suspend fun pushInventoryItems(items: List<InventoryItem>, serverUrl: String): List<InventoryItemDto> {
+    suspend fun pushInventoryItems(items: List<InventoryItemDto>, serverUrl: String): List<InventoryItemDto> {
         val auth = preferencesRepository.authenticationPreferencesFlow.firstOrNull()
         val token = auth?.accessToken
         if (token.isNullOrBlank()) return emptyList()
