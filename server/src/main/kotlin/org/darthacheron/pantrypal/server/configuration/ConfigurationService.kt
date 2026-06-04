@@ -33,7 +33,12 @@ class ConfigurationService(environment: ApplicationEnvironment) {
     val foodImagesPath = imagesPath + "food/"
     val inventoryImagesPath = imagesPath + "inventory/"
 
+    val mongodbUri = environment.config.property("mongodb.uri").getString()
+    val mongodbDatabase = environment.config.property("mongodb.database").getString()
+
     val appToken = environment.config.property("networking.appToken").getString()
+
+    val deletionGracePeriodDays = environment.config.propertyOrNull("deletion.gracePeriodDays")?.getString()?.toInt() ?: 30
 
     init {
         validateConfig()

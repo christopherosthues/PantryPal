@@ -27,6 +27,7 @@ fun ImageDto.toImage(serverUrl: String): Image {
         remoteImages = listOf(
             RemoteImage(
                 localImageId = localId,
+                localProfileId = profileId,
                 serverUrl = serverUrl,
                 serverId = serverId,
                 lastSyncedAt = lastModifiedAt

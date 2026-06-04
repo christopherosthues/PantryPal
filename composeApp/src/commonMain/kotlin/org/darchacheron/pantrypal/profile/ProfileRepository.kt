@@ -124,6 +124,10 @@ class ProfileRepository(
         deleteLocal()
     }
 
+    suspend fun unlinkRemote(localProfileId: Uuid, serverUrl: String) = withContext(Dispatchers.IO) {
+        remoteProfileDao.delete(localProfileId, serverUrl)
+    }
+
     private val _remoteAccountDeleted = MutableSharedFlow<Boolean>()
     val remoteAccountDeleted: Flow<Boolean> = _remoteAccountDeleted
 

@@ -75,4 +75,10 @@ class FoodRepository {
         existing.deletedAt = Clock.System.now()
         true
     }
+
+    fun deleteAllFoodForProfile(profileId: Uuid) = transaction {
+        FoodDAO.find { (FoodsTable.profileId eq profileId) and (FoodsTable.deletedAt.isNull()) }.forEach {
+            it.deletedAt = Clock.System.now()
+        }
+    }
 }

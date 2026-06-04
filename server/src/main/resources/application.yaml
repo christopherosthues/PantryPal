@@ -3,7 +3,7 @@ ktor:
     modules:
       - org.darthacheron.pantrypal.server.ApplicationKt.module
   deployment:
-    port: 8080
+    port: 8081
 #    shutdown:
 #      url: "/shutdown"
 
@@ -29,5 +29,12 @@ postgres:
 images:
   path: ${IMAGES_PATH:/app/pantrypal/}
 
+mongodb:
+  uri: ${MONGODB_URI:mongodb://admin:admin_password@localhost:27017/}
+  database: ${MONGODB_DATABASE:pantrypal}
+
 networking:
   appToken: ${APP_TOKEN:pantrypal-default-app-token}
+
+deletion:
+  gracePeriodDays: ${DELETION_GRACE_PERIOD_DAYS:30}

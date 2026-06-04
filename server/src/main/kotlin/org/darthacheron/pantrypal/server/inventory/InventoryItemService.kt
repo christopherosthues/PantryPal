@@ -84,6 +84,10 @@ class InventoryItemService(
 
         return runCatching {
             inventoryItemRepository.deleteInventoryItem(id, profileId)
+            imageService.deleteAllImagesForInventoryItem(id, profileId).onFailure {
+                logger.warn("Inventory item record soft-deleted, but image cleanup failed for item ID: {}", id, it)
+            }
+            true
         }.onSuccess { logger.info("Successfully soft deleted inventory item ID: {}", id) }
             .onFailure { logger.error("Failed to soft delete inventory item ID: {}", id, it) }
     }
@@ -137,4 +141,11 @@ class InventoryItemService(
             .onSuccess { logger.info("Successfully deleted image ID: {}", imageId) }
             .onFailure { logger.error("Failed to delete image ID: {}", imageId, it) }
     }
+
+    fun deleteAllInventoryItemsForProfile(profileId: Uuid): Result<Boolean> = runCatching {
+        logger.info("Deleting all inventory items for profile ID: {}", profileId)
+        inventoryItemRepository.deleteAllInventoryItemsForProfile(profileId)
+        true
+    }.onSuccess { logger.info("Successfully soft deleted all inventory items for profile ID: {}", profileId) }
+        .onFailure { logger.error("Failed to soft delete all inventory items for profile ID: {}", profileId, it) }
 }

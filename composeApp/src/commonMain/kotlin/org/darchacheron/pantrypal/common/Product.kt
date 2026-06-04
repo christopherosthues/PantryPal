@@ -8,6 +8,7 @@ import kotlin.uuid.Uuid
 @OptIn(ExperimentalUuidApi::class)
 data class RemoteProduct(
     val localProductId: Uuid,
+    val localProfileId: Uuid,
     val serverUrl: String,
     val serverId: Uuid,
     val lastSyncedAt: Instant? = null

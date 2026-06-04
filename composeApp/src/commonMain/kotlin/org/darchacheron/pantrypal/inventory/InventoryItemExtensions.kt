@@ -54,6 +54,7 @@ fun InventoryItemDto.toInventoryItem(serverUrl: String): InventoryItem = Invento
         serverId?.let {
             RemoteProduct(
                 localProductId = clientId,
+                localProfileId = profileId,
                 serverUrl = serverUrl,
                 serverId = it,
                 lastSyncedAt = lastModifiedAt

@@ -59,9 +59,42 @@ class ImageRepository {
         val existing = ImageDAO.findById(id) ?: return@transaction false
         if (existing.profileId != profileId) return@transaction false
         if (existing.deletedAt != null) return@transaction false
-        
+
         existing.deletedAt = Clock.System.now()
         existing.lastModifiedAt = Clock.System.now()
         true
+    }
+
+    fun deleteAllImagesForProfile(profileId: Uuid) = transaction {
+        ImageDAO.find { (ImagesTable.profileId eq profileId) and (ImagesTable.deletedAt.isNull()) }.forEach {
+            it.deletedAt = Clock.System.now()
+            it.lastModifiedAt = Clock.System.now()
+        }
+    }
+
+    fun deleteAllImagesForFood(foodId: Uuid, profileId: Uuid): List<Uuid> = transaction {
+        val images = ImageDAO.find {
+            (ImagesTable.foodId eq foodId) and (ImagesTable.profileId eq profileId) and (ImagesTable.deletedAt.isNull())
+        }.toList()
+        
+        val ids = images.map { it.id.value }
+        images.forEach {
+            it.deletedAt = Clock.System.now()
+            it.lastModifiedAt = Clock.System.now()
+        }
+        ids
+    }
+
+    fun deleteAllImagesForInventoryItem(inventoryItemId: Uuid, profileId: Uuid): List<Uuid> = transaction {
+        val images = ImageDAO.find {
+            (ImagesTable.inventoryItemId eq inventoryItemId) and (ImagesTable.profileId eq profileId) and (ImagesTable.deletedAt.isNull())
+        }.toList()
+
+        val ids = images.map { it.id.value }
+        images.forEach {
+            it.deletedAt = Clock.System.now()
+            it.lastModifiedAt = Clock.System.now()
+        }
+        ids
     }
 }

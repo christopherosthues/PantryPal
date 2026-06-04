@@ -109,7 +109,7 @@ class FoodRepository(
                 val serverFood = syncedFoods.firstOrNull()
                 if (serverFood != null) {
                     val serverFoodId = serverFood.serverId!!
-                    remoteFoodDao.upsert(RemoteFoodEntity(food.id, serverUrl, serverFoodId, Clock.System.now()))
+                    remoteFoodDao.upsert(RemoteFoodEntity(food.id, food.profileId, serverUrl, serverFoodId, Clock.System.now()))
 
                     // Delete removed images from server
                     imagesToDeleteOnServer.forEach { imageServerId ->
@@ -129,7 +129,7 @@ class FoodRepository(
                                 val bytes = fileSystem.read(path) { readByteArray() }
                                 imageNetworkService.uploadFoodImage(serverFoodId, bytes, isPrimary, serverUrl)
                                     .onSuccess { imageDto ->
-                                        remoteImageDao.upsert(RemoteImageEntity(image.id, serverUrl, imageDto.serverId, Clock.System.now()))
+                                        remoteImageDao.upsert(RemoteImageEntity(image.id, food.profileId, serverUrl, imageDto.serverId, Clock.System.now()))
                                     }
                             }
                         }
@@ -191,7 +191,10 @@ class FoodRepository(
                     try {
                         val syncedFoods = foodNetworkService.pushFoods(dirtyFoods.map { it.toDto(prefs.serverUrl) }, prefs.serverUrl)
                         syncedFoods.forEach { synced ->
-                            remoteFoodDao.upsert(RemoteFoodEntity(synced.clientId, prefs.serverUrl, synced.serverId!!, Clock.System.now()))
+                            val localFood = dirtyFoods.find { it.id == synced.clientId }
+                            if (localFood != null) {
+                                remoteFoodDao.upsert(RemoteFoodEntity(synced.clientId, localFood.profileId, prefs.serverUrl, synced.serverId!!, Clock.System.now()))
+                            }
                         }
                     } catch (e: Exception) {
                         Logger.withTag(loggerTag).e { "Failed to upload batch: ${e.message}" }
@@ -208,7 +211,7 @@ class FoodRepository(
                     if (local == null || remoteFood.lastModifiedAt > local.lastModifiedAt) {
                         val food = remoteFood.toFood(prefs.serverUrl)
                         foodDao.upsert(food)
-                        remoteFoodDao.upsert(RemoteFoodEntity(food.id, prefs.serverUrl, remoteFood.serverId!!, Clock.System.now()))
+                        remoteFoodDao.upsert(RemoteFoodEntity(food.id, food.profileId, prefs.serverUrl, remoteFood.serverId!!, Clock.System.now()))
                     }
                 }
             }

@@ -59,6 +59,7 @@ fun FoodDto.toFood(serverUrl: String): Food = Food(
         serverId?.let {
             RemoteProduct(
                 localProductId = clientId,
+                localProfileId = profileId ?: throw IllegalArgumentException("profileId must not be null when converting from DTO"),
                 serverUrl = serverUrl,
                 serverId = it,
                 lastSyncedAt = lastModifiedAt

@@ -1,7 +1,7 @@
 package org.darthacheron.pantrypal.server.profile
 
 import org.darthacheron.pantrypal.shared.profile.ProfileDto
-import java.time.Clock
+import kotlin.time.Clock
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.isNull
@@ -64,7 +64,7 @@ class ProfileRepository {
     fun deleteProfile(id: Uuid) {
         transaction {
             ProfileDAO.findById(id)?.apply {
-                deletedAt = kotlin.time.Instant.fromEpochMilliseconds(Clock.systemUTC().millis())
+                deletedAt = Clock.System.now()
             }
         }
     }

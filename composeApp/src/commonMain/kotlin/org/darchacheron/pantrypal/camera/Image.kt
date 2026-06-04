@@ -7,6 +7,7 @@ import kotlin.uuid.Uuid
 @OptIn(ExperimentalUuidApi::class)
 data class RemoteImage(
     val localImageId: Uuid,
+    val localProfileId: Uuid,
     val serverUrl: String,
     val serverId: Uuid,
     val lastSyncedAt: Instant? = null

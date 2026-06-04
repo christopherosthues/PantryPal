@@ -63,7 +63,10 @@ class MainViewModel(
             if (prefs.localProfileId.isNotBlank()) {
                 val profileId = Uuid.parse(prefs.localProfileId)
                 profileRepository.getProfileById(profileId).first()?.let { profile ->
-                    profileRepository.upsert(profile.copy(serverId = null, isLocalOnly = true))
+                    profileRepository.upsert(profile.copy(isLocalOnly = true))
+                }
+                if (prefs.serverUrl.isNotBlank()) {
+                    profileRepository.unlinkRemote(profileId, prefs.serverUrl)
                 }
             }
 

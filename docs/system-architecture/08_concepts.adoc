@@ -3,6 +3,12 @@
 == Persistence
 *   **Local DB**: Room (SQL-based) for structured data storage. It supports migrations (1->2, 2->3, etc.) and uses DAOs to abstract SQL queries.
 *   **File Storage**: Images are stored as files in the platform's app data directory and referenced via local paths in the database.
+*   **Dynamic Configuration**: Server settings that can be changed on the fly (like deletion grace periods) are stored in a **MongoDB** document database. This allows for flexible, schema-less updates without requiring a server restart.
+*   **Data Deletion Strategy (Server)**:
+    *   **Soft Delete**: All deletions (profiles, food items, inventory items, images) on the server are implemented as soft deletes by marking a `deletedAt` timestamp.
+    *   **Binary Data Deletion**: Physical image files on disk are physically deleted immediately when an image or its parent resource is soft-deleted. This saves space while maintaining the metadata needed for synchronization.
+    *   **Synchronization**: The soft-deleted database records allow clients to receive a `410 Gone` status when trying to access deleted resources, enabling them to decide whether to keep the data locally or delete it.
+    *   **Cleanup Task**: A background task periodically performs hard deletions of database records after a configurable grace period.
 
 == Networking
 *   **Engine**: Ktor-Client with `CIO` engine for cross-platform compatibility.

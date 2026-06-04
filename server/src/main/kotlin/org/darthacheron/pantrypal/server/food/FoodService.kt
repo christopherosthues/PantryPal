@@ -84,6 +84,10 @@ class FoodService(
 
         return runCatching {
             foodRepository.deleteFood(id, profileId)
+            imageService.deleteAllImagesForFood(id, profileId).onFailure { 
+                logger.warn("Food record soft-deleted, but image cleanup failed for food ID: {}", id, it)
+            }
+            true
         }.onSuccess { logger.info("Successfully soft deleted food item ID: {}", id) }
             .onFailure { logger.error("Failed to soft delete food item ID: {}", id, it) }
     }
@@ -137,5 +141,12 @@ class FoodService(
             .onSuccess { logger.info("Successfully deleted image ID: {}", imageId) }
             .onFailure { logger.error("Failed to delete image ID: {}", imageId, it) }
     }
+
+    fun deleteAllFoodForProfile(profileId: Uuid): Result<Boolean> = runCatching {
+        logger.info("Deleting all food items for profile ID: {}", profileId)
+        foodRepository.deleteAllFoodForProfile(profileId)
+        true
+    }.onSuccess { logger.info("Successfully soft deleted all food items for profile ID: {}", profileId) }
+        .onFailure { logger.error("Failed to soft delete all food items for profile ID: {}", profileId, it) }
 }
 

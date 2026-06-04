@@ -68,7 +68,7 @@ class ImageService(
     }.onFailure { logger.error("Failed to get image metadata for image ID: {}", imageId, it) }
 
     fun deleteImage(imageId: Uuid, profileId: Uuid): Result<Boolean> = runCatching {
-        logger.info("Deleting image ID: {} for profile ID: {}", imageId, profileId)
+        logger.info("Soft deleting image ID: {} and physically deleting file for profile ID: {}", imageId, profileId)
         val imageDto = imageRepository.getImageById(imageId) ?: run {
             logger.warn("Image metadata not found for deletion, ID: {}", imageId)
             return@runCatching false
@@ -81,14 +81,65 @@ class ImageService(
         val deleted = imageRepository.deleteImage(imageId, profileId)
         if (deleted) {
             val basePath = if (imageDto.foodId != null) configurationService.foodImagesPath else configurationService.inventoryImagesPath
-            val imageFile = File(File(basePath, profileId.toString()), "${imageId}.jpg")
+            val imageFile = File(File(basePath, profileId.toString()), "$imageId.jpg")
             if (imageFile.exists()) {
                 logger.debug("Deleting image file from disk: {}", imageFile.absolutePath)
                 imageFile.delete()
-            } else {
-                logger.warn("Image file to delete not found on disk: {}", imageFile.absolutePath)
             }
         }
         deleted
-    }.onFailure { logger.error("Failed to delete image ID: {}", imageId, it) }
+    }.onFailure { logger.error("Failed to soft delete image ID: {}", imageId, it) }
+
+    fun deleteAllImagesForProfile(profileId: Uuid): Result<Boolean> = runCatching {
+        logger.info("Soft deleting all images and physically deleting files for profile ID: {}", profileId)
+        imageRepository.deleteAllImagesForProfile(profileId)
+
+        // Delete food images directory
+        val foodDir = File(configurationService.foodImagesPath, profileId.toString())
+        if (foodDir.exists()) {
+            logger.debug("Deleting food images directory: {}", foodDir.absolutePath)
+            foodDir.deleteRecursively()
+        }
+
+        // Delete inventory images directory
+        val inventoryDir = File(configurationService.inventoryImagesPath, profileId.toString())
+        if (inventoryDir.exists()) {
+            logger.debug("Deleting inventory images directory: {}", inventoryDir.absolutePath)
+            inventoryDir.deleteRecursively()
+        }
+        true
+    }.onSuccess { logger.info("Successfully soft deleted all images and physically deleted files for profile ID: {}", profileId) }
+        .onFailure { logger.error("Failed to soft delete all images for profile ID: {}", profileId, it) }
+
+    fun deleteAllImagesForFood(foodId: Uuid, profileId: Uuid): Result<Boolean> = runCatching {
+        logger.info("Soft deleting all images and physically deleting files for food ID: {}, profile ID: {}", foodId, profileId)
+        val imageIds = imageRepository.deleteAllImagesForFood(foodId, profileId)
+
+        val userDir = File(configurationService.foodImagesPath, profileId.toString())
+        imageIds.forEach { imageId ->
+            val imageFile = File(userDir, "$imageId.jpg")
+            if (imageFile.exists()) {
+                logger.debug("Deleting image file from disk: {}", imageFile.absolutePath)
+                imageFile.delete()
+            }
+        }
+        true
+    }.onSuccess { logger.info("Successfully soft deleted images for food ID: {}", foodId) }
+        .onFailure { logger.error("Failed to soft delete images for food ID: {}", foodId, it) }
+
+    fun deleteAllImagesForInventoryItem(inventoryItemId: Uuid, profileId: Uuid): Result<Boolean> = runCatching {
+        logger.info("Soft deleting all images and physically deleting files for inventory item ID: {}, profile ID: {}", inventoryItemId, profileId)
+        val imageIds = imageRepository.deleteAllImagesForInventoryItem(inventoryItemId, profileId)
+
+        val userDir = File(configurationService.inventoryImagesPath, profileId.toString())
+        imageIds.forEach { imageId ->
+            val imageFile = File(userDir, "$imageId.jpg")
+            if (imageFile.exists()) {
+                logger.debug("Deleting image file from disk: {}", imageFile.absolutePath)
+                imageFile.delete()
+            }
+        }
+        true
+    }.onSuccess { logger.info("Successfully soft deleted images for inventory item ID: {}", inventoryItemId) }
+        .onFailure { logger.error("Failed to soft delete images for inventory item ID: {}", inventoryItemId, it) }
 }

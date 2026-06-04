@@ -1,5 +1,8 @@
 package org.darthacheron.pantrypal.server.profile
 
+import org.darthacheron.pantrypal.server.camera.ImageService
+import org.darthacheron.pantrypal.server.food.FoodService
+import org.darthacheron.pantrypal.server.inventory.InventoryItemService
 import org.darthacheron.pantrypal.server.keycloak.InvalidCredentialsException
 import org.darthacheron.pantrypal.server.keycloak.KeycloakService
 import org.darthacheron.pantrypal.shared.auth.UpdateUserDto
@@ -12,6 +15,9 @@ import kotlin.uuid.Uuid
 @OptIn(ExperimentalUuidApi::class)
 class ProfileService(
     private val profileRepository: ProfileRepository,
+    private val foodService: FoodService,
+    private val inventoryItemService: InventoryItemService,
+    private val imageService: ImageService,
     private val keycloakService: KeycloakService
 ) {
     private val logger = LoggerFactory.getLogger(ProfileService::class.java)
@@ -136,6 +142,12 @@ class ProfileService(
             logger.debug("Deleting user from Keycloak for user ID: {}", userId)
             keycloakService.deleteUser(userId).onFailure { return Result.failure(it) }
         }
+
+        // Delete all associated data
+        logger.debug("Soft deleting all associated data for user ID: {}", userId)
+        foodService.deleteAllFoodForProfile(userId)
+        inventoryItemService.deleteAllInventoryItemsForProfile(userId)
+        imageService.deleteAllImagesForProfile(userId)
 
         // 3. Soft Delete from Database
         logger.debug("Soft deleting database profile for user ID: {}", userId)

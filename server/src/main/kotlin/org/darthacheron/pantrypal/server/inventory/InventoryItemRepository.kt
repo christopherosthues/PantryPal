@@ -69,4 +69,10 @@ class InventoryItemRepository {
         existing.deletedAt = Clock.System.now()
         true
     }
+
+    fun deleteAllInventoryItemsForProfile(profileId: Uuid) = transaction {
+        InventoryItemDAO.find { (InventoryItemsTable.profileId eq profileId) and (InventoryItemsTable.deletedAt.isNull()) }.forEach {
+            it.deletedAt = Clock.System.now()
+        }
+    }
 }

@@ -66,6 +66,7 @@ dependencies {
     implementation(libs.ktor.client.content.negotiation)
     implementation(libs.koin.ktor)
     implementation(libs.koin.logger.slf4j)
+    implementation(libs.mongodb.kotlin)
     implementation(libs.logback.classic)
     implementation(libs.jwks.rsa)
     implementation(projects.shared)

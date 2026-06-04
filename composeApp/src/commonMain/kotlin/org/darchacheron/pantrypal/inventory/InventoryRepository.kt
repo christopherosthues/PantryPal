@@ -103,7 +103,7 @@ class InventoryRepository(
                 val serverItem = syncedItems.firstOrNull()
                 if (serverItem != null) {
                     val serverItemId = serverItem.serverId!!
-                    remoteInventoryItemDao.upsert(RemoteInventoryItemEntity(inventoryItem.id, serverUrl, serverItemId, Clock.System.now()))
+                    remoteInventoryItemDao.upsert(RemoteInventoryItemEntity(inventoryItem.id, inventoryItem.profileId, serverUrl, serverItemId, Clock.System.now()))
                     
                     // Delete removed images from server
                     imagesToDeleteOnServer.forEach { imageServerId ->
@@ -123,7 +123,7 @@ class InventoryRepository(
                                 val bytes = fileSystem.read(path) { readByteArray() }
                                 imageNetworkService.uploadInventoryImage(serverItemId, bytes, isPrimary, serverUrl)
                                     .onSuccess { imageDto ->
-                                        remoteImageDao.upsert(RemoteImageEntity(image.id, serverUrl, imageDto.serverId, Clock.System.now()))
+                                        remoteImageDao.upsert(RemoteImageEntity(image.id, inventoryItem.profileId, serverUrl, imageDto.serverId, Clock.System.now()))
                                     }
                             }
                         }
@@ -186,7 +186,10 @@ class InventoryRepository(
                     try {
                         val syncedItems = inventoryNetworkService.pushInventoryItems(dirtyItems.map { it.toDto(prefs.serverUrl) }, prefs.serverUrl)
                         syncedItems.forEach { synced ->
-                            remoteInventoryItemDao.upsert(RemoteInventoryItemEntity(synced.clientId, prefs.serverUrl, synced.serverId!!, Clock.System.now()))
+                            val localItem = dirtyItems.find { it.id == synced.clientId }
+                            if (localItem != null) {
+                                remoteInventoryItemDao.upsert(RemoteInventoryItemEntity(synced.clientId, localItem.profileId, prefs.serverUrl, synced.serverId!!, Clock.System.now()))
+                            }
                         }
                     } catch (e: Exception) {
                         Logger.withTag(loggerTag).e { "Failed to upload inventory batch: ${e.message}" }
@@ -204,7 +207,7 @@ class InventoryRepository(
                     if (local == null || remoteItem.lastModifiedAt > local.lastModifiedAt) {
                         val item = remoteItem.toInventoryItem(prefs.serverUrl)
                         inventoryItemDao.upsert(item)
-                        remoteInventoryItemDao.upsert(RemoteInventoryItemEntity(item.id, prefs.serverUrl, remoteItem.serverId!!, Clock.System.now()))
+                        remoteInventoryItemDao.upsert(RemoteInventoryItemEntity(item.id, item.profileId, prefs.serverUrl, remoteItem.serverId!!, Clock.System.now()))
                     }
                 }
             }

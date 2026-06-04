@@ -83,7 +83,7 @@ services:
     container_name: pantry_pal
     hostname: pantrypal
     ports:
-      - "8081:8080"
+      - "8080:8080"
     environment:
       - POSTGRES_CONNECTION_STRING=${POSTGRES_CONNECTION_STRING}
       - POSTGRES_USER=${PANTRY_PAL_USER}
@@ -98,6 +98,8 @@ services:
       - KEYCLOAK_ADMIN=${KEYCLOAK_ADMIN}
       - KEYCLOAK_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD}
       - IMAGES_PATH=/app/pantrypal/
+      - MONGODB_URI=${MONGODB_CONNECTION_STRING}
+      - MONGODB_DATABASE=${MONGODB_DATABASE}
     volumes:
       - images-data:/app/pantrypal/
     restart: unless-stopped
@@ -105,6 +107,8 @@ services:
       postgres:
         condition: service_healthy
       keycloak:
+        condition: service_started
+      mongodb:
         condition: service_started
     networks:
       - pantrypal_network
@@ -140,11 +144,43 @@ services:
     profiles:
       - migration
 
+  mongodb:
+    image: mongodb/mongodb-community-server:8.3.2-ubuntu2204-slim
+    container_name: pantry_pal_mongodb
+    environment:
+      - MONGODB_INITDB_ROOT_USERNAME=${MONGODB_ROOT_USER}
+      - MONGODB_INITDB_ROOT_PASSWORD=${MONGODB_ROOT_PASSWORD}
+    ports:
+      - "27017:27017"
+    volumes:
+      - pantrypal-mongodb-data:/data/db
+    restart: unless-stopped
+    networks:
+      - pantrypal_network
+
+#  mongo-express:
+#    image: mongo-express:1.0.2-alpha.4
+#    container_name: pantry_pal_mongo_express
+#    environment:
+#      - ME_CONFIG_MONGODB_ADMINUSERNAME=${MONGODB_ROOT_USER:admin}
+#      - ME_CONFIG_MONGODB_ADMINPASSWORD=${MONGODB_ROOT_PASSWORD:admin_password}
+#      - ME_CONFIG_MONGODB_URL=mongodb://${MONGODB_ROOT_USER:admin}:${MONGODB_ROOT_PASSWORD:admin_password}@pantry_pal_mongodb:27017/
+#      - ME_CONFIG_BASICAUTH_USERNAME=${MONGO_EXPRESS_USER:admin}
+#      - ME_CONFIG_BASICAUTH_PASSWORD=${MONGO_EXPRESS_PASSWORD:admin_password}
+#    ports:
+#      - "8081:8081"
+#    depends_on:
+#      - mongodb
+#    restart: unless-stopped
+#    networks:
+#      - pantrypal_network
+
 volumes:
   pantrypal-pgdata:
   pantrypal-pgadmin-data:
   pantrypal-keycloak-data:
     driver: local
+  pantrypal-mongodb-data:
   images-data:
     driver: local
 
