@@ -1,5 +1,6 @@
 package org.darchacheron.pantrypal.inventory
 
+import org.darchacheron.pantrypal.common.RemoteProduct
 import org.darchacheron.pantrypal.camera.toDto as toImageDto
 import org.darchacheron.pantrypal.camera.toImage as toImageBO
 import org.darthacheron.pantrypal.shared.inventory.InventoryItemDto
@@ -30,7 +31,7 @@ fun InventoryItem.toDto(serverUrl: String): InventoryItemDto = InventoryItemDto(
 )
 
 @OptIn(ExperimentalUuidApi::class)
-fun InventoryItemDto.toInventoryItem(): InventoryItem = InventoryItem(
+fun InventoryItemDto.toInventoryItem(serverUrl: String): InventoryItem = InventoryItem(
     id = clientId,
     profileId = profileId,
     name = name,
@@ -45,9 +46,18 @@ fun InventoryItemDto.toInventoryItem(): InventoryItem = InventoryItem(
     saltInGrams = saltInGrams,
     fillingQuantity = fillingQuantity,
     isLiquid = isLiquid,
-    image = primaryImage?.toImageBO(),
-    additionalImages = additionalImages.map { it.toImageBO() },
+    image = primaryImage?.toImageBO(serverUrl),
+    additionalImages = additionalImages.map { it.toImageBO(serverUrl) },
     createdAt = createdAt,
     lastModifiedAt = lastModifiedAt,
-    remoteProducts = emptyList()
+    remoteProducts = listOfNotNull(
+        serverId?.let {
+            RemoteProduct(
+                localProductId = clientId,
+                serverUrl = serverUrl,
+                serverId = it,
+                lastSyncedAt = lastModifiedAt
+            )
+        }
+    )
 )

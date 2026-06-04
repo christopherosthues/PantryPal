@@ -16,11 +16,21 @@ fun Image.toDto(serverUrl: String): ImageDto = ImageDto(
 )
 
 @OptIn(ExperimentalUuidApi::class)
-fun ImageDto.toImage(): Image = Image(
-    id = Uuid.generateV7(), // DTO doesn't have local image ID
-    profileId = profileId,
-    localPath = null, // Remote image has no local path initially
-    createdAt = createdAt,
-    lastModifiedAt = lastModifiedAt,
-    remoteImages = emptyList() // TODO: Resolve this
-)
+fun ImageDto.toImage(serverUrl: String): Image {
+    val localId = Uuid.generateV7()
+    return Image(
+        id = localId, // DTO doesn't have local image ID
+        profileId = profileId,
+        localPath = null, // Remote image has no local path initially
+        createdAt = createdAt,
+        lastModifiedAt = lastModifiedAt,
+        remoteImages = listOf(
+            RemoteImage(
+                localImageId = localId,
+                serverUrl = serverUrl,
+                serverId = serverId,
+                lastSyncedAt = lastModifiedAt
+            )
+        )
+    )
+}

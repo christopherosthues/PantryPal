@@ -1,5 +1,6 @@
 package org.darchacheron.pantrypal.food
 
+import org.darchacheron.pantrypal.common.RemoteProduct
 import org.darchacheron.pantrypal.camera.toDto as toImageDto
 import org.darchacheron.pantrypal.camera.toImage as toImageBO
 import org.darthacheron.pantrypal.shared.food.FoodDto
@@ -32,7 +33,7 @@ fun Food.toDto(serverUrl: String): FoodDto = FoodDto(
 )
 
 @OptIn(ExperimentalUuidApi::class)
-fun FoodDto.toFood(): Food = Food(
+fun FoodDto.toFood(serverUrl: String): Food = Food(
     id = clientId,
     profileId = profileId ?: throw IllegalArgumentException("profileId must not be null when converting from DTO"),
     name = name,
@@ -50,9 +51,18 @@ fun FoodDto.toFood(): Food = Food(
     bestBeforeUsedByDate = bestBeforeUsedByDate,
     isUseBy = isUseBy,
     openedAt = openedAt,
-    image = primaryImage?.toImageBO(),
-    additionalImages = additionalImages.map { it.toImageBO() },
+    image = primaryImage?.toImageBO(serverUrl),
+    additionalImages = additionalImages.map { it.toImageBO(serverUrl) },
     createdAt = createdAt,
     lastModifiedAt = lastModifiedAt,
-    remoteProducts = emptyList() // TODO: Resolve this if needed
+    remoteProducts = listOfNotNull(
+        serverId?.let {
+            RemoteProduct(
+                localProductId = clientId,
+                serverUrl = serverUrl,
+                serverId = it,
+                lastSyncedAt = lastModifiedAt
+            )
+        }
+    )
 )
