@@ -59,6 +59,9 @@ class FoodRepository(
     }
 
     suspend fun upsert(food: Food) = withContext(Dispatchers.IO) {
+        val prefs = authenticationPreferencesRepository.authenticationPreferencesFlow.firstOrNull()
+        val serverUrl = prefs?.serverUrl ?: ""
+        
         val existingWithImages = foodDao.getByIdWithImages(food.id)
         val imagesToDeleteOnServer = mutableListOf<Uuid>()
 
@@ -69,20 +72,25 @@ class FoodRepository(
             if (existingFood.image?.localPath != null && existingFood.image.localPath != food.image?.localPath) {
                 deleteImageFile(existingFood.image.localPath)
             }
-            if (existingFood.image?.serverId != null && existingFood.image.serverId != food.image?.serverId) {
-                imagesToDeleteOnServer.add(existingFood.image.serverId)
+            
+            val existingMainServerId = existingFood.image?.getServerId(serverUrl)
+            val newMainServerId = food.image?.getServerId(serverUrl)
+            if (existingMainServerId != null && existingMainServerId != newMainServerId) {
+                imagesToDeleteOnServer.add(existingMainServerId)
             }
             
             // Delete old additional images if they were removed
             val newPaths = food.additionalImages.mapNotNull { it.localPath }
-            val newServerIds = food.additionalImages.mapNotNull { it.serverId }
+            val newServerIds = food.additionalImages.mapNotNull { it.getServerId(serverUrl) }
 
             existingFood.additionalImages.forEach { existingImage ->
                 if (existingImage.localPath != null && existingImage.localPath !in newPaths) {
                     deleteImageFile(existingImage.localPath)
                 }
-                if (existingImage.serverId != null && existingImage.serverId !in newServerIds) {
-                    imagesToDeleteOnServer.add(existingImage.serverId)
+                
+                val existingImageServerId = existingImage.getServerId(serverUrl)
+                if (existingImageServerId != null && existingImageServerId !in newServerIds) {
+                    imagesToDeleteOnServer.add(existingImageServerId)
                 }
             }
         }
@@ -91,7 +99,6 @@ class FoodRepository(
         foodDao.upsert(food)
         
         // Phase 1: Try push immediately if enabled
-        val prefs = authenticationPreferencesRepository.authenticationPreferencesFlow.firstOrNull()
         val profileId = prefs?.localProfileId?.let { if (it.isNotBlank()) Uuid.parse(it) else null }
         val profile = profileId?.let { profileDao.getProfileById(it).firstOrNull() }
         val canSync = prefs?.isLoggedInRemotely == true
@@ -99,15 +106,15 @@ class FoodRepository(
         if (canSync && profile != null && (profile.dataSynchronization == DataSynchronization.UPLOAD_AND_DOWNLOAD || 
             profile.dataSynchronization == DataSynchronization.ONLY_UPLOAD)) {
             try {
-                val syncedFoods = foodNetworkService.pushFoods(listOf(food), prefs.serverUrl)
+                val syncedFoods = foodNetworkService.pushFoods(listOf(food), serverUrl)
                 val serverFood = syncedFoods.firstOrNull()
                 if (serverFood != null) {
                     val serverFoodId = serverFood.serverId!!
-                    remoteFoodDao.upsert(RemoteFoodEntity(food.id, prefs.serverUrl, serverFoodId, Clock.System.now()))
+                    remoteFoodDao.upsert(RemoteFoodEntity(food.id, serverUrl, serverFoodId, Clock.System.now()))
 
                     // Delete removed images from server
                     imagesToDeleteOnServer.forEach { imageServerId ->
-                        imageNetworkService.deleteFoodImage(serverFoodId, imageServerId, prefs.serverUrl)
+                        imageNetworkService.deleteFoodImage(serverFoodId, imageServerId, serverUrl)
                     }
                     
                     // Upload images if any
@@ -116,14 +123,14 @@ class FoodRepository(
                     food.additionalImages.forEach { imagesToUpload.add(it to false) }
                     
                     imagesToUpload.forEach { (image, isPrimary) ->
-                        val existingRemoteImage = image.getServerId(prefs.serverUrl)
+                        val existingRemoteImage = image.getServerId(serverUrl)
                         if (existingRemoteImage == null && image.localPath != null) {
                             val path = image.localPath.toPath()
                             if (fileSystem.exists(path)) {
                                 val bytes = fileSystem.read(path) { readByteArray() }
-                                imageNetworkService.uploadFoodImage(serverFoodId, bytes, isPrimary, prefs.serverUrl)
+                                imageNetworkService.uploadFoodImage(serverFoodId, bytes, isPrimary, serverUrl)
                                     .onSuccess { imageDto ->
-                                        remoteImageDao.upsert(RemoteImageEntity(image.id, prefs.serverUrl, imageDto.serverId, Clock.System.now()))
+                                        remoteImageDao.upsert(RemoteImageEntity(image.id, serverUrl, imageDto.serverId, Clock.System.now()))
                                     }
                             }
                         }
@@ -153,7 +160,7 @@ class FoodRepository(
             if (canSync && profile != null && serverId != null && (profile.dataSynchronization == DataSynchronization.UPLOAD_AND_DOWNLOAD || 
                 profile.dataSynchronization == DataSynchronization.ONLY_UPLOAD)) {
                 try {
-                    foodNetworkService.deleteFood(serverId, prefs!!.serverUrl)
+                    foodNetworkService.deleteFood(serverId, prefs.serverUrl)
                 } catch (e: Exception) {
                     Logger.withTag(loggerTag).w { "Failed to delete food ${food.name} from server. Error: ${e.message}" }
                 }

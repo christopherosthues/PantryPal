@@ -51,6 +51,9 @@ class InventoryRepository(
     }
 
     suspend fun upsert(inventoryItem: InventoryItem) = withContext(Dispatchers.IO) {
+        val prefs = authenticationPreferencesRepository.authenticationPreferencesFlow.firstOrNull()
+        val serverUrl = prefs?.serverUrl ?: ""
+
         val existingWithImages = inventoryItemDao.getByIdWithImages(inventoryItem.id)
         val imagesToDeleteOnServer = mutableListOf<Uuid>()
 
@@ -61,20 +64,25 @@ class InventoryRepository(
             if (existingItem.image?.localPath != null && existingItem.image.localPath != inventoryItem.image?.localPath) {
                 deleteImageFile(existingItem.image.localPath)
             }
-            if (existingItem.image?.serverId != null && existingItem.image.serverId != inventoryItem.image?.serverId) {
-                imagesToDeleteOnServer.add(existingItem.image.serverId)
+            
+            val existingMainServerId = existingItem.image?.getServerId(serverUrl)
+            val newMainServerId = inventoryItem.image?.getServerId(serverUrl)
+            if (existingMainServerId != null && existingMainServerId != newMainServerId) {
+                imagesToDeleteOnServer.add(existingMainServerId)
             }
 
             // Additional images
             val newPaths = inventoryItem.additionalImages.mapNotNull { it.localPath }
-            val newServerIds = inventoryItem.additionalImages.mapNotNull { it.serverId }
+            val newServerIds = inventoryItem.additionalImages.mapNotNull { it.getServerId(serverUrl) }
 
             existingItem.additionalImages.forEach { existingImage ->
                 if (existingImage.localPath != null && existingImage.localPath !in newPaths) {
                     deleteImageFile(existingImage.localPath)
                 }
-                if (existingImage.serverId != null && existingImage.serverId !in newServerIds) {
-                    imagesToDeleteOnServer.add(existingImage.serverId)
+                
+                val existingImageServerId = existingImage.getServerId(serverUrl)
+                if (existingImageServerId != null && existingImageServerId !in newServerIds) {
+                    imagesToDeleteOnServer.add(existingImageServerId)
                 }
             }
         }
@@ -83,7 +91,6 @@ class InventoryRepository(
         inventoryItemDao.upsert(inventoryItem)
 
         // Phase 1: Try push immediately
-        val prefs = authenticationPreferencesRepository.authenticationPreferencesFlow.firstOrNull()
         val profileId = prefs?.localProfileId?.let { if (it.isNotBlank()) Uuid.parse(it) else null }
         val profile = profileId?.let { profileDao.getProfileById(it).firstOrNull() }
         val canSync = prefs?.isLoggedInRemotely == true
@@ -92,15 +99,15 @@ class InventoryRepository(
             profile.dataSynchronization == DataSynchronization.ONLY_UPLOAD
         )) {
             try {
-                val syncedItems = inventoryNetworkService.pushInventoryItems(listOf(inventoryItem), prefs.serverUrl)
+                val syncedItems = inventoryNetworkService.pushInventoryItems(listOf(inventoryItem), serverUrl)
                 val serverItem = syncedItems.firstOrNull()
                 if (serverItem != null) {
                     val serverItemId = serverItem.serverId!!
-                    remoteInventoryItemDao.upsert(RemoteInventoryItemEntity(inventoryItem.id, prefs.serverUrl, serverItemId, Clock.System.now()))
+                    remoteInventoryItemDao.upsert(RemoteInventoryItemEntity(inventoryItem.id, serverUrl, serverItemId, Clock.System.now()))
                     
                     // Delete removed images from server
                     imagesToDeleteOnServer.forEach { imageServerId ->
-                        imageNetworkService.deleteInventoryImage(serverItemId, imageServerId, prefs.serverUrl)
+                        imageNetworkService.deleteInventoryImage(serverItemId, imageServerId, serverUrl)
                     }
 
                     // Upload images if any
@@ -109,14 +116,14 @@ class InventoryRepository(
                     inventoryItem.additionalImages.forEach { imagesToUpload.add(it to false) }
 
                     imagesToUpload.forEach { (image, isPrimary) ->
-                        val existingRemoteImage = image.getServerId(prefs.serverUrl)
+                        val existingRemoteImage = image.getServerId(serverUrl)
                         if (existingRemoteImage == null && image.localPath != null) {
                             val path = image.localPath.toPath()
                             if (fileSystem.exists(path)) {
                                 val bytes = fileSystem.read(path) { readByteArray() }
-                                imageNetworkService.uploadInventoryImage(serverItemId, bytes, isPrimary, prefs.serverUrl)
+                                imageNetworkService.uploadInventoryImage(serverItemId, bytes, isPrimary, serverUrl)
                                     .onSuccess { imageDto ->
-                                        remoteImageDao.upsert(RemoteImageEntity(image.id, prefs.serverUrl, imageDto.serverId, Clock.System.now()))
+                                        remoteImageDao.upsert(RemoteImageEntity(image.id, serverUrl, imageDto.serverId, Clock.System.now()))
                                     }
                             }
                         }
@@ -147,7 +154,7 @@ class InventoryRepository(
                 profile.dataSynchronization == DataSynchronization.ONLY_UPLOAD)
             ) {
                 try {
-                    inventoryNetworkService.deleteInventoryItem(serverId, prefs!!.serverUrl)
+                    inventoryNetworkService.deleteInventoryItem(serverId, prefs.serverUrl)
                 } catch (e: Exception) {
                     Logger.withTag(loggerTag).w { "Failed to delete item ${item.name} from server. Error: ${e.message}" }
                 }
