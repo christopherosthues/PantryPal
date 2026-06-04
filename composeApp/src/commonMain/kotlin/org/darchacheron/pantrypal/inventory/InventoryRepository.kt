@@ -202,7 +202,9 @@ class InventoryRepository(
                 remoteChanges.forEach { remoteItem ->
                     val local = inventoryItemDao.getByIdWithImages(remoteItem.clientId)?.toInventoryItem()
                     if (local == null || remoteItem.lastModifiedAt > local.lastModifiedAt) {
-                        inventoryItemDao.upsert(remoteItem.toInventoryItem(prefs.serverUrl))
+                        val item = remoteItem.toInventoryItem(prefs.serverUrl)
+                        inventoryItemDao.upsert(item)
+                        remoteInventoryItemDao.upsert(RemoteInventoryItemEntity(item.id, prefs.serverUrl, remoteItem.serverId!!, Clock.System.now()))
                     }
                 }
             }

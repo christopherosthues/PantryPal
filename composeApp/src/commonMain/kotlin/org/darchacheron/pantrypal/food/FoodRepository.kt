@@ -206,7 +206,9 @@ class FoodRepository(
                 remoteChanges.forEach { remoteFood ->
                     val local = foodDao.getByIdWithImages(remoteFood.clientId)?.toFood()
                     if (local == null || remoteFood.lastModifiedAt > local.lastModifiedAt) {
-                        foodDao.upsert(remoteFood.toFood(prefs.serverUrl))
+                        val food = remoteFood.toFood(prefs.serverUrl)
+                        foodDao.upsert(food)
+                        remoteFoodDao.upsert(RemoteFoodEntity(food.id, prefs.serverUrl, remoteFood.serverId!!, Clock.System.now()))
                     }
                 }
             }
