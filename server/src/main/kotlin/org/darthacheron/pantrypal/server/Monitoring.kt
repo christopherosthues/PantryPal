@@ -19,9 +19,13 @@ import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
 import io.opentelemetry.api.trace.SpanKind
 import io.opentelemetry.instrumentation.ktor.v3_0.KtorServerTelemetry
+import org.darthacheron.pantrypal.server.configuration.DynamicConfigurationService
+import org.koin.ktor.ext.inject
 import java.util.concurrent.TimeUnit
 
 fun Application.configureMonitoring() {
+    val dynamicConfigService by inject<DynamicConfigurationService>()
+
     install(CallId) {
         header(HttpHeaders.XRequestId)
         verify { callId: String ->
@@ -63,5 +67,11 @@ fun Application.configureMonitoring() {
 //    }
     install(CallLogging) {
         callIdMdc("call-id")
+    }
+
+    val openTelemetry = getOpenTelemetry(serviceName = "pantrypal-server", dynamicConfigService = dynamicConfigService)
+
+    install(KtorServerTelemetry) {
+        setOpenTelemetry(openTelemetry)
     }
 }

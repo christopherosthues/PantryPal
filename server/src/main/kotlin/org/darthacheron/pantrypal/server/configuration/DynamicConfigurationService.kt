@@ -12,6 +12,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.decodeFromString
+import org.slf4j.Logger
 
 @Serializable
 data class DeletionConfig(
@@ -109,7 +110,7 @@ class DynamicConfigurationService(private val configurationService: Configuratio
     private fun applyLoggingConfig(loggingConfig: LoggingConfig) {
         try {
             val loggerContext = LoggerFactory.getILoggerFactory() as LoggerContext
-            val rootLogger = loggerContext.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME)
+            val rootLogger = loggerContext.getLogger(Logger.ROOT_LOGGER_NAME)
             val level = Level.toLevel(loggingConfig.serverLogLevel, Level.INFO)
             rootLogger.level = level
             logger.info("Applied log level: {}", level)

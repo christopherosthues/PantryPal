@@ -21,6 +21,7 @@
     *   `sharedModule`: Common repositories, network services, and ViewModels.
 
 == Error Handling and Logging
-*   **Logging**: `co.touchlab.kermit.Logger` for multi-platform logging.
+*   **Logging**: `co.touchlab.kermit.Logger` for multi-platform logging. The server's root log level can be changed on the fly via dynamic configuration.
+*   **Problem Details**: The server implements the RFC 7807 (Problem Details for HTTP APIs) standard for consistent error responses, avoiding generic internal server errors.
+*   **Custom Exceptions**: Domain-specific exceptions (e.g., `RegistrationDisabledException`, `ImageTooLargeException`) are handled by `StatusPages` to return appropriate HTTP status codes.
 *   **Network Errors**: Ktor's `expectSuccess = true` combined with `runCatching` for robust exception handling.
-*   **Validation**: ViewModels validate user input (e.g., non-empty names) before triggering repository actions.

@@ -38,8 +38,6 @@ class ConfigurationService(environment: ApplicationEnvironment) {
 
     val appToken = environment.config.property("networking.appToken").getString()
 
-    val deletionGracePeriodDays = environment.config.propertyOrNull("deletion.gracePeriodDays")?.getString()?.toInt() ?: 30
-
     init {
         validateConfig()
         logger.info("ConfigurationService initialized with Keycloak URL: {}", keycloakBaseUrl)

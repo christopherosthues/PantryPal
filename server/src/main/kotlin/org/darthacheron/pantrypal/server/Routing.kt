@@ -10,6 +10,7 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
 import jakarta.validation.Validation
 import org.darthacheron.pantrypal.server.authentication.authenticationRoutes
+import org.darthacheron.pantrypal.server.configuration.ServerDynamicConfig
 import org.darthacheron.pantrypal.server.food.foodRoutes
 import org.darthacheron.pantrypal.server.inventory.inventoryItemRoutes
 import org.darthacheron.pantrypal.server.networking.connectionRoutes
@@ -28,6 +29,19 @@ fun Application.configureRouting() {
                 ValidationResult.Invalid("${it::username} must not be empty")
             } else if (it.password.isBlank()) {
                 ValidationResult.Invalid("${it::password} must not be empty")
+            } else {
+                ValidationResult.Valid
+            }
+        }
+        validate<ServerDynamicConfig> {
+            if (it.deletion.gracePeriodDays < 0) {
+                ValidationResult.Invalid("Grace period days cannot be negative")
+            } else if (it.storage.maxImageUploadSizeMB <= 0) {
+                ValidationResult.Invalid("Max image upload size must be positive")
+            } else if (it.rateLimiting.rateLimitCapacity <= 0) {
+                ValidationResult.Invalid("Rate limit capacity must be positive")
+            } else if (it.diagnostics.telemetrySamplingRate !in 0.0..1.0) {
+                ValidationResult.Invalid("Telemetry sampling rate must be between 0.0 and 1.0")
             } else {
                 ValidationResult.Valid
             }

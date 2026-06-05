@@ -35,6 +35,3 @@ mongodb:
 
 networking:
   appToken: ${APP_TOKEN:pantrypal-default-app-token}
-
-deletion:
-  gracePeriodDays: ${DELETION_GRACE_PERIOD_DAYS:30}
