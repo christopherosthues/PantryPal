@@ -1,5 +1,7 @@
 package org.darthacheron.pantrypal.server.configuration
 
+import ch.qos.logback.classic.Level
+import ch.qos.logback.classic.LoggerContext
 import com.mongodb.client.model.ReplaceOptions
 import com.mongodb.kotlin.client.coroutine.MongoClient
 import kotlinx.coroutines.flow.firstOrNull
@@ -12,8 +14,46 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.decodeFromString
 
 @Serializable
+data class DeletionConfig(
+    val gracePeriodDays: Int = 30
+)
+
+@Serializable
+data class FeatureToggles(
+    val maintenanceModeEnabled: Boolean = false,
+    val registrationEnabled: Boolean = true,
+    val remoteSyncEnabled: Boolean = true
+)
+
+@Serializable
+data class StorageLimits(
+    val maxImageUploadSizeMB: Int = 10,
+    val supportedImageTypes: List<String> = listOf("jpg", "jpeg", "png", "webp")
+)
+
+@Serializable
+data class RateLimitConfig(
+    val rateLimitCapacity: Int = 100
+)
+
+@Serializable
+data class DiagnosticsConfig(
+    val telemetrySamplingRate: Double = 1.0
+)
+
+@Serializable
+data class LoggingConfig(
+    val serverLogLevel: String = "INFO"
+)
+
+@Serializable
 data class ServerDynamicConfig(
-    val deletionGracePeriodDays: Int = 30
+    val deletion: DeletionConfig = DeletionConfig(),
+    val features: FeatureToggles = FeatureToggles(),
+    val storage: StorageLimits = StorageLimits(),
+    val rateLimiting: RateLimitConfig = RateLimitConfig(),
+    val diagnostics: DiagnosticsConfig = DiagnosticsConfig(),
+    val logging: LoggingConfig = LoggingConfig()
 )
 
 class DynamicConfigurationService(private val configurationService: ConfigurationService) {
@@ -39,12 +79,15 @@ class DynamicConfigurationService(private val configurationService: Configuratio
                 val jsonStr = doc.toJson()
                 _cachedConfig = Json.decodeFromString<ServerDynamicConfig>(jsonStr)
                 logger.info("Loaded dynamic configuration: {}", _cachedConfig)
+                applyLoggingConfig(_cachedConfig.logging)
             } catch (e: Exception) {
                 logger.error("Failed to parse dynamic configuration from MongoDB, using defaults", e)
             }
         } else {
             logger.info("No dynamic configuration found in MongoDB, using defaults and saving them")
-            saveConfig(ServerDynamicConfig())
+            val defaultConfig = ServerDynamicConfig()
+            saveConfig(defaultConfig)
+            applyLoggingConfig(defaultConfig.logging)
         }
     }
 
@@ -60,6 +103,19 @@ class DynamicConfigurationService(private val configurationService: Configuratio
             ReplaceOptions().upsert(true)
         )
         _cachedConfig = newConfig
+        applyLoggingConfig(newConfig.logging)
+    }
+
+    private fun applyLoggingConfig(loggingConfig: LoggingConfig) {
+        try {
+            val loggerContext = LoggerFactory.getILoggerFactory() as LoggerContext
+            val rootLogger = loggerContext.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME)
+            val level = Level.toLevel(loggingConfig.serverLogLevel, Level.INFO)
+            rootLogger.level = level
+            logger.info("Applied log level: {}", level)
+        } catch (e: Exception) {
+            logger.error("Failed to apply logging configuration", e)
+        }
     }
 
     fun close() {

@@ -1,5 +1,6 @@
 package org.darthacheron.pantrypal.server.authentication
 
+import org.darthacheron.pantrypal.server.configuration.DynamicConfigurationService
 import org.darthacheron.pantrypal.server.keycloak.*
 import org.darthacheron.pantrypal.server.profile.ProfileAlreadyExistsException
 import org.darthacheron.pantrypal.server.profile.ProfileDeletedException
@@ -15,7 +16,8 @@ import kotlin.uuid.Uuid
 @OptIn(ExperimentalUuidApi::class)
 class AuthenticationService(
     private val keycloakService: KeycloakService,
-    private val profileService: ProfileService
+    private val profileService: ProfileService,
+    private val dynamicConfigurationService: DynamicConfigurationService
 ) {
     private val logger = LoggerFactory.getLogger(AuthenticationService::class.java)
 
@@ -42,6 +44,9 @@ class AuthenticationService(
     }
 
     suspend fun register(registrationDto: RegistrationDto): Result<RegistrationResponse> {
+        if (!dynamicConfigurationService.config.features.registrationEnabled) {
+            return Result.failure(Exception("Registration is currently disabled"))
+        }
         logger.info("Attempting registration for user: {}", registrationDto.username)
         
         // 1. Create User in Keycloak

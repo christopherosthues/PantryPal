@@ -3,6 +3,7 @@ package org.darthacheron.pantrypal.server.food
 import org.darthacheron.pantrypal.server.camera.ImageDeletedException
 import org.darthacheron.pantrypal.server.camera.ImageNotFoundException
 import org.darthacheron.pantrypal.server.camera.ImageService
+import org.darthacheron.pantrypal.server.configuration.DynamicConfigurationService
 import org.darthacheron.pantrypal.shared.camera.ImageDto
 import org.darthacheron.pantrypal.shared.food.FoodDto
 import org.slf4j.LoggerFactory
@@ -12,7 +13,8 @@ import kotlin.uuid.Uuid
 @OptIn(ExperimentalUuidApi::class)
 class FoodService(
     private val foodRepository: FoodRepository,
-    private val imageService: ImageService
+    private val imageService: ImageService,
+    private val dynamicConfigurationService: DynamicConfigurationService
 ) {
     private val logger = LoggerFactory.getLogger(FoodService::class.java)
 
@@ -93,6 +95,16 @@ class FoodService(
     }
 
     fun saveImage(foodId: Uuid, profileId: Uuid, isPrimary: Boolean, imageData: ByteArray): Result<ImageDto> {
+        val limits = dynamicConfigurationService.config.storage
+        if (imageData.size > limits.maxImageUploadSizeMB * 1024 * 1024) {
+            return Result.failure(Exception("Image size exceeds limit of ${limits.maxImageUploadSizeMB} MB"))
+        }
+        
+        // Simple check for supported types (we only support JPEG/JPG for now on server)
+        if (!limits.supportedImageTypes.any { it.equals("jpg", ignoreCase = true) || it.equals("jpeg", ignoreCase = true) }) {
+            return Result.failure(Exception("JPEG images are currently disabled in server configuration"))
+        }
+
         logger.info("Saving image for food ID: {}, profile ID: {}, isPrimary: {}", foodId, profileId, isPrimary)
         val food = runCatching { foodRepository.getFoodById(foodId) }
             .onFailure { logger.error("Failed to retrieve food item ID: {}", foodId, it) }

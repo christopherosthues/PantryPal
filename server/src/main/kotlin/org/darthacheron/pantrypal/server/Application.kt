@@ -1,6 +1,7 @@
 package org.darthacheron.pantrypal.server
 
 import io.ktor.server.application.*
+import org.darthacheron.pantrypal.server.plugins.MaintenanceMode
 
 fun main(args: Array<String>) {
     io.ktor.server.cio.EngineMain.main(args)
@@ -8,6 +9,7 @@ fun main(args: Array<String>) {
 
 fun Application.module() {
     configureFrameworks()
+    install(MaintenanceMode)
     configureHTTP()
     configureSecurity()
     configureMonitoring()

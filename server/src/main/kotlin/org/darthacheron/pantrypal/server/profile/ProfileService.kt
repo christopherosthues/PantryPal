@@ -1,6 +1,7 @@
 package org.darthacheron.pantrypal.server.profile
 
 import org.darthacheron.pantrypal.server.camera.ImageService
+import org.darthacheron.pantrypal.server.configuration.DynamicConfigurationService
 import org.darthacheron.pantrypal.server.food.FoodService
 import org.darthacheron.pantrypal.server.inventory.InventoryItemService
 import org.darthacheron.pantrypal.server.keycloak.InvalidCredentialsException
@@ -18,7 +19,8 @@ class ProfileService(
     private val foodService: FoodService,
     private val inventoryItemService: InventoryItemService,
     private val imageService: ImageService,
-    private val keycloakService: KeycloakService
+    private val keycloakService: KeycloakService,
+    private val dynamicConfigurationService: DynamicConfigurationService
 ) {
     private val logger = LoggerFactory.getLogger(ProfileService::class.java)
 
@@ -88,6 +90,9 @@ class ProfileService(
     }
 
     suspend fun syncProfile(userId: Uuid, profileDto: ProfileDto): Result<ProfileDto> {
+        if (!dynamicConfigurationService.config.features.remoteSyncEnabled) {
+            return Result.failure(Exception("Remote synchronization is currently disabled"))
+        }
         logger.info("Syncing profile for user ID: {}", userId)
         val existingProfile = runCatching { profileRepository.getProfile(userId) }
             .onFailure { logger.error("Failed to retrieve profile for user ID: {}", userId, it) }
