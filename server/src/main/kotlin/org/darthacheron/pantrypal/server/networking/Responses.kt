@@ -5,6 +5,10 @@ import io.ktor.server.application.ApplicationCall
 import io.ktor.server.auth.jwt.JWTPrincipal
 import io.ktor.server.auth.principal
 import io.ktor.server.response.respond
+import org.darthacheron.pantrypal.server.configuration.ImageTooLargeException
+import org.darthacheron.pantrypal.server.configuration.RegistrationDisabledException
+import org.darthacheron.pantrypal.server.configuration.RemoteSyncDisabledException
+import org.darthacheron.pantrypal.server.configuration.UnsupportedImageTypeException
 import org.darthacheron.pantrypal.shared.auth.ProblemDetails
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -71,9 +75,17 @@ suspend fun ApplicationCall.respondForbidden(detail: String) {
 }
 
 suspend fun ApplicationCall.respondProblem(e: Throwable) {
-    respond(HttpStatusCode.InternalServerError, ProblemDetails(
-        title = "Internal Server Error",
-        status = HttpStatusCode.InternalServerError.value,
+    val (status, title) = when (e) {
+        is RegistrationDisabledException -> HttpStatusCode.Forbidden to "Registration Disabled"
+        is RemoteSyncDisabledException -> HttpStatusCode.ServiceUnavailable to "Sync Disabled"
+        is ImageTooLargeException -> HttpStatusCode.PayloadTooLarge to "Image Too Large"
+        is UnsupportedImageTypeException -> HttpStatusCode.UnsupportedMediaType to "Unsupported Image Type"
+        else -> HttpStatusCode.InternalServerError to "Internal Server Error"
+    }
+
+    respond(status, ProblemDetails(
+        title = title,
+        status = status.value,
         detail = e.message ?: "An unexpected error occurred."
     ))
 }

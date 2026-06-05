@@ -2,6 +2,7 @@ package org.darthacheron.pantrypal.server.profile
 
 import org.darthacheron.pantrypal.server.camera.ImageService
 import org.darthacheron.pantrypal.server.configuration.DynamicConfigurationService
+import org.darthacheron.pantrypal.server.configuration.RemoteSyncDisabledException
 import org.darthacheron.pantrypal.server.food.FoodService
 import org.darthacheron.pantrypal.server.inventory.InventoryItemService
 import org.darthacheron.pantrypal.server.keycloak.InvalidCredentialsException
@@ -91,7 +92,7 @@ class ProfileService(
 
     suspend fun syncProfile(userId: Uuid, profileDto: ProfileDto): Result<ProfileDto> {
         if (!dynamicConfigurationService.config.features.remoteSyncEnabled) {
-            return Result.failure(Exception("Remote synchronization is currently disabled"))
+            return Result.failure(RemoteSyncDisabledException())
         }
         logger.info("Syncing profile for user ID: {}", userId)
         val existingProfile = runCatching { profileRepository.getProfile(userId) }

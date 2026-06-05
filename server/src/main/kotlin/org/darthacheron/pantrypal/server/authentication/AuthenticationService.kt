@@ -1,6 +1,7 @@
 package org.darthacheron.pantrypal.server.authentication
 
 import org.darthacheron.pantrypal.server.configuration.DynamicConfigurationService
+import org.darthacheron.pantrypal.server.configuration.RegistrationDisabledException
 import org.darthacheron.pantrypal.server.keycloak.*
 import org.darthacheron.pantrypal.server.profile.ProfileAlreadyExistsException
 import org.darthacheron.pantrypal.server.profile.ProfileDeletedException
@@ -45,7 +46,7 @@ class AuthenticationService(
 
     suspend fun register(registrationDto: RegistrationDto): Result<RegistrationResponse> {
         if (!dynamicConfigurationService.config.features.registrationEnabled) {
-            return Result.failure(Exception("Registration is currently disabled"))
+            return Result.failure(RegistrationDisabledException())
         }
         logger.info("Attempting registration for user: {}", registrationDto.username)
         
