@@ -25,6 +25,7 @@ import org.koin.dsl.module
 import org.koin.ktor.plugin.Koin
 import org.koin.ktor.ext.getKoin
 import org.koin.logger.slf4jLogger
+import org.darthacheron.pantrypal.server.networking.respondProblem
 import org.darthacheron.pantrypal.shared.auth.ProblemDetails
 
 fun Application.configureFrameworks() {
@@ -37,11 +38,7 @@ fun Application.configureFrameworks() {
             ))
         }
         exception<Throwable> { call, cause ->
-            call.respond(HttpStatusCode.InternalServerError, ProblemDetails(
-                title = "Internal Server Error",
-                status = HttpStatusCode.InternalServerError.value,
-                detail = cause.message ?: "An unexpected error occurred."
-            ))
+            call.respondProblem(cause)
         }
     }
 

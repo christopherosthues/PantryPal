@@ -6,11 +6,9 @@ import io.ktor.client.engine.cio.CIO
 import io.ktor.http.HttpMethod
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
-import io.ktor.server.auth.OAuthServerSettings
-import io.ktor.server.auth.authentication
+import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.JWTPrincipal
 import io.ktor.server.auth.jwt.jwt
-import io.ktor.server.auth.oauth
 import io.ktor.server.plugins.csrf.CSRF
 import org.darthacheron.pantrypal.server.configuration.ConfigurationService
 import org.koin.ktor.ext.inject
@@ -32,6 +30,23 @@ fun Application.configureSecurity() {
             }
             validate { credential ->
                 if (credential.payload.audience.contains(configurationService.keycloakAudience)) JWTPrincipal(credential.payload) else null
+            }
+        }
+
+        jwt("auth-jwt-admin") {
+            realm = configurationService.keycloakRealm
+            verifier(jwkProvider, configurationService.keycloakIssuer) {
+                acceptLeeway(3)
+                withAudience(configurationService.keycloakAudience)
+                withIssuer(configurationService.keycloakIssuer)
+            }
+            validate { credential ->
+                val audienceValid = credential.payload.audience.contains(configurationService.keycloakAudience)
+                val realmAccess = credential.payload.getClaim("realm_access").asMap()
+                val roles = realmAccess?.get("roles") as? List<*>
+                val isAdmin = roles?.contains("admin") == true
+
+                if (audienceValid && isAdmin) JWTPrincipal(credential.payload) else null
             }
         }
 
