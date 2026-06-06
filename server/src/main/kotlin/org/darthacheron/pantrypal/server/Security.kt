@@ -71,6 +71,8 @@ fun Application.configureSecurity() {
 //        allowOrigin("http://localhost:8080")
 //        allowOrigin("http://localhost:8081")
 //        originMatchesHost()
-        checkHeader("X-CSRF-Token")
+        checkHeader("X-CSRF-Token") {
+            it == configurationService.appToken
+        }
     }
 }

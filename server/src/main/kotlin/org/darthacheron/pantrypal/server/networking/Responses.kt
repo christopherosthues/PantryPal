@@ -5,10 +5,13 @@ import io.ktor.server.application.ApplicationCall
 import io.ktor.server.auth.jwt.JWTPrincipal
 import io.ktor.server.auth.principal
 import io.ktor.server.response.respond
-import org.darthacheron.pantrypal.server.configuration.ImageTooLargeException
-import org.darthacheron.pantrypal.server.configuration.RegistrationDisabledException
-import org.darthacheron.pantrypal.server.configuration.RemoteSyncDisabledException
-import org.darthacheron.pantrypal.server.configuration.UnsupportedImageTypeException
+import org.darthacheron.pantrypal.server.configuration.*
+import org.darthacheron.pantrypal.server.keycloak.InvalidCredentialsException
+import org.darthacheron.pantrypal.server.keycloak.KeycloakException
+import org.darthacheron.pantrypal.server.keycloak.UserAlreadyExistsException
+import org.darthacheron.pantrypal.server.profile.ProfileAlreadyExistsException
+import org.darthacheron.pantrypal.server.profile.ProfileDeletedException
+import org.darthacheron.pantrypal.server.profile.ProfileNotFoundException
 import org.darthacheron.pantrypal.shared.auth.ProblemDetails
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -75,18 +78,25 @@ suspend fun ApplicationCall.respondForbidden(detail: String) {
 }
 
 suspend fun ApplicationCall.respondProblem(e: Throwable) {
-    val (status, title) = when (e) {
-        is RegistrationDisabledException -> HttpStatusCode.Forbidden to "Registration Disabled"
-        is RemoteSyncDisabledException -> HttpStatusCode.ServiceUnavailable to "Sync Disabled"
-        is ImageTooLargeException -> HttpStatusCode.PayloadTooLarge to "Image Too Large"
-        is UnsupportedImageTypeException -> HttpStatusCode.UnsupportedMediaType to "Unsupported Image Type"
-        else -> HttpStatusCode.InternalServerError to "Internal Server Error"
+    val (status, title, errors) = when (e) {
+        is RegistrationDisabledException -> Triple(HttpStatusCode.Forbidden, "Registration Disabled", null)
+        is RemoteSyncDisabledException -> Triple(HttpStatusCode.ServiceUnavailable, "Sync Disabled", null)
+        is ImageTooLargeException -> Triple(HttpStatusCode.PayloadTooLarge, "Image Too Large", null)
+        is UnsupportedImageTypeException -> Triple(HttpStatusCode.UnsupportedMediaType, "Unsupported Image Type", null)
+        is InvalidCredentialsException -> Triple(HttpStatusCode.Unauthorized, "Invalid Credentials", null)
+        is ProfileNotFoundException -> Triple(HttpStatusCode.NotFound, "Profile Not Found", null)
+        is ProfileDeletedException -> Triple(HttpStatusCode.Gone, "Profile Deleted", null)
+        is UserAlreadyExistsException -> Triple(HttpStatusCode.Conflict, "User Already Exists", null)
+        is ProfileAlreadyExistsException -> Triple(HttpStatusCode.Conflict, "Profile Already Exists", mapOf("profile" to listOf(e.detail)))
+        is KeycloakException -> Triple(e.status, "Identity Provider Error", null)
+        else -> Triple(HttpStatusCode.InternalServerError, "Internal Server Error", null)
     }
 
     respond(status, ProblemDetails(
         title = title,
         status = status.value,
-        detail = e.message ?: "An unexpected error occurred."
+        detail = e.message ?: "An unexpected error occurred.",
+        errors = errors
     ))
 }
 

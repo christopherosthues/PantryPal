@@ -6,12 +6,26 @@ import io.ktor.server.auth.authenticate
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.*
+import org.darthacheron.pantrypal.server.authentication.AuthenticationService
 import org.darthacheron.pantrypal.server.configuration.DynamicConfigurationService
 import org.darthacheron.pantrypal.server.configuration.ServerDynamicConfig
+import org.darthacheron.pantrypal.server.networking.respondProblem
+import org.darthacheron.pantrypal.shared.auth.LoginDto
 import org.koin.ktor.ext.inject
 
 fun Application.configureAdministration() {
     routing {
+        val authService by inject<AuthenticationService>()
+
+        post("/admin/login") {
+            val loginDto = call.receive<LoginDto>()
+            authService.adminLogin(loginDto).onSuccess {
+                call.respond(HttpStatusCode.OK, it)
+            }.onFailure { e ->
+                call.respondProblem(e)
+            }
+        }
+
         authenticate("auth-jwt-admin") {
             route("/admin") {
                 val dynamicConfigService by inject<DynamicConfigurationService>()

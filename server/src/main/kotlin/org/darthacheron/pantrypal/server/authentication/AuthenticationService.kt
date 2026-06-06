@@ -44,6 +44,11 @@ class AuthenticationService(
         return Result.success(LoginResponse(tokenResponse, userResponse))
     }
 
+    suspend fun adminLogin(loginDto: LoginDto): Result<TokenResponse> {
+        logger.debug("Attempting admin login for user: {}", loginDto.username)
+        return keycloakService.getAccessToken(loginDto.username, loginDto.password)
+    }
+
     suspend fun register(registrationDto: RegistrationDto): Result<RegistrationResponse> {
         if (!dynamicConfigurationService.config.features.registrationEnabled) {
             return Result.failure(RegistrationDisabledException())
