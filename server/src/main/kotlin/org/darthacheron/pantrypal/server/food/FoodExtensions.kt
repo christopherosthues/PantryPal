@@ -2,7 +2,7 @@ package org.darthacheron.pantrypal.server.food
 
 import org.darthacheron.pantrypal.server.camera.ImageDAO
 import org.darthacheron.pantrypal.server.camera.ImagesTable
-import org.darthacheron.pantrypal.shared.food.FoodDto
+import org.darthacheron.pantrypal.core.food.FoodDto
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.isNull

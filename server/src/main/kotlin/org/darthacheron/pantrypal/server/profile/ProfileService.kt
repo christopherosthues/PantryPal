@@ -7,8 +7,8 @@ import org.darthacheron.pantrypal.server.food.FoodService
 import org.darthacheron.pantrypal.server.inventory.InventoryItemService
 import org.darthacheron.pantrypal.server.keycloak.InvalidCredentialsException
 import org.darthacheron.pantrypal.server.keycloak.KeycloakService
-import org.darthacheron.pantrypal.shared.auth.UpdateUserDto
-import org.darthacheron.pantrypal.shared.profile.ProfileDto
+import org.darthacheron.pantrypal.core.auth.UpdateUserDto
+import org.darthacheron.pantrypal.core.profile.ProfileDto
 import org.slf4j.LoggerFactory
 import kotlin.time.Clock
 import kotlin.uuid.ExperimentalUuidApi

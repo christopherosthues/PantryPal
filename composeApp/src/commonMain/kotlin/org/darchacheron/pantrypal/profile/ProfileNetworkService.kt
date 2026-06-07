@@ -12,7 +12,7 @@ import io.ktor.http.contentType
 import kotlinx.coroutines.flow.firstOrNull
 import org.darchacheron.pantrypal.authentication.AuthenticationPreferencesRepository
 import org.darchacheron.pantrypal.utils.createHttpClient
-import org.darthacheron.pantrypal.shared.profile.ProfileDto
+import org.darthacheron.pantrypal.core.profile.ProfileDto
 import kotlin.uuid.ExperimentalUuidApi
 
 @OptIn(ExperimentalUuidApi::class)

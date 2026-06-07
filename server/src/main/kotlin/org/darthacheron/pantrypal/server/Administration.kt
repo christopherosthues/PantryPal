@@ -10,7 +10,7 @@ import org.darthacheron.pantrypal.server.authentication.AuthenticationService
 import org.darthacheron.pantrypal.server.configuration.DynamicConfigurationService
 import org.darthacheron.pantrypal.server.configuration.ServerDynamicConfig
 import org.darthacheron.pantrypal.server.networking.respondProblem
-import org.darthacheron.pantrypal.shared.auth.LoginDto
+import org.darthacheron.pantrypal.core.auth.LoginDto
 import org.koin.ktor.ext.inject
 
 fun Application.configureAdministration() {

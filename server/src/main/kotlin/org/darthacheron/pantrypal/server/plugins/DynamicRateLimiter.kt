@@ -6,7 +6,7 @@ import io.ktor.server.response.respond
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.darthacheron.pantrypal.server.configuration.DynamicConfigurationService
-import org.darthacheron.pantrypal.shared.auth.ProblemDetails
+import org.darthacheron.pantrypal.core.auth.ProblemDetails
 import org.koin.ktor.ext.inject
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.time.Clock

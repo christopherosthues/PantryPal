@@ -16,7 +16,6 @@ import io.ktor.utils.io.readRemaining
 import kotlinx.io.readByteArray
 import org.darthacheron.pantrypal.server.camera.ImageDeletedException
 import org.darthacheron.pantrypal.server.camera.ImageNotFoundException
-import org.darthacheron.pantrypal.server.food.FoodMissingIdException
 import org.darthacheron.pantrypal.server.networking.extractIdParameter
 import org.darthacheron.pantrypal.server.networking.extractProfileId
 import org.darthacheron.pantrypal.server.networking.respondBadRequest
@@ -24,10 +23,9 @@ import org.darthacheron.pantrypal.server.networking.respondForbidden
 import org.darthacheron.pantrypal.server.networking.respondGone
 import org.darthacheron.pantrypal.server.networking.respondNotFound
 import org.darthacheron.pantrypal.server.networking.respondProblem
-import org.darthacheron.pantrypal.shared.inventory.InventoryItemDto
+import org.darthacheron.pantrypal.core.inventory.InventoryItemDto
 import org.koin.ktor.ext.inject
 import kotlin.uuid.ExperimentalUuidApi
-import kotlin.uuid.Uuid
 
 @OptIn(ExperimentalUuidApi::class)
 fun Route.inventoryItemRoutes() {

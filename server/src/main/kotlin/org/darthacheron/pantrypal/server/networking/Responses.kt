@@ -12,7 +12,7 @@ import org.darthacheron.pantrypal.server.keycloak.UserAlreadyExistsException
 import org.darthacheron.pantrypal.server.profile.ProfileAlreadyExistsException
 import org.darthacheron.pantrypal.server.profile.ProfileDeletedException
 import org.darthacheron.pantrypal.server.profile.ProfileNotFoundException
-import org.darthacheron.pantrypal.shared.auth.ProblemDetails
+import org.darthacheron.pantrypal.core.auth.ProblemDetails
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 

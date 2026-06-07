@@ -1,7 +1,7 @@
 package org.darthacheron.pantrypal.server.camera
 
 import kotlin.time.Clock
-import org.darthacheron.pantrypal.shared.camera.ImageDto
+import org.darthacheron.pantrypal.core.camera.ImageDto
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.isNull

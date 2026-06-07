@@ -26,7 +26,7 @@ import org.koin.ktor.plugin.Koin
 import org.koin.ktor.ext.getKoin
 import org.koin.logger.slf4jLogger
 import org.darthacheron.pantrypal.server.networking.respondProblem
-import org.darthacheron.pantrypal.shared.auth.ProblemDetails
+import org.darthacheron.pantrypal.core.auth.ProblemDetails
 
 fun Application.configureFrameworks() {
     install(StatusPages) {

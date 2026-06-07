@@ -3,7 +3,7 @@ package org.darchacheron.pantrypal.profile
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
-import org.darthacheron.pantrypal.shared.profile.ProfileDto
+import org.darthacheron.pantrypal.core.profile.ProfileDto
 import kotlin.time.Instant
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid

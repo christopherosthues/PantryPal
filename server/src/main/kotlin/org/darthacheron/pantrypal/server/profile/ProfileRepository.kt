@@ -1,6 +1,6 @@
 package org.darthacheron.pantrypal.server.profile
 
-import org.darthacheron.pantrypal.shared.profile.ProfileDto
+import org.darthacheron.pantrypal.core.profile.ProfileDto
 import kotlin.time.Clock
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq

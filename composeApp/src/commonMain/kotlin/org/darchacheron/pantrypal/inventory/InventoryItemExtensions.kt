@@ -3,7 +3,7 @@ package org.darchacheron.pantrypal.inventory
 import org.darchacheron.pantrypal.common.RemoteProduct
 import org.darchacheron.pantrypal.camera.toDto as toImageDto
 import org.darchacheron.pantrypal.camera.toImage as toImageBO
-import org.darthacheron.pantrypal.shared.inventory.InventoryItemDto
+import org.darthacheron.pantrypal.core.inventory.InventoryItemDto
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 

@@ -4,7 +4,7 @@ import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import org.darchacheron.pantrypal.settings.DataSynchronization
-import org.darthacheron.pantrypal.shared.profile.ProfileDto
+import org.darthacheron.pantrypal.core.profile.ProfileDto
 import kotlin.time.Instant
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid

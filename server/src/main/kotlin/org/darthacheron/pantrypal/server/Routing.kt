@@ -5,17 +5,14 @@ import io.ktor.server.application.install
 import io.ktor.server.auth.authenticate
 import io.ktor.server.plugins.requestvalidation.RequestValidation
 import io.ktor.server.plugins.requestvalidation.ValidationResult
-import io.ktor.server.response.respondText
-import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
-import jakarta.validation.Validation
 import org.darthacheron.pantrypal.server.authentication.authenticationRoutes
 import org.darthacheron.pantrypal.server.configuration.ServerDynamicConfig
 import org.darthacheron.pantrypal.server.food.foodRoutes
 import org.darthacheron.pantrypal.server.inventory.inventoryItemRoutes
 import org.darthacheron.pantrypal.server.networking.connectionRoutes
 import org.darthacheron.pantrypal.server.profile.profileRoutes
-import org.darthacheron.pantrypal.shared.auth.LoginDto
+import org.darthacheron.pantrypal.core.auth.LoginDto
 
 fun Application.configureRouting() {
     install(RequestValidation) {

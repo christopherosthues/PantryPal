@@ -7,8 +7,8 @@ import org.darthacheron.pantrypal.server.profile.ProfileAlreadyExistsException
 import org.darthacheron.pantrypal.server.profile.ProfileDeletedException
 import org.darthacheron.pantrypal.server.profile.ProfileNotFoundException
 import org.darthacheron.pantrypal.server.profile.ProfileService
-import org.darthacheron.pantrypal.shared.auth.*
-import org.darthacheron.pantrypal.shared.profile.ProfileDto
+import org.darthacheron.pantrypal.core.auth.*
+import org.darthacheron.pantrypal.core.profile.ProfileDto
 import org.slf4j.LoggerFactory
 import kotlin.time.Clock
 import kotlin.uuid.ExperimentalUuidApi

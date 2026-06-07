@@ -6,7 +6,7 @@ import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.post
 import org.darthacheron.pantrypal.server.networking.respondProblem
-import org.darthacheron.pantrypal.shared.auth.*
+import org.darthacheron.pantrypal.core.auth.*
 import org.koin.ktor.ext.inject
 import kotlin.getValue
 

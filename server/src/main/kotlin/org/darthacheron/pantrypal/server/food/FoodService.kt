@@ -6,8 +6,8 @@ import org.darthacheron.pantrypal.server.camera.ImageService
 import org.darthacheron.pantrypal.server.configuration.DynamicConfigurationService
 import org.darthacheron.pantrypal.server.configuration.ImageTooLargeException
 import org.darthacheron.pantrypal.server.configuration.UnsupportedImageTypeException
-import org.darthacheron.pantrypal.shared.camera.ImageDto
-import org.darthacheron.pantrypal.shared.food.FoodDto
+import org.darthacheron.pantrypal.core.camera.ImageDto
+import org.darthacheron.pantrypal.core.food.FoodDto
 import org.slf4j.LoggerFactory
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid

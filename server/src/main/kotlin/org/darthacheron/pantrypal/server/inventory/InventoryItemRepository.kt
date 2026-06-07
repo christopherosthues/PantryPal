@@ -1,7 +1,7 @@
 package org.darthacheron.pantrypal.server.inventory
 
 import kotlin.time.Clock
-import org.darthacheron.pantrypal.shared.inventory.InventoryItemDto
+import org.darthacheron.pantrypal.core.inventory.InventoryItemDto
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.isNull

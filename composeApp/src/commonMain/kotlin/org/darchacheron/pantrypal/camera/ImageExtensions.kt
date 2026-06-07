@@ -1,6 +1,6 @@
 package org.darchacheron.pantrypal.camera
 
-import org.darthacheron.pantrypal.shared.camera.ImageDto
+import org.darthacheron.pantrypal.core.camera.ImageDto
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 

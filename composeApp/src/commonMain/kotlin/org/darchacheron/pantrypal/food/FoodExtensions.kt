@@ -3,7 +3,7 @@ package org.darchacheron.pantrypal.food
 import org.darchacheron.pantrypal.common.RemoteProduct
 import org.darchacheron.pantrypal.camera.toDto as toImageDto
 import org.darchacheron.pantrypal.camera.toImage as toImageBO
-import org.darthacheron.pantrypal.shared.food.FoodDto
+import org.darthacheron.pantrypal.core.food.FoodDto
 import kotlin.uuid.ExperimentalUuidApi
 
 @OptIn(ExperimentalUuidApi::class)

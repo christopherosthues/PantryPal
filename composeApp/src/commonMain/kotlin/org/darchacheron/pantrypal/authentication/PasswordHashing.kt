@@ -1,6 +1,6 @@
 package org.darchacheron.pantrypal.authentication
 
-import org.darthacheron.pantrypal.shared.util.HashUtils
+import org.darthacheron.pantrypal.core.util.HashUtils
 
 fun hashPassword(password: String?): String? {
     if (password == null) return null

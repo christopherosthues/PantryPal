@@ -9,7 +9,7 @@ import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import kotlinx.coroutines.flow.firstOrNull
-import org.darthacheron.pantrypal.shared.food.FoodDto
+import org.darthacheron.pantrypal.core.food.FoodDto
 import org.darchacheron.pantrypal.authentication.AuthenticationPreferencesRepository
 import org.darchacheron.pantrypal.utils.createHttpClient
 import kotlin.time.Instant

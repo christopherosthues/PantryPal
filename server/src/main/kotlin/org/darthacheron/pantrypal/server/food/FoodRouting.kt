@@ -23,11 +23,10 @@ import org.darthacheron.pantrypal.server.networking.respondForbidden
 import org.darthacheron.pantrypal.server.networking.respondGone
 import org.darthacheron.pantrypal.server.networking.respondNotFound
 import org.darthacheron.pantrypal.server.networking.respondProblem
-import org.darthacheron.pantrypal.shared.camera.ImageDto
-import org.darthacheron.pantrypal.shared.food.FoodDto
+import org.darthacheron.pantrypal.core.camera.ImageDto
+import org.darthacheron.pantrypal.core.food.FoodDto
 import org.koin.ktor.ext.inject
 import kotlin.uuid.ExperimentalUuidApi
-import kotlin.uuid.Uuid
 
 @OptIn(ExperimentalUuidApi::class)
 fun Route.foodRoutes() {

@@ -1,7 +1,7 @@
 package org.darthacheron.pantrypal.server.camera
 
 import org.darthacheron.pantrypal.server.configuration.ConfigurationService
-import org.darthacheron.pantrypal.shared.camera.ImageDto
+import org.darthacheron.pantrypal.core.camera.ImageDto
 import org.slf4j.LoggerFactory
 import java.io.File
 import kotlin.uuid.ExperimentalUuidApi

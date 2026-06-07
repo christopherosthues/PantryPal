@@ -69,7 +69,7 @@ dependencies {
     implementation(libs.mongodb.kotlin)
     implementation(libs.logback.classic)
     implementation(libs.jwks.rsa)
-    implementation(projects.shared)
+    implementation(projects.core)
     testImplementation(libs.ktor.server.test.host)
     testImplementation(libs.kotlin.testJunit)
 }

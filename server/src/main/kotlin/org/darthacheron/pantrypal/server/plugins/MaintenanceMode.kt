@@ -5,7 +5,7 @@ import io.ktor.server.application.createApplicationPlugin
 import io.ktor.server.request.path
 import io.ktor.server.response.respond
 import org.darthacheron.pantrypal.server.configuration.DynamicConfigurationService
-import org.darthacheron.pantrypal.shared.auth.ProblemDetails
+import org.darthacheron.pantrypal.core.auth.ProblemDetails
 import org.koin.ktor.ext.inject
 
 val MaintenanceMode = createApplicationPlugin(name = "MaintenanceMode") {

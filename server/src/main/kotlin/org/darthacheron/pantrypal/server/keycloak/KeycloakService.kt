@@ -15,7 +15,7 @@ import io.ktor.http.contentType
 import io.ktor.http.parameters
 import org.darthacheron.pantrypal.server.configuration.ConfigurationService
 import org.darthacheron.pantrypal.server.networking.createHttpClient
-import org.darthacheron.pantrypal.shared.auth.TokenResponse
+import org.darthacheron.pantrypal.core.auth.TokenResponse
 import org.slf4j.LoggerFactory
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid

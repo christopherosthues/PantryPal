@@ -1,6 +1,6 @@
 package org.darthacheron.pantrypal.server.profile
 
-import org.darthacheron.pantrypal.shared.profile.ProfileDto
+import org.darthacheron.pantrypal.core.profile.ProfileDto
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 

@@ -8,7 +8,7 @@ import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
-import org.darthacheron.pantrypal.shared.NetworkingConstants
+import org.darthacheron.pantrypal.core.NetworkingConstants
 
 class ConnectionNetworkService {
 
