@@ -55,6 +55,9 @@ import org.darthacheron.pantrypal.navigation.NavRoute
 import org.darthacheron.pantrypal.navigation.Navigator
 import org.darthacheron.pantrypal.networking.ConnectionNetworkService
 import org.darthacheron.pantrypal.networking.ImageNetworkService
+import org.darthacheron.pantrypal.profile.AdminNetworkService
+import org.darthacheron.pantrypal.profile.AdminView
+import org.darthacheron.pantrypal.profile.AdminViewModel
 import org.darthacheron.pantrypal.profile.EditRemoteProfileViewModel
 import org.darthacheron.pantrypal.profile.ProfileNetworkService
 import org.darthacheron.pantrypal.profile.ProfileRepository
@@ -211,6 +214,17 @@ val navigationModule = module {
     ) {
         RegistrationView(registrationViewModel = koinViewModel())
     }
+
+    navigation<NavRoute.Admin>(
+        metadata = NavDisplay.transitionSpec {
+            slideInVertically(initialOffsetY = { it }) togetherWith ExitTransition.KeepUntilTransitionsFinished
+        } + NavDisplay.popTransitionSpec {
+            EnterTransition.None togetherWith slideOutVertically(targetOffsetY = { it })
+        }
+    ) {
+        val navigator = get<Navigator>()
+        AdminView(onBack = { navigator.goBack() })
+    }
 }
 
 val sharedModule =
@@ -220,6 +234,7 @@ val sharedModule =
         factoryOf(::FoodNetworkService)
         factoryOf(::InventoryNetworkService)
         factoryOf(::ProfileNetworkService)
+        factoryOf(::AdminNetworkService)
         factoryOf(::ConnectionNetworkService)
         factoryOf(::ImageNetworkService)
         factoryOf(::FoodRepository)
@@ -254,6 +269,7 @@ val sharedModule =
         viewModelOf(::RemoteLoginViewModel)
         viewModelOf(::RegistrationViewModel)
         viewModelOf(::ProfileViewModel)
+        viewModelOf(::AdminViewModel)
         viewModelOf(::EditRemoteProfileViewModel)
         viewModelOf(::InventoryListViewModel)
         viewModelOf(::InventoryDetailViewModel)

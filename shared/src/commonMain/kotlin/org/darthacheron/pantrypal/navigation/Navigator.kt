@@ -89,6 +89,10 @@ class Navigator {
         _mainBackStack?.add(NavRoute.Settings)
     }
 
+    fun goToAdmin() {
+        _mainBackStack?.add(NavRoute.Admin)
+    }
+
     fun goToLogin() {
         clearBackStacks()
         _mainBackStack?.add(NavRoute.Login)

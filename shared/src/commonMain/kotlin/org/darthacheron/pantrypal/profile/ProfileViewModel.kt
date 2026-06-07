@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import org.darthacheron.pantrypal.authentication.AuthenticationPreferencesRepository
 import org.darthacheron.pantrypal.authentication.AuthenticationService
+import org.darthacheron.pantrypal.authentication.JwtUtils
 import org.darthacheron.pantrypal.authentication.hashPassword
 import org.darthacheron.pantrypal.authentication.verifyPassword
 import org.darthacheron.pantrypal.food.FoodRepository
@@ -60,6 +61,9 @@ class ProfileViewModel(
     private val _isLoggedInRemotely = MutableStateFlow(false)
     val isLoggedInRemotely: StateFlow<Boolean> = _isLoggedInRemotely
 
+    private val _isAdmin = MutableStateFlow(false)
+    val isAdmin: StateFlow<Boolean> = _isAdmin
+
     private val _persistedServerUrl = MutableStateFlow<String?>(null)
     val persistedServerUrl: StateFlow<String?> = _persistedServerUrl
 
@@ -86,6 +90,7 @@ class ProfileViewModel(
                 .collect { prefs ->
                     _isLoggedInRemotely.value = prefs.isLoggedInRemotely
                     _persistedServerUrl.value = prefs.serverUrl
+                    _isAdmin.value = JwtUtils.isAdmin(prefs.accessToken)
                 }
         }
 
@@ -313,6 +318,10 @@ class ProfileViewModel(
     fun onLoginSuccess() {
         _showLoginDialog.value = false
         triggerSync()
+    }
+
+    fun goToAdmin() {
+        navigator.goToAdmin()
     }
 
     private val _showRemoteProfileDialog = MutableStateFlow(false)

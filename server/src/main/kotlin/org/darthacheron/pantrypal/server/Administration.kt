@@ -36,12 +36,12 @@ fun Application.configureAdministration() {
 
                 put("/config") {
                     val newConfig = call.receive<ServerDynamicConfig>()
-                    dynamicConfigService.saveConfig(newConfig)
+                    dynamicConfigService.saveConfiguration(newConfig)
                     call.respond(HttpStatusCode.OK, dynamicConfigService.config)
                 }
 
                 post("/config/reload") {
-                    dynamicConfigService.loadConfig()
+                    dynamicConfigService.loadConfiguration()
                     call.respond(HttpStatusCode.OK, dynamicConfigService.config)
                 }
             }

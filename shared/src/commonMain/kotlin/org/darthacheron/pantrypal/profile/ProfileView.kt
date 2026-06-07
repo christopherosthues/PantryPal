@@ -63,6 +63,7 @@ import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import pantrypal.shared.generated.resources.Res
+import pantrypal.shared.generated.resources.admin_title
 import pantrypal.shared.generated.resources.arrow_drop_down
 import pantrypal.shared.generated.resources.ic_check_circle_outline
 import pantrypal.shared.generated.resources.ic_delete
@@ -73,6 +74,7 @@ import pantrypal.shared.generated.resources.ic_save
 import pantrypal.shared.generated.resources.ic_settings
 import pantrypal.shared.generated.resources.ic_sync
 import pantrypal.shared.generated.resources.ic_sync_disabled
+import pantrypal.shared.generated.resources.ic_sync_lock
 import pantrypal.shared.generated.resources.profile_change_password_title
 import pantrypal.shared.generated.resources.profile_content_description_delete
 import pantrypal.shared.generated.resources.profile_content_description_logout
@@ -127,6 +129,7 @@ fun ProfileView(
     val profileValidationState by profileViewModel.profileValidationState.collectAsState()
     val passwordChangeState by profileViewModel.passwordChangeState.collectAsState()
     val isLoggedInRemotely by profileViewModel.isLoggedInRemotely.collectAsState()
+    val isAdmin by profileViewModel.isAdmin.collectAsState()
     val persistedServerUrl by profileViewModel.persistedServerUrl.collectAsState()
     val isSyncing by profileViewModel.isSyncing.collectAsState()
     val showLoginDialog by profileViewModel.showLoginDialog.collectAsState()
@@ -188,6 +191,16 @@ fun ProfileView(
                                     contentDescription = stringResource(Res.string.profile_description_sync)
                                 )
                             }
+                        }
+                    }
+
+                    if (isAdmin) {
+                        IconButton(onClick = { profileViewModel.goToAdmin() }) {
+                            Icon(
+                                painter = painterResource(Res.drawable.ic_sync_lock),
+                                contentDescription = stringResource(Res.string.admin_title),
+                                tint = MaterialTheme.colorScheme.tertiary
+                            )
                         }
                     }
 

@@ -293,4 +293,24 @@
     <string name="inventory_detail_scan_table">Scan table</string>
     <string name="inventory_detail_ocr_name">Scan name</string>
     <string name="inventory_detail_ocr_amount">Scan weight or volume</string>
+
+    <!-- Admin -->
+    <string name="admin_title">Server Administration</string>
+    <string name="admin_section_deletion">Data Deletion</string>
+    <string name="admin_grace_period_label">Grace Period (Days)</string>
+    <string name="admin_section_features">Feature Toggles</string>
+    <string name="admin_maintenance_mode_label">Maintenance Mode</string>
+    <string name="admin_registration_enabled_label">Allow Registrations</string>
+    <string name="admin_sync_enabled_label">Allow Synchronization</string>
+    <string name="admin_section_storage">Storage Limits</string>
+    <string name="admin_max_image_size_label">Max Image Size (MB)</string>
+    <string name="admin_supported_image_types_label">Supported Image Types (comma separated)</string>
+    <string name="admin_section_rate_limiting">Rate Limiting</string>
+    <string name="admin_rate_limit_capacity_label">Global Capacity (tokens/min)</string>
+    <string name="admin_section_diagnostics">Diagnostics</string>
+    <string name="admin_telemetry_sampling_label">Telemetry Sampling Rate (0.0 - 1.0)</string>
+    <string name="admin_section_logging">Logging</string>
+    <string name="admin_log_level_label">Server Log Level</string>
+    <string name="admin_reload_button">Reload from Disk</string>
+    <string name="admin_save_button">Apply Changes</string>
 </resources>

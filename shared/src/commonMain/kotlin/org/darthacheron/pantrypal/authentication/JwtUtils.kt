@@ -2,6 +2,7 @@ package org.darthacheron.pantrypal.authentication
 
 import co.touchlab.kermit.Logger
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlin.io.encoding.Base64
@@ -31,6 +32,24 @@ object JwtUtils {
         } catch (e: Exception) {
             Logger.withTag("JwtUtils").e(e) { "Error decoding JWT token" }
             null
+        }
+    }
+
+    @OptIn(ExperimentalEncodingApi::class)
+    fun isAdmin(token: String): Boolean {
+        return try {
+            val parts = token.split(".")
+            if (parts.size < 2) return false
+            val payloadBase64 = parts[1]
+            val decodedBytes = Base64.UrlSafe.withPadding(Base64.PaddingOption.ABSENT_OPTIONAL).decode(payloadBase64)
+            val decodedString = decodedBytes.decodeToString()
+            val jsonObject = json.parseToJsonElement(decodedString).jsonObject
+            
+            val realmAccess = jsonObject["realm_access"]?.jsonObject
+            val roles = realmAccess?.get("roles")?.jsonArray
+            roles?.any { it.jsonPrimitive.content == "admin" } == true
+        } catch (e: Exception) {
+            false
         }
     }
 }

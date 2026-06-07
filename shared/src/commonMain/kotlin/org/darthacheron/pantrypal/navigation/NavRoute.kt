@@ -16,4 +16,7 @@ sealed interface NavRoute : NavKey {
 
     @Serializable
     data object Register : NavRoute
+
+    @Serializable
+    data object Admin : NavRoute
 }
