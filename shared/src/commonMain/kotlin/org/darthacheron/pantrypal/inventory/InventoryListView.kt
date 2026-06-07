@@ -1,0 +1,481 @@
+package org.darthacheron.pantrypal.inventory
+
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedCard
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import coil3.compose.AsyncImage
+import com.stevdza_san.swipeable.Swipeable
+import com.stevdza_san.swipeable.domain.ActionAnimationConfig
+import com.stevdza_san.swipeable.domain.ActionCustomization
+import com.stevdza_san.swipeable.domain.HapticFeedbackConfig
+import com.stevdza_san.swipeable.domain.HapticFeedbackIntensity
+import com.stevdza_san.swipeable.domain.HapticFeedbackMode
+import com.stevdza_san.swipeable.domain.SwipeAction
+import com.stevdza_san.swipeable.domain.SwipeBackground
+import com.stevdza_san.swipeable.domain.SwipeBehavior
+import org.darthacheron.pantrypal.ui.PantryPalTheme
+import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.koinInject
+import pantrypal.shared.generated.resources.Res
+import pantrypal.shared.generated.resources.ic_add
+import pantrypal.shared.generated.resources.ic_arrow_downward
+import pantrypal.shared.generated.resources.ic_arrow_upward
+import pantrypal.shared.generated.resources.ic_check
+import pantrypal.shared.generated.resources.ic_copy
+import pantrypal.shared.generated.resources.ic_delete
+import pantrypal.shared.generated.resources.ic_fridge
+import pantrypal.shared.generated.resources.ic_search
+import pantrypal.shared.generated.resources.ic_settings
+import pantrypal.shared.generated.resources.ic_sort
+import pantrypal.shared.generated.resources.ic_x
+import pantrypal.shared.generated.resources.inventory_list_card_content_description_add_to_pantry
+import pantrypal.shared.generated.resources.inventory_list_card_content_description_delete
+import pantrypal.shared.generated.resources.inventory_list_content_description_add_item
+import pantrypal.shared.generated.resources.inventory_list_content_description_settings
+import pantrypal.shared.generated.resources.inventory_list_empty
+import pantrypal.shared.generated.resources.inventory_list_search_placeholder
+import pantrypal.shared.generated.resources.inventory_list_sort_name_asc
+import pantrypal.shared.generated.resources.inventory_list_sort_name_desc
+import pantrypal.shared.generated.resources.inventory_list_title
+import kotlin.uuid.ExperimentalUuidApi
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalUuidApi::class)
+@Composable
+fun InventoryListView(
+    inventoryListViewModel: InventoryListViewModel = koinInject(),
+) {
+    val snackbarHostState = remember { SnackbarHostState() }
+    val uiState by inventoryListViewModel.uiState.collectAsState()
+    val searchQuery by inventoryListViewModel.searchQuery.collectAsState()
+    val sortOrder by inventoryListViewModel.sortOrder.collectAsState()
+    val sortDirection by inventoryListViewModel.sortDirection.collectAsState()
+    val message by inventoryListViewModel.messages.collectAsState()
+
+    // 1. Track the scroll state
+    val scrollState = rememberLazyListState()
+
+    // 2. Calculate Parallax and Alpha based on scroll
+    // We use derivedStateOf to prevent unnecessary recompositions
+    val headerParallaxOffset by remember {
+        derivedStateOf {
+            if (scrollState.firstVisibleItemIndex == 0) {
+                // Moves at 0.5x the speed of the scroll
+                scrollState.firstVisibleItemScrollOffset.toFloat() * 0.5f
+            } else 0f
+        }
+    }
+
+    val headerAlpha by remember {
+        derivedStateOf {
+            if (scrollState.firstVisibleItemIndex == 0) {
+                // Fades out completely after 400 pixels of scroll
+                val progress = scrollState.firstVisibleItemScrollOffset.toFloat() / 400f
+                (1f - progress).coerceIn(0f, 1f)
+            } else 0f
+        }
+    }
+
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(Res.string.inventory_list_title)) },
+                actions = {
+                    IconButton(onClick = { inventoryListViewModel.goToSettings() }) {
+                        Icon(
+                            painter = painterResource(Res.drawable.ic_settings),
+                            contentDescription = stringResource(Res.string.inventory_list_content_description_settings)
+                        )
+                    }
+                }
+            )
+        },
+        floatingActionButton = {
+            FloatingActionButton(onClick = { inventoryListViewModel.goToItemDetails(null) }) {
+                Icon(
+                    painter = painterResource(Res.drawable.ic_add),
+                    contentDescription = stringResource(Res.string.inventory_list_content_description_add_item)
+                )
+            }
+        }
+    ) { padding ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = padding.calculateTopPadding()),
+            contentAlignment = Alignment.Center
+        ) {
+            if (message != null) {
+                val snackbarMessage = if (message!!.parameter == null)
+                    stringResource(message!!.messageResource)
+                else
+                    stringResource(message!!.messageResource, message!!.parameter!!)
+
+                LaunchedEffect(snackbarMessage) {
+                    snackbarHostState.showSnackbar(message = snackbarMessage)
+                    inventoryListViewModel.clearMessage()
+                }
+            }
+
+            val state = uiState
+            when {
+                state.isLoading -> {
+                    CircularProgressIndicator()
+                }
+
+                state.hasError -> {
+                    val errorMessage = stringResource(state.error!!)
+                    LaunchedEffect(errorMessage) {
+                        snackbarHostState.showSnackbar(message = errorMessage)
+                    }
+                }
+
+                state.data != null -> {
+                    LazyColumn(
+                        state = scrollState, // 3. Attach the scroll state
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 80.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        // 4. Move Controls inside the LazyColumn
+                        item {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .graphicsLayer {
+                                        // Apply the parallax and fade effects
+                                        translationY = headerParallaxOffset
+                                        alpha = headerAlpha
+                                    }
+                            ) {
+                                InventoryListControls(
+                                    searchQuery = searchQuery,
+                                    onSearchQueryChange = inventoryListViewModel::setSearchQuery,
+                                    sortOrder = sortOrder,
+                                    sortDirection = sortDirection,
+                                    onSortChange = inventoryListViewModel::setSort,
+                                )
+                            }
+                        }
+
+                        if (state.data.isEmpty()) {
+                            item {
+                                Text(
+                                    text = stringResource(Res.string.inventory_list_empty),
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.fillMaxWidth().padding(top = 32.dp)
+                                )
+                            }
+                        } else {
+                            val groupedFoods = state.data.groupBy { it.name }
+                            groupedFoods.forEach { (name, items) ->
+                                if (items.size > 1) {
+                                    item(key = "header_$name") {
+                                        BadgedBox(
+                                            badge = {
+                                                Badge {
+                                                    Text(text = "${items.size}")
+                                                }
+                                            }
+                                        ) {
+                                            Text(
+                                                text = name,
+                                                style = MaterialTheme.typography.titleSmall,
+                                                color = MaterialTheme.colorScheme.secondary,
+                                                modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
+                                            )
+                                        }
+                                    }
+                                }
+                                items(items, key = { it.id.toString() }) { item ->
+                                    InventoryItem(
+                                        item = item,
+                                        onClick = { inventoryListViewModel.goToItemDetails(item.id.toString()) },
+                                        onDelete = { inventoryListViewModel.deleteItem(it) },
+                                        onAddToPantry = { inventoryListViewModel.addToFoodList(it) }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun InventoryListControls(
+    searchQuery: String,
+    onSearchQueryChange: (String) -> Unit,
+    sortOrder: InventorySortOrder,
+    sortDirection: InventorySortDirection,
+    onSortChange: (InventorySortOrder, InventorySortDirection) -> Unit,
+) {
+    var showSortMenu by remember { mutableStateOf(false) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        OutlinedTextField(
+            value = searchQuery,
+            onValueChange = onSearchQueryChange,
+            modifier = Modifier.fillMaxWidth(),
+            placeholder = { Text(stringResource(Res.string.inventory_list_search_placeholder)) },
+            leadingIcon = { Icon(painter = painterResource(Res.drawable.ic_search), contentDescription = null) },
+            trailingIcon = {
+                if (searchQuery.isNotEmpty()) {
+                    IconButton(onClick = { onSearchQueryChange("") }) {
+                        Icon(painter = painterResource(Res.drawable.ic_x), contentDescription = null)
+                    }
+                }
+            },
+            singleLine = true,
+            shape = RoundedCornerShape(12.dp)
+        )
+
+        Box(
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.CenterEnd
+        ) {
+            AssistChip(
+                onClick = { showSortMenu = true },
+                label = {
+                    Text(
+                        when (sortOrder) {
+                            InventorySortOrder.Name -> if (sortDirection == InventorySortDirection.Ascending) stringResource(
+                                Res.string.inventory_list_sort_name_asc
+                            ) else stringResource(
+                                Res.string.inventory_list_sort_name_desc
+                            )
+                        }
+                    )
+                },
+                leadingIcon = {
+                    Icon(
+                        painter = painterResource(Res.drawable.ic_sort),
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            )
+            DropdownMenu(
+                expanded = showSortMenu,
+                onDismissRequest = { showSortMenu = false }
+            ) {
+                val sortOptions = listOf(
+                    Triple(
+                        InventorySortOrder.Name,
+                        InventorySortDirection.Ascending,
+                        Res.string.inventory_list_sort_name_asc
+                    ),
+                    Triple(
+                        InventorySortOrder.Name,
+                        InventorySortDirection.Descending,
+                        Res.string.inventory_list_sort_name_desc
+                    ),
+                )
+
+                sortOptions.forEach { (order, direction, labelRes) ->
+                    DropdownMenuItem(
+                        text = { Text(stringResource(labelRes)) },
+                        onClick = {
+                            onSortChange(order, direction)
+                            showSortMenu = false
+                        },
+                        leadingIcon = {
+                            Icon(
+                                painter = painterResource(if (direction == InventorySortDirection.Ascending) Res.drawable.ic_arrow_upward else Res.drawable.ic_arrow_downward),
+                                contentDescription = null,
+                            )
+                        },
+                        trailingIcon = {
+                            if (sortOrder == order && sortDirection == direction) {
+                                Icon(painter = painterResource(Res.drawable.ic_check), contentDescription = null)
+                            }
+                        }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalUuidApi::class, ExperimentalMaterial3Api::class)
+@Composable
+fun InventoryItem(
+    item: InventoryItem,
+    onClick: () -> Unit,
+    onDelete: (item: InventoryItem) -> Unit,
+    onAddToPantry: (item: InventoryItem) -> Unit,
+) {
+    val extraColors = PantryPalTheme.extraColors
+    val itemColor = extraColors.notOverdue
+    val containerColor = extraColors.notOverdueContainer
+
+    Swipeable(
+        actionAnimation = ActionAnimationConfig.Flip,
+        behavior = SwipeBehavior.REVEAL,
+        threshold = 0.5f,
+        leftHapticFeedbackConfig = HapticFeedbackConfig(
+            mode = HapticFeedbackMode.THRESHOLD_ONCE,
+            intensity = HapticFeedbackIntensity.LIGHT
+        ),
+        rightHapticFeedbackConfig = HapticFeedbackConfig(
+            mode = HapticFeedbackMode.THRESHOLD_ONCE,
+            intensity = HapticFeedbackIntensity.HEAVY
+        ),
+        leftBackground = SwipeBackground.radialGradient(
+            colors = listOf(extraColors.leftCardBackgroundFrom, extraColors.leftCardBackgroundTo),
+            radius = 250f,
+            centerX = 0.1f,
+            centerY = 0.5f,
+        ),
+        rightBackground = SwipeBackground.radialGradient(
+            colors = listOf(extraColors.rightCardBackgroundFrom, extraColors.rightCardBackgroundTo),
+            radius = 250f,
+        ),
+        leftRevealActions = listOf(
+            SwipeAction(
+                label = stringResource(Res.string.inventory_list_card_content_description_add_to_pantry, item.name),
+                onAction = { onAddToPantry(item) },
+                customization = ActionCustomization(
+                    icon = Res.drawable.ic_copy,
+                    iconColor = MaterialTheme.colorScheme.onPrimary,
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    shape = MaterialTheme.shapes.medium
+                )
+            )
+        ),
+        rightRevealActions = listOf(
+            SwipeAction(
+                label = stringResource(Res.string.inventory_list_card_content_description_delete, item.name),
+                onAction = { onDelete(item) },
+                customization = ActionCustomization(
+                    icon = Res.drawable.ic_delete,
+                    iconColor = MaterialTheme.colorScheme.onError,
+                    containerColor = MaterialTheme.colorScheme.error,
+                    shape = MaterialTheme.shapes.medium
+                )
+            )
+        ),
+    ) {
+        OutlinedCard(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onClick() },
+            shape = RoundedCornerShape(12.dp),
+            border = BorderStroke(1.dp, itemColor),
+            colors = CardDefaults.outlinedCardColors(
+                containerColor = containerColor
+            )
+        ) {
+            ListItem(
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                leadingContent = {
+                    if (item.image?.localPath != null) {
+                        AsyncImage(
+                            model = item.image.localPath,
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(64.dp)
+                                .clip(RoundedCornerShape(8.dp)),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        Surface(
+                            modifier = Modifier.size(64.dp),
+                            shape = RoundedCornerShape(8.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    painter = painterResource(Res.drawable.ic_fridge),
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                },
+                headlineContent = {
+                    Text(
+                        text = item.name,
+                        style = MaterialTheme.typography.titleMedium,
+                        maxLines = 1,
+                        modifier = Modifier.padding(end = 12.dp)
+                    )
+                },
+                supportingContent = {
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        val details = mutableListOf<String>()
+                        item.kiloCalories?.let { details.add("$it kcal") }
+                        item.kiloJoule?.let { details.add("$it kJ") }
+                        item.fillingQuantity?.let { details.add("${it}${if (item.isLiquid) "ml" else "g"}") }
+                        if (details.isNotEmpty()) {
+                            Text(
+                                text = details.joinToString(" • "),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                },
+            )
+        }
+    }
+}

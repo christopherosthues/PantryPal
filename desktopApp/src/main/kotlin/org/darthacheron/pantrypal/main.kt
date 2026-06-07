@@ -5,9 +5,9 @@ import androidx.compose.ui.window.application
 import io.github.vinceglb.filekit.FileKit
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
-import pantrypal.composeapp.generated.resources.Res
-import pantrypal.composeapp.generated.resources.appName
-import pantrypal.composeapp.generated.resources.ic_app_launcher
+import pantrypal.shared.generated.resources.Res
+import pantrypal.shared.generated.resources.appName
+import pantrypal.shared.generated.resources.ic_app_launcher
 import org.darthacheron.pantrypal.di.initKoin
 
 fun main() {

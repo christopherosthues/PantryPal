@@ -104,8 +104,8 @@ jobs:
       - name: Execute tests
         run: |
           chmod +x gradlew || true
-          ./gradlew --no-daemon --stacktrace :composeApp:jvmTest
-      # :composeApp:connectedAndroidTest :composeApp:testAndroid
+          ./gradlew --no-daemon --stacktrace :shared:jvmTest
+      # :shared:connectedAndroidTest :shared:testAndroid
 
       - name: Upload test artifacts
         if: always()
@@ -113,7 +113,7 @@ jobs:
         with:
           name: test-artifacts
           path: |
-            composeApp/build/reports/tests/**
+            shared/build/reports/tests/**
           retention-days: 14
 
   package-ubuntu:
@@ -146,11 +146,11 @@ jobs:
       - name: Build DEB (Ubuntu)
         run: |
           chmod +x gradlew || true
-          ./gradlew --no-daemon --stacktrace :composeApp:packageDeb
+          ./gradlew --no-daemon --stacktrace :shared:packageDeb
 
       - name: Name DEB (Ubuntu)
         run: |
-          DEB=$(find composeApp/build/compose/binaries -name "*.deb" | head -n 1)
+          DEB=$(find shared/build/compose/binaries -name "*.deb" | head -n 1)
           if [ -n "$DEB" ]; then
             if [[ "${{ github.event_name == 'push' || github.event.inputs.sign_ubuntu == 'true' }}" != "true" || -z "${{ secrets.GPG_PRIVATE_KEY }}" ]]; then
                DEST_FILE="${DEB%.deb}-unsigned.deb"
@@ -168,7 +168,7 @@ jobs:
           if [ -n "$GPG_PRIVATE_KEY" ]; then
             echo "$GPG_PRIVATE_KEY" | gpg --batch --import
             # Find the deb file
-            DEB_FILE=$(find composeApp/build/compose/binaries -name "*.deb" | head -n 1)
+            DEB_FILE=$(find shared/build/compose/binaries -name "*.deb" | head -n 1)
             if [ -n "$DEB_FILE" ]; then
               echo "Signing $DEB_FILE"
               gpg --batch --yes --passphrase "$PASSPHRASE" --detach-sign -a "$DEB_FILE"
@@ -182,8 +182,8 @@ jobs:
         with:
           name: ubuntu-artifacts
           path: |
-            composeApp/build/compose/binaries/**/*.deb
-            composeApp/build/compose/binaries/**/*.asc
+            shared/build/compose/binaries/**/*.deb
+            shared/build/compose/binaries/**/*.asc
           retention-days: 14
 
   package-android-apk:
@@ -370,14 +370,14 @@ jobs:
 #      - name: Build JS
 #        run: |
 #          chmod +x gradlew || true
-#          ./gradlew --no-daemon --stacktrace :composeApp:jsBrowserDistribution
+#          ./gradlew --no-daemon --stacktrace :shared:jsBrowserDistribution
 #
 #      - name: Upload JS artifacts
 #        uses: actions/upload-artifact@v7
 #        with:
 #          name: js-artifacts
 #          path: |
-#            composeApp/build/dist/js/productionExecutable/**
+#            shared/build/dist/js/productionExecutable/**
 #          retention-days: 14
 #
 #  package-js-wasm:
@@ -409,14 +409,14 @@ jobs:
 #      - name: Build WASM
 #        run: |
 #          chmod +x gradlew || true
-#          ./gradlew --no-daemon --stacktrace :composeApp:wasmJsBrowserDistribution
+#          ./gradlew --no-daemon --stacktrace :shared:wasmJsBrowserDistribution
 #
 #      - name: Upload WASM artifacts
 #        uses: actions/upload-artifact@v7
 #        with:
 #          name: wasm-artifacts
 #          path: |
-#            composeApp/build/dist/wasmJs/productionExecutable/**
+#            shared/build/dist/wasmJs/productionExecutable/**
 #          retention-days: 14
 
   package-macos:
@@ -449,11 +449,11 @@ jobs:
       - name: Build DMG (macOS)
         run: |
           chmod +x gradlew || true
-          ./gradlew --no-daemon --stacktrace :composeApp:packageDmg
+          ./gradlew --no-daemon --stacktrace :shared:packageDmg
 
       - name: Name DMG (macOS)
         run: |
-          DMG=$(find composeApp/build/compose/binaries -name "*.dmg" | head -n 1)
+          DMG=$(find shared/build/compose/binaries -name "*.dmg" | head -n 1)
           if [ -n "$DMG" ]; then
             if [[ "${{ github.event_name == 'push' || github.event.inputs.sign_macos == 'true' }}" != "true" || -z "${{ secrets.MACOS_CERTIFICATE }}" ]]; then
               DEST_FILE="${DMG%.dmg}-unsigned.dmg"
@@ -478,7 +478,7 @@ jobs:
             security import certificate.p12 -k $KEYCHAIN_PATH -P "$MACOS_CERTIFICATE_PWD" -A -t cert -f pkcs12
             security list-keychain -d user -s $KEYCHAIN_PATH
             
-            DMG_FILE=$(find composeApp/build/compose/binaries -name "*.dmg" | head -n 1)
+            DMG_FILE=$(find shared/build/compose/binaries -name "*.dmg" | head -n 1)
             if [ -n "$DMG_FILE" ]; then
               echo "Signing $DMG_FILE"
               # Identity name can be extracted or provided as a secret
@@ -493,7 +493,7 @@ jobs:
         with:
           name: macos-artifacts
           path: |
-            composeApp/build/compose/binaries/**/*.dmg
+            shared/build/compose/binaries/**/*.dmg
           retention-days: 14
 
   package-windows:
@@ -526,12 +526,12 @@ jobs:
       - name: Build MSI (Windows)
         shell: powershell
         run: |
-          .\gradlew.bat --no-daemon --stacktrace :composeApp:packageMsi
+          .\gradlew.bat --no-daemon --stacktrace :shared:packageMsi
 
       - name: Name MSI (Windows)
         shell: powershell
         run: |
-          $msi = Get-ChildItem -Path "composeApp/build/compose/binaries" -Filter "*.msi" -Recurse | Select-Object -First 1
+          $msi = Get-ChildItem -Path "shared/build/compose/binaries" -Filter "*.msi" -Recurse | Select-Object -First 1
           if ($msi) {
             if ("${{ github.event_name == 'push' || github.event.inputs.sign_windows == 'true' }}" -ne "true" -or -not "${{ secrets.WINDOWS_PFX_BASE64 }}") {
               $destFile = $msi.FullName.Replace(".msi", "-unsigned.msi")
@@ -554,7 +554,7 @@ jobs:
           $pfxPath = Join-Path $pwd "cert.pfx"
           [System.Convert]::FromBase64String($env:PFX_BASE64) | Set-Content -Path $pfxPath -Encoding Byte
           
-          $msiFile = Get-ChildItem -Path "composeApp/build/compose/binaries" -Filter "*.msi" -Recurse | Select-Object -First 1
+          $msiFile = Get-ChildItem -Path "shared/build/compose/binaries" -Filter "*.msi" -Recurse | Select-Object -First 1
           if ($msiFile) {
             Write-Host "Signing $($msiFile.FullName)"
             # signtool is usually in the path on GHA windows runners
@@ -567,7 +567,7 @@ jobs:
         with:
           name: windows-artifacts
           path: |
-            composeApp/build/compose/binaries/**/*.msi
+            shared/build/compose/binaries/**/*.msi
           retention-days: 14
 
   # Prepare a draft release for GitHub Releases page for the manual verification

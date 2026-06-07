@@ -12,7 +12,7 @@ val appVersionName = project.property("appVersionName") as String
 
 kotlin {
     dependencies {
-        implementation(projects.composeApp)
+        implementation(projects.shared)
         implementation(libs.compose.uiToolingPreview)
         implementation(libs.androidx.activity.compose)
         implementation(libs.androidx.core.splashscreen)

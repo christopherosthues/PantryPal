@@ -13,7 +13,7 @@ val appVersionName = project.property("appVersionName") as String
 
 kotlin {
     dependencies {
-        implementation(projects.composeApp)
+        implementation(projects.shared)
         implementation(libs.compose.components.resources)
         implementation(libs.filekit.core)
         implementation(compose.desktop.currentOs)

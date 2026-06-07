@@ -11,7 +11,7 @@ The PantryPal system consists of the Client Application (KMP) and the Backend Se
 |===
 
 == Level 2: White Box of the Client App
-The Client App is divided into several modules within the `composeApp` project.
+The Client App is divided into several modules within the `shared` project.
 
 [cols="1,2"]
 |===
