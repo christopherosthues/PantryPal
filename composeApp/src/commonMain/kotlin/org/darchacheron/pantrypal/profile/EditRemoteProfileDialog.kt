@@ -32,6 +32,7 @@ import kotlin.uuid.ExperimentalUuidApi
 @Composable
 fun EditRemoteProfileDialog(
     profile: Profile,
+    serverUrl: String,
     onDismiss: () -> Unit,
     viewModel: EditRemoteProfileViewModel = koinInject()
 ) {
@@ -42,7 +43,7 @@ fun EditRemoteProfileDialog(
     val newPassword by viewModel.newPassword.collectAsState()
     val repeatNewPassword by viewModel.repeatNewPassword.collectAsState()
 
-    val remoteProfile = remember(profile) { profile.remoteProfiles.firstOrNull { it.serverUrl == profile.serverUrl } }
+    val remoteProfile = remember(profile, serverUrl) { profile.remoteProfiles.firstOrNull { it.serverUrl == serverUrl } }
 
     LaunchedEffect(remoteProfile) {
         if (remoteProfile != null) {
@@ -63,7 +64,7 @@ fun EditRemoteProfileDialog(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Text(
-                    text = "${stringResource(Res.string.profile_server_url_label)}: ${profile.serverUrl ?: ""}",
+                    text = "${stringResource(Res.string.profile_server_url_label)}: $serverUrl",
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
@@ -133,13 +134,11 @@ fun EditRemoteProfileDialog(
             
             Button(
                 onClick = {
-                    profile.serverUrl?.let {
-                        viewModel.updateRemoteProfile(
-                            serverUrl = it,
-                            currentProfile = profile,
-                            onDismiss = onDismiss
-                        )
-                    }
+                    viewModel.updateRemoteProfile(
+                        serverUrl = serverUrl,
+                        currentProfile = profile,
+                        onDismiss = onDismiss
+                    )
                 },
                 enabled = !uiState.isLoading && isDataChanged && isPasswordChangeValid
             ) {

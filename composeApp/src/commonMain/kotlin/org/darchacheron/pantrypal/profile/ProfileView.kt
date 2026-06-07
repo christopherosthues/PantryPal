@@ -127,6 +127,7 @@ fun ProfileView(
     val profileValidationState by profileViewModel.profileValidationState.collectAsState()
     val passwordChangeState by profileViewModel.passwordChangeState.collectAsState()
     val isLoggedInRemotely by profileViewModel.isLoggedInRemotely.collectAsState()
+    val persistedServerUrl by profileViewModel.persistedServerUrl.collectAsState()
     val isSyncing by profileViewModel.isSyncing.collectAsState()
     val showLoginDialog by profileViewModel.showLoginDialog.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -280,11 +281,16 @@ fun ProfileView(
 
                         PersonalInformationSection(profile, profileViewModel, profileValidationState)
 
-                        RemoteProfileSection(profileViewModel, remoteAccountLinkViewModel, profile)
+                        RemoteProfileSection(profileViewModel, remoteAccountLinkViewModel, profile, persistedServerUrl)
 
                         ChangeLocalPasswordSection(profileViewModel)
 
-                        if (profile.serverId != null && (profile.lastSyncedAt == null || (profile.lastModifiedAt > profile.lastSyncedAt))) {
+                        val hasPendingSync = persistedServerUrl?.let { url ->
+                            val remote = profile.remoteProfiles.find { it.serverUrl == url }
+                            remote != null && (profile.lastSyncedAt == null || profile.lastModifiedAt > profile.lastSyncedAt)
+                        } ?: false
+
+                        if (hasPendingSync) {
                             Text(
                                 text = stringResource(Res.string.profile_pending_sync),
                                 style = MaterialTheme.typography.bodySmall,
@@ -310,9 +316,10 @@ fun ProfileView(
     val showRemoteProfileDialog by profileViewModel.showRemoteProfileDialog.collectAsState()
     if (showRemoteProfileDialog) {
         val profile = uiState.data
-        if (profile != null) {
+        if (profile != null && !persistedServerUrl.isNullOrBlank()) {
             EditRemoteProfileDialog(
                 profile = profile,
+                serverUrl = persistedServerUrl!!,
                 onDismiss = { profileViewModel.dismissRemoteProfileDialog() }
             )
         }
@@ -467,10 +474,10 @@ private fun PersonalInformationSection(
 private fun RemoteProfileSection(
     profileViewModel: ProfileViewModel,
     remoteAccountLinkViewModel: RemoteAccountLinkViewModel,
-    profile: Profile
+    profile: Profile,
+    persistedServerUrl: String?
 ) {
     val isLoggedInRemotely by profileViewModel.isLoggedInRemotely.collectAsState()
-    val persistedServerUrl by profileViewModel.persistedServerUrl.collectAsState()
     val profileValidationState by profileViewModel.profileValidationState.collectAsState()
     var showEnableSyncDialog by remember { mutableStateOf(false) }
 
