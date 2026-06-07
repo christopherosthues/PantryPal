@@ -37,7 +37,7 @@ kotlin {
 }
 
 android {
-    namespace = "org.darchacheron.pantrypal"
+    namespace = "org.darthacheron.pantrypal"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
 
     defaultConfig {
