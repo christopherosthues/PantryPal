@@ -1,4 +1,3 @@
-import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -151,11 +150,6 @@ kotlin {
         nativeMain.dependencies {
             implementation(libs.ktor.client.darwin)
         }
-
-        jvmMain.dependencies {
-            implementation(compose.desktop.currentOs)
-            implementation(libs.kotlinx.coroutinesSwing)
-        }
     }
 }
 
@@ -186,14 +180,6 @@ changelog {
     path = rootProject.file("CHANGELOG.md").path
 }
 
-compose.desktop {
-    application {
-        mainClass = "org.darchacheron.pantrypal.MainKt"
-
-        nativeDistributions {
-            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            packageName = properties("appName").get()
-            packageVersion = appVersionName
-        }
-    }
+compose.resources {
+    publicResClass = true
 }

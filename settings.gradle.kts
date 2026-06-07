@@ -36,3 +36,5 @@ include(":core")
 include(":composeApp")
 include(":androidApp")
 include(":server")
+
+include("desktopApp")

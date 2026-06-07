@@ -1,0 +1,12 @@
+package org.darthacheron.pantrypal.authentication
+
+import org.darthacheron.pantrypal.core.util.HashUtils
+
+fun hashPassword(password: String?): String? {
+    if (password == null) return null
+    return HashUtils.sha256(password)
+}
+
+fun verifyPassword(password: String?, hashedPassword: String?): Boolean {
+    return hashPassword(password) == hashedPassword
+}
