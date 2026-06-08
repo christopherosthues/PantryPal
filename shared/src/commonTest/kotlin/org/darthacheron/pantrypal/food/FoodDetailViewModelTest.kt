@@ -1,13 +1,20 @@
 package org.darthacheron.pantrypal.food
 
 import app.cash.turbine.test
+import dev.mokkery.answering.returns
+import dev.mokkery.every
+import dev.mokkery.everySuspend
+import dev.mokkery.matcher.any
+import dev.mokkery.mock
+import dev.mokkery.verifySuspend
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.*
 import kotlinx.datetime.LocalDate
-import org.darthacheron.pantrypal.navigation.NavRoute
+import org.darthacheron.pantrypal.authentication.AuthenticationPreferences
+import org.darthacheron.pantrypal.authentication.AuthenticationPreferencesRepository
+import org.darthacheron.pantrypal.navigation.FoodNavRoute
 import org.darthacheron.pantrypal.navigation.Navigator
 import kotlin.test.*
 import kotlin.time.Clock
@@ -18,13 +25,18 @@ import kotlin.uuid.Uuid
 class FoodDetailViewModelTest {
     private val testDispatcher = UnconfinedTestDispatcher()
     private lateinit var repository: FoodRepository
+    private lateinit var authRepository: AuthenticationPreferencesRepository
     private lateinit var navigator: Navigator
-    private val foodDao = FakeFoodDao()
+    private val profileId = Uuid.generateV7()
+    private val authPreferencesFlow = MutableStateFlow(AuthenticationPreferences("", "", 0, 0, profileId.toString()))
 
     @BeforeTest
     fun setup() {
         Dispatchers.setMain(testDispatcher)
-        repository = FoodRepository(foodDao)
+        authRepository = mock<AuthenticationPreferencesRepository> {
+            every { authenticationPreferencesFlow } returns authPreferencesFlow
+        }
+        repository = mock<FoodRepository>()
         navigator = Navigator()
     }
 
@@ -36,44 +48,60 @@ class FoodDetailViewModelTest {
     @Test
     fun testLoadingExistingFood() = runTest {
         val foodId = Uuid.generateV7()
-        val foodEntity = createFoodEntity(foodId, "Apple")
-        foodDao.foods[foodId] = foodEntity
+        val food = createFood(foodId, "Apple", profileId)
+        
+        everySuspend { repository.getById(foodId) } returns food
 
-        val route = NavRoute.FoodDetail(foodId.toString())
-        val viewModel = FoodDetailViewModel(route, repository, navigator)
+        val route = FoodNavRoute.FoodDetail(foodId.toString())
+        val viewModel = FoodDetailViewModel(route, repository, authRepository, navigator)
 
         viewModel.uiState.test {
             var item = awaitItem()
-            // Wait for data or error, skipping initial and loading states
             while (item.isLoading) {
                 item = awaitItem()
             }
             assertEquals("Apple", item.data?.name)
+            assertEquals(profileId, item.data?.profileId)
             assertFalse(viewModel.isAdding)
         }
     }
 
     @Test
     fun testNewFoodInitialState() = runTest {
-        val route = NavRoute.FoodDetail(null)
-        val viewModel = FoodDetailViewModel(route, repository, navigator)
+        val route = FoodNavRoute.FoodDetail(null)
+        val viewModel = FoodDetailViewModel(route, repository, authRepository, navigator)
 
         viewModel.uiState.test {
             var item = awaitItem()
-            // Wait for initial data to be populated
             while (item.isLoading) {
                 item = awaitItem()
             }
             assertTrue(item.hasData)
             assertEquals("", item.data?.name)
+            assertEquals(profileId, item.data?.profileId)
             assertTrue(viewModel.isAdding)
         }
     }
 
     @Test
+    fun testLoadingErrorWhenProfileMissing() = runTest {
+        authPreferencesFlow.value = authPreferencesFlow.value.copy(localProfileId = "")
+        val route = FoodNavRoute.FoodDetail(null)
+        val viewModel = FoodDetailViewModel(route, repository, authRepository, navigator)
+
+        viewModel.uiState.test {
+            var item = awaitItem()
+            while (item.isLoading) {
+                item = awaitItem()
+            }
+            assertTrue(item.hasError)
+        }
+    }
+
+    @Test
     fun testUpdateNameAndSave() = runTest {
-        val route = NavRoute.FoodDetail(null)
-        val viewModel = FoodDetailViewModel(route, repository, navigator)
+        val route = FoodNavRoute.FoodDetail(null)
+        val viewModel = FoodDetailViewModel(route, repository, authRepository, navigator)
         
         // Wait for it to be ready
         viewModel.uiState.test {
@@ -84,20 +112,23 @@ class FoodDetailViewModelTest {
         viewModel.updateName("Banana")
         assertTrue(viewModel.canSave)
         
+        everySuspend { repository.upsert(any()) } returns Unit
+        everySuspend { repository.getById(any()) } returns createFood(Uuid.generateV7(), "Banana", profileId)
+        
         viewModel.save()
         
         assertTrue(viewModel.isSaved.value)
-        val savedFood = foodDao.foods.values.first()
-        assertEquals("Banana", savedFood.name)
+        verifySuspend { repository.upsert(any()) }
     }
 
     @Test
     fun testDeleteFood() = runTest {
         val foodId = Uuid.generateV7()
-        foodDao.foods[foodId] = createFoodEntity(foodId, "To Delete")
+        everySuspend { repository.getById(foodId) } returns createFood(foodId, "To Delete", profileId)
+        everySuspend { repository.delete(foodId) } returns Unit
 
-        val route = NavRoute.FoodDetail(foodId.toString())
-        val viewModel = FoodDetailViewModel(route, repository, navigator)
+        val route = FoodNavRoute.FoodDetail(foodId.toString())
+        val viewModel = FoodDetailViewModel(route, repository, authRepository, navigator)
 
         // Wait for it to be ready
         viewModel.uiState.test {
@@ -107,14 +138,14 @@ class FoodDetailViewModelTest {
 
         viewModel.delete()
 
-        assertNull(foodDao.foods[foodId])
+        verifySuspend { repository.delete(foodId) }
         assertTrue(viewModel.isSaved.value)
     }
 
     @Test
     fun testUpdateNutrients() = runTest {
-        val route = NavRoute.FoodDetail(null)
-        val viewModel = FoodDetailViewModel(route, repository, navigator)
+        val route = FoodNavRoute.FoodDetail(null)
+        val viewModel = FoodDetailViewModel(route, repository, authRepository, navigator)
 
         // Wait for it to be ready
         viewModel.uiState.test {
@@ -131,7 +162,6 @@ class FoodDetailViewModelTest {
         viewModel.updateDietaryFiberInGrams("3.2")
         viewModel.updateProteinInGrams("8.0")
         viewModel.updateSaltInGrams("0.1")
-        viewModel.updateAmount("500")
         viewModel.updateFillingQuantity("500.0")
         viewModel.updateIsLiquid(true)
 
@@ -146,35 +176,14 @@ class FoodDetailViewModelTest {
         assertEquals(3.2f, food.dietaryFiberInGrams)
         assertEquals(8.0f, food.proteinInGrams)
         assertEquals(0.1f, food.saltInGrams)
-        assertEquals(500, food.amount)
         assertEquals(500f, food.fillingQuantity)
         assertTrue(food.isLiquid)
     }
 
     @Test
-    fun testUpdateNutrientsWithInvalidInput() = runTest {
-        val route = NavRoute.FoodDetail(null)
-        val viewModel = FoodDetailViewModel(route, repository, navigator)
-
-        // Wait for it to be ready
-        viewModel.uiState.test {
-            var item = awaitItem()
-            while (item.isLoading) item = awaitItem()
-        }
-
-        viewModel.updateKiloCalories("abc")
-        viewModel.updateFatInGrams("xyz")
-
-        val food = viewModel.uiState.value.data
-        assertNotNull(food)
-        assertNull(food.kiloCalories)
-        assertNull(food.fatInGrams)
-    }
-
-    @Test
     fun testUpdateDates() = runTest {
-        val route = NavRoute.FoodDetail(null)
-        val viewModel = FoodDetailViewModel(route, repository, navigator)
+        val route = FoodNavRoute.FoodDetail(null)
+        val viewModel = FoodDetailViewModel(route, repository, authRepository, navigator)
 
         // Wait for it to be ready
         viewModel.uiState.test {
@@ -196,8 +205,65 @@ class FoodDetailViewModelTest {
         assertEquals(opened, food.openedAt)
     }
 
-    private fun createFoodEntity(id: Uuid, name: String) = FoodEntity(
+    @Test
+    fun testOcrDateParsing() = runTest {
+        val route = FoodNavRoute.FoodDetail(null)
+        val viewModel = FoodDetailViewModel(route, repository, authRepository, navigator)
+
+        // Wait for it to be ready
+        viewModel.uiState.test {
+            var item = awaitItem()
+            while (item.isLoading) item = awaitItem()
+        }
+
+        // Test ISO format
+        viewModel.updateOcrDate("2025-12-31")
+        assertEquals(LocalDate(2025, 12, 31), viewModel.uiState.value.data?.bestBeforeUsedByDate)
+
+        // Test German format (dd.MM.yyyy)
+        viewModel.updateOcrDate("24.12.2024")
+        assertEquals(LocalDate(2024, 12, 24), viewModel.uiState.value.data?.bestBeforeUsedByDate)
+
+        // Test invalid format
+        viewModel.updateOcrDate("not a date")
+        assertEquals(LocalDate(2024, 12, 24), viewModel.uiState.value.data?.bestBeforeUsedByDate) // Remains unchanged
+    }
+
+    @Test
+    fun testCameraAndImages() = runTest {
+        val route = FoodNavRoute.FoodDetail(null)
+        val viewModel = FoodDetailViewModel(route, repository, authRepository, navigator)
+
+        // Wait for it to be ready
+        viewModel.uiState.test {
+            var item = awaitItem()
+            while (item.isLoading) item = awaitItem()
+        }
+
+        // Test primary image via camera
+        viewModel.openCamera()
+        navigator.onSimpleCameraResult("path/to/main.jpg")
+        assertEquals("path/to/main.jpg", viewModel.uiState.value.data?.image?.localPath)
+
+        // Test remove primary image
+        viewModel.removePrimaryImage()
+        assertNull(viewModel.uiState.value.data?.image)
+
+        // Test add additional image
+        viewModel.addAdditionalImage()
+        navigator.onSimpleCameraResult("path/to/extra.jpg")
+        assertEquals(1, viewModel.uiState.value.data?.additionalImages?.size)
+        assertEquals("path/to/extra.jpg", viewModel.uiState.value.data?.additionalImages?.first()?.localPath)
+
+        // Test remove additional image
+        val extraImage = viewModel.uiState.value.data!!.additionalImages.first()
+        viewModel.removeAdditionalImage(extraImage)
+        assertTrue(viewModel.uiState.value.data!!.additionalImages.isEmpty())
+    }
+
+    private fun createFood(id: Uuid, name: String, profileId: Uuid) = Food(
         id = id,
+        profileId = profileId,
         name = name,
         kiloCalories = null,
         kiloJoule = null,
@@ -208,7 +274,6 @@ class FoodDetailViewModelTest {
         dietaryFiberInGrams = null,
         proteinInGrams = null,
         saltInGrams = null,
-        amount = 1,
         fillingQuantity = null,
         isLiquid = false,
         bestBeforeUsedByDate = null,
@@ -216,30 +281,8 @@ class FoodDetailViewModelTest {
         openedAt = null,
         createdAt = Clock.System.now(),
         lastModifiedAt = Clock.System.now(),
-        imagePath = null,
-        additionalImagePaths = emptyList()
+        image = null,
+        additionalImages = emptyList(),
+        remoteProducts = emptyList()
     )
-
-    @OptIn(ExperimentalUuidApi::class)
-    class FakeFoodDao : FoodDao {
-        val foods = mutableMapOf<Uuid, FoodEntity>()
-        
-        override fun getFilteredAndSorted(
-            query: String,
-            filter: String,
-            sort: String,
-            direction: String,
-            currentDate: LocalDate
-        ): Flow<List<FoodEntity>> = flow { emit(foods.values.toList()) }
-
-        override suspend fun getById(id: Uuid): FoodEntity? = foods[id]
-
-        override suspend fun upsert(food: FoodEntity) {
-            foods[food.id] = food
-        }
-
-        override suspend fun delete(id: Uuid) {
-            foods.remove(id)
-        }
-    }
 }

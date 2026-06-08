@@ -171,7 +171,7 @@ abstract class ProductViewModel<T : Product>(protected val navigator: Navigator)
         internalUiState.value = UiState.success(item)
     }
 
-    protected open fun updateOcrDate(text: String) {
+    open fun updateOcrDate(text: String) {
     }
 
     protected val kcal = "kcal"

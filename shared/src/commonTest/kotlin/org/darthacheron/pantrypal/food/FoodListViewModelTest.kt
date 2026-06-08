@@ -1,14 +1,25 @@
 package org.darthacheron.pantrypal.food
 
 import app.cash.turbine.test
+import dev.mokkery.answering.returns
+import dev.mokkery.every
+import dev.mokkery.everySuspend
+import dev.mokkery.matcher.any
+import dev.mokkery.mock
+import dev.mokkery.verifySuspend
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.*
-import kotlinx.datetime.LocalDate
+import org.darthacheron.pantrypal.authentication.AuthenticationPreferences
+import org.darthacheron.pantrypal.authentication.AuthenticationPreferencesRepository
+import org.darthacheron.pantrypal.inventory.InventoryRepository
 import org.darthacheron.pantrypal.navigation.Navigator
+import pantrypal.shared.generated.resources.Res
+import pantrypal.shared.generated.resources.food_list_card_consume_success
+import pantrypal.shared.generated.resources.food_list_card_copy_success
+import pantrypal.shared.generated.resources.food_list_card_delete_success
 import kotlin.test.*
 import kotlin.time.Clock
 import kotlin.uuid.ExperimentalUuidApi
@@ -20,15 +31,25 @@ class FoodListViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var viewModel: FoodListViewModel
     private lateinit var repository: FoodRepository
+    private lateinit var inventoryRepository: InventoryRepository
+    private lateinit var authRepository: AuthenticationPreferencesRepository
     private lateinit var navigator: Navigator
-    private val foodDao = FakeFoodDao()
+    private val profileId = Uuid.generateV7()
+    private val authPreferencesFlow = MutableStateFlow(AuthenticationPreferences("", "", 0, 0, profileId.toString()))
+    private val foodFlow = MutableStateFlow<List<Food>>(emptyList())
 
     @BeforeTest
     fun setup() {
         Dispatchers.setMain(testDispatcher)
-        repository = FoodRepository(foodDao)
+        authRepository = mock<AuthenticationPreferencesRepository> {
+            every { authenticationPreferencesFlow } returns authPreferencesFlow
+        }
+        repository = mock<FoodRepository> {
+            every { getFilteredAndSorted(any(), any(), any(), any(), any()) } returns foodFlow
+        }
+        inventoryRepository = mock<InventoryRepository>()
         navigator = Navigator()
-        viewModel = FoodListViewModel(repository, navigator)
+        viewModel = FoodListViewModel(repository, inventoryRepository, authRepository, navigator)
     }
 
     @AfterTest
@@ -62,8 +83,8 @@ class FoodListViewModelTest {
 
     @Test
     fun testDataLoadingSuccess() = runTest {
-        val foodEntities = listOf(createFoodEntity("Apple"))
-        foodDao.emit(foodEntities)
+        val foods = listOf(createFood("Apple", profileId))
+        foodFlow.value = foods
 
         viewModel.uiState.test {
             var item = awaitItem()
@@ -80,7 +101,7 @@ class FoodListViewModelTest {
 
     @Test
     fun testDataLoadingError() = runTest {
-        foodDao.setShouldThrow(true)
+        every { repository.getFilteredAndSorted(any(), any(), any(), any(), any()) } returns flow { throw RuntimeException("Test error") }
 
         // Trigger a change to ensure the flow is re-collected and encounters the error
         viewModel.setSearchQuery("Error Trigger")
@@ -95,8 +116,42 @@ class FoodListViewModelTest {
         }
     }
 
-    private fun createFoodEntity(name: String) = FoodEntity(
+    @Test
+    fun testDeleteFood() = runTest {
+        val food = createFood("Apple", profileId)
+        everySuspend { repository.delete(food.id) } returns Unit
+
+        viewModel.deleteFood(food)
+
+        verifySuspend { repository.delete(food.id) }
+        assertEquals(Res.string.food_list_card_delete_success, viewModel.messages.value?.messageResource)
+    }
+
+    @Test
+    fun testCopyFood() = runTest {
+        val food = createFood("Apple", profileId)
+        everySuspend { repository.upsert(any()) } returns Unit
+
+        viewModel.copyFood(food)
+
+        verifySuspend { repository.upsert(any()) }
+        assertEquals(Res.string.food_list_card_copy_success, viewModel.messages.value?.messageResource)
+    }
+
+    @Test
+    fun testConsumeFood() = runTest {
+        val food = createFood("Apple", profileId)
+        everySuspend { repository.delete(food.id) } returns Unit
+
+        viewModel.consumeFood(food)
+
+        verifySuspend { repository.delete(food.id) }
+        assertEquals(Res.string.food_list_card_consume_success, viewModel.messages.value?.messageResource)
+    }
+
+    private fun createFood(name: String, profileId: Uuid) = Food(
         id = Uuid.generateV7(),
+        profileId = profileId,
         name = name,
         kiloCalories = null,
         kiloJoule = null,
@@ -107,7 +162,6 @@ class FoodListViewModelTest {
         dietaryFiberInGrams = null,
         proteinInGrams = null,
         saltInGrams = null,
-        amount = 1,
         fillingQuantity = null,
         isLiquid = false,
         bestBeforeUsedByDate = null,
@@ -115,37 +169,8 @@ class FoodListViewModelTest {
         openedAt = null,
         createdAt = Clock.System.now(),
         lastModifiedAt = Clock.System.now(),
-        imagePath = null,
-        additionalImagePaths = emptyList()
+        image = null,
+        additionalImages = emptyList(),
+        remoteProducts = emptyList()
     )
-}
-
-@OptIn(ExperimentalUuidApi::class)
-class FakeFoodDao : FoodDao {
-    private val _flow = MutableStateFlow<List<FoodEntity>>(emptyList())
-    private var shouldThrow = false
-
-    fun emit(list: List<FoodEntity>) {
-        _flow.value = list
-    }
-
-    fun setShouldThrow(value: Boolean) {
-        shouldThrow = value
-    }
-
-    override fun getFilteredAndSorted(
-        query: String,
-        filter: String,
-        sort: String,
-        direction: String,
-        currentDate: LocalDate
-    ): Flow<List<FoodEntity>> = if (shouldThrow) {
-        flow { throw RuntimeException("Test error") }
-    } else {
-        _flow
-    }
-
-    override suspend fun getById(id: Uuid): FoodEntity? = null
-    override suspend fun upsert(food: FoodEntity) {}
-    override suspend fun delete(id: Uuid) {}
 }

@@ -23,6 +23,7 @@ import okio.SYSTEM
 import org.darthacheron.pantrypal.MainView
 import org.darthacheron.pantrypal.MainViewModel
 import org.darthacheron.pantrypal.authentication.AuthenticationPreferencesRepository
+import org.darthacheron.pantrypal.authentication.AuthenticationPreferencesRepositoryImpl
 import org.darthacheron.pantrypal.authentication.AuthenticationService
 import org.darthacheron.pantrypal.authentication.LoginView
 import org.darthacheron.pantrypal.authentication.LoginViewModel
@@ -42,12 +43,14 @@ import org.darthacheron.pantrypal.food.FoodListView
 import org.darthacheron.pantrypal.food.FoodListViewModel
 import org.darthacheron.pantrypal.food.FoodNetworkService
 import org.darthacheron.pantrypal.food.FoodRepository
+import org.darthacheron.pantrypal.food.FoodRepositoryImpl
 import org.darthacheron.pantrypal.inventory.InventoryDetailView
 import org.darthacheron.pantrypal.inventory.InventoryDetailViewModel
 import org.darthacheron.pantrypal.inventory.InventoryListView
 import org.darthacheron.pantrypal.inventory.InventoryListViewModel
 import org.darthacheron.pantrypal.inventory.InventoryNetworkService
 import org.darthacheron.pantrypal.inventory.InventoryRepository
+import org.darthacheron.pantrypal.inventory.InventoryRepositoryImpl
 import org.darthacheron.pantrypal.navigation.BottomNavRoute
 import org.darthacheron.pantrypal.navigation.FoodNavRoute
 import org.darthacheron.pantrypal.navigation.InventoryNavRoute
@@ -61,6 +64,7 @@ import org.darthacheron.pantrypal.profile.AdminViewModel
 import org.darthacheron.pantrypal.profile.EditRemoteProfileViewModel
 import org.darthacheron.pantrypal.profile.ProfileNetworkService
 import org.darthacheron.pantrypal.profile.ProfileRepository
+import org.darthacheron.pantrypal.profile.ProfileRepositoryImpl
 import org.darthacheron.pantrypal.profile.ProfileView
 import org.darthacheron.pantrypal.profile.ProfileViewModel
 import org.darthacheron.pantrypal.settings.SettingsView
@@ -231,16 +235,17 @@ val sharedModule =
     module {
         includes(navigationModule)
         single { FileSystem.SYSTEM }
+        factoryOf(::AuthenticationService)
         factoryOf(::FoodNetworkService)
         factoryOf(::InventoryNetworkService)
         factoryOf(::ProfileNetworkService)
         factoryOf(::AdminNetworkService)
         factoryOf(::ConnectionNetworkService)
         factoryOf(::ImageNetworkService)
-        factoryOf(::FoodRepository)
-        factoryOf(::InventoryRepository)
-        factoryOf(::ProfileRepository)
-        factoryOf(::AuthenticationPreferencesRepository)
+        factory<FoodRepository> { FoodRepositoryImpl(get(), get(), get(), get(), get(), get(), get(), get()) }
+        factory<InventoryRepository> { InventoryRepositoryImpl(get(), get(), get(), get(), get(), get(), get(), get()) }
+        factory<ProfileRepository> { ProfileRepositoryImpl(get(), get(), get(), get()) }
+        factory<AuthenticationPreferencesRepository> { AuthenticationPreferencesRepositoryImpl(get()) }
 
         single {
             get<PantryPalDatabaseFactory>()
@@ -274,6 +279,4 @@ val sharedModule =
         viewModelOf(::InventoryListViewModel)
         viewModelOf(::InventoryDetailViewModel)
         viewModelOf(::MainViewModel)
-
-        factoryOf(::AuthenticationService)
     }

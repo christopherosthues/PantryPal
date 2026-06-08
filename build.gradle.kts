@@ -14,4 +14,5 @@ plugins {
     alias(libs.plugins.kotlinJvm) apply false
     alias(libs.plugins.ktor) apply false
     alias(libs.plugins.android.lint) apply false
+    alias(libs.plugins.mokkery) apply false
 }

@@ -25,7 +25,7 @@ class FoodIntegrationTest {
     fun setup() {
         Dispatchers.setMain(testDispatcher)
         database = createInMemoryRoomDatabase()
-        repository = FoodRepository(database.foodDao)
+        repository = FoodRepositoryImpl(database.foodDao)
         navigator = Navigator()
     }
 

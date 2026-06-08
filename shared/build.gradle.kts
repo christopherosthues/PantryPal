@@ -10,6 +10,7 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.room)
     alias(libs.plugins.changelog)
+    alias(libs.plugins.mokkery)
 }
 
 fun properties(key: String) = providers.gradleProperty(key)
@@ -134,6 +135,7 @@ kotlin {
             implementation(libs.kotlinx.coroutines.test)
             implementation(libs.androidx.room.testing)
             implementation(libs.turbine.test)
+            implementation(libs.mokkery)
         }
         val androidHostTest by getting {
             dependencies {
