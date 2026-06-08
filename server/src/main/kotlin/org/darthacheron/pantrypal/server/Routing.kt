@@ -7,12 +7,12 @@ import io.ktor.server.plugins.requestvalidation.RequestValidation
 import io.ktor.server.plugins.requestvalidation.ValidationResult
 import io.ktor.server.routing.routing
 import org.darthacheron.pantrypal.server.authentication.authenticationRoutes
-import org.darthacheron.pantrypal.server.configuration.ServerDynamicConfig
 import org.darthacheron.pantrypal.server.food.foodRoutes
 import org.darthacheron.pantrypal.server.inventory.inventoryItemRoutes
 import org.darthacheron.pantrypal.server.networking.connectionRoutes
 import org.darthacheron.pantrypal.server.profile.profileRoutes
 import org.darthacheron.pantrypal.core.auth.LoginDto
+import org.darthacheron.pantrypal.core.configuration.ServerDynamicConfiguration
 
 fun Application.configureRouting() {
     install(RequestValidation) {
@@ -30,7 +30,7 @@ fun Application.configureRouting() {
                 ValidationResult.Valid
             }
         }
-        validate<ServerDynamicConfig> {
+        validate<ServerDynamicConfiguration> {
             if (it.deletion.gracePeriodDays < 0) {
                 ValidationResult.Invalid("Grace period days cannot be negative")
             } else if (it.storage.maxImageUploadSizeMB <= 0) {
