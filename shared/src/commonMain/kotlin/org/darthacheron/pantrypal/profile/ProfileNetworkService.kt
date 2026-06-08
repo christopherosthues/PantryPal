@@ -1,82 +1,16 @@
 package org.darthacheron.pantrypal.profile
 
-import io.ktor.client.call.body
-import io.ktor.client.request.delete
-import io.ktor.client.request.get
-import io.ktor.client.request.parameter
-import io.ktor.client.request.put
-import io.ktor.client.request.setBody
-import io.ktor.http.ContentType
-import io.ktor.http.HttpStatusCode
-import io.ktor.http.contentType
-import kotlinx.coroutines.flow.firstOrNull
-import org.darthacheron.pantrypal.authentication.AuthenticationPreferencesRepository
-import org.darthacheron.pantrypal.utils.createHttpClient
 import org.darthacheron.pantrypal.core.profile.ProfileDto
-import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
-@OptIn(ExperimentalUuidApi::class)
-class ProfileNetworkService(private val preferencesRepository: AuthenticationPreferencesRepository) {
-
-    suspend fun fetchProfile(serverUrl: String): Result<ProfileDto?> {
-        val auth = preferencesRepository.authenticationPreferencesFlow.firstOrNull()
-        val token = auth?.accessToken
-        if (token.isNullOrBlank()) return Result.failure(Exception("Not authenticated"))
-
-        return runCatching {
-            createHttpClient(token).use { client ->
-                val response = client.get("$serverUrl/profile")
-                if (response.status == HttpStatusCode.NotFound || response.status == HttpStatusCode.Gone) {
-                    throw RemoteAccountDeletedException()
-                }
-                response.body<ProfileDto>()
-            }
-        }
-    }
-
+interface ProfileNetworkService {
+    suspend fun fetchProfile(serverUrl: String): Result<ProfileDto?>
     suspend fun updateProfile(
         profile: Profile,
         serverUrl: String,
         serverId: Uuid?,
         usernameOverride: String? = null,
         emailOverride: String? = null
-    ): Result<ProfileDto?> {
-        val auth = preferencesRepository.authenticationPreferencesFlow.firstOrNull()
-        val token = auth?.accessToken
-        if (token.isNullOrBlank()) return Result.failure(Exception("Not authenticated"))
-
-        return runCatching {
-            createHttpClient(token).use { client ->
-                val response = client.put("$serverUrl/profile") {
-                    contentType(ContentType.Application.Json)
-                    setBody(profile.toDto(serverId, usernameOverride, emailOverride))
-                }
-                if (response.status == HttpStatusCode.NotFound || response.status == HttpStatusCode.Gone) {
-                    throw RemoteAccountDeletedException()
-                }
-                response.body<ProfileDto>()
-            }
-        }
-    }
-
-    class RemoteAccountDeletedException : Exception("Remote account has been deleted.")
-
-    suspend fun deleteProfile(serverUrl: String, remote: Boolean): Result<Boolean> {
-        val auth = preferencesRepository.authenticationPreferencesFlow.firstOrNull()
-        val token = auth?.accessToken
-        if (token.isNullOrBlank()) return Result.failure(Exception("Not authenticated"))
-
-        return runCatching {
-            createHttpClient(token).use { client ->
-                val response = client.delete("$serverUrl/profile") {
-                    parameter("remote", remote)
-                }
-                if (response.status == HttpStatusCode.NotFound || response.status == HttpStatusCode.Gone) {
-                    throw RemoteAccountDeletedException()
-                }
-                response.status == HttpStatusCode.NoContent
-            }
-        }
-    }
+    ): Result<ProfileDto?>
+    suspend fun deleteProfile(serverUrl: String, remote: Boolean): Result<Boolean>
 }

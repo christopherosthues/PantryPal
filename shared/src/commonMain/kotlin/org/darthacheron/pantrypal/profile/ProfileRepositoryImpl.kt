@@ -87,7 +87,7 @@ class ProfileRepositoryImpl(
                     }
                 }
                 .onFailure { e ->
-                    if (e is ProfileNetworkService.RemoteAccountDeletedException) {
+                    if (e is RemoteAccountDeletedException) {
                         _remoteAccountDeleted.emit(true)
                     } else {
                         Logger.withTag(loggerTag).w { "Failed immediate profile sync: ${e.message}" }
@@ -199,7 +199,7 @@ class ProfileRepositoryImpl(
     }
 
     private suspend fun handleSyncError(e: Throwable) {
-        if (e is ProfileNetworkService.RemoteAccountDeletedException) {
+        if (e is RemoteAccountDeletedException) {
             _remoteAccountDeleted.emit(true)
         } else {
             Logger.withTag(loggerTag).e { "Profile sync failed: ${e.message}" }

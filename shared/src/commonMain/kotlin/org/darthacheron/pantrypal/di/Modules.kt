@@ -25,6 +25,7 @@ import org.darthacheron.pantrypal.MainViewModel
 import org.darthacheron.pantrypal.authentication.AuthenticationPreferencesRepository
 import org.darthacheron.pantrypal.authentication.AuthenticationPreferencesRepositoryImpl
 import org.darthacheron.pantrypal.authentication.AuthenticationService
+import org.darthacheron.pantrypal.authentication.AuthenticationServiceImpl
 import org.darthacheron.pantrypal.authentication.LoginView
 import org.darthacheron.pantrypal.authentication.LoginViewModel
 import org.darthacheron.pantrypal.authentication.RegistrationView
@@ -42,6 +43,7 @@ import org.darthacheron.pantrypal.food.FoodDetailViewModel
 import org.darthacheron.pantrypal.food.FoodListView
 import org.darthacheron.pantrypal.food.FoodListViewModel
 import org.darthacheron.pantrypal.food.FoodNetworkService
+import org.darthacheron.pantrypal.food.FoodNetworkServiceImpl
 import org.darthacheron.pantrypal.food.FoodRepository
 import org.darthacheron.pantrypal.food.FoodRepositoryImpl
 import org.darthacheron.pantrypal.inventory.InventoryDetailView
@@ -49,6 +51,7 @@ import org.darthacheron.pantrypal.inventory.InventoryDetailViewModel
 import org.darthacheron.pantrypal.inventory.InventoryListView
 import org.darthacheron.pantrypal.inventory.InventoryListViewModel
 import org.darthacheron.pantrypal.inventory.InventoryNetworkService
+import org.darthacheron.pantrypal.inventory.InventoryNetworkServiceImpl
 import org.darthacheron.pantrypal.inventory.InventoryRepository
 import org.darthacheron.pantrypal.inventory.InventoryRepositoryImpl
 import org.darthacheron.pantrypal.navigation.BottomNavRoute
@@ -56,13 +59,18 @@ import org.darthacheron.pantrypal.navigation.FoodNavRoute
 import org.darthacheron.pantrypal.navigation.InventoryNavRoute
 import org.darthacheron.pantrypal.navigation.NavRoute
 import org.darthacheron.pantrypal.navigation.Navigator
+import org.darthacheron.pantrypal.navigation.NavigatorImpl
 import org.darthacheron.pantrypal.networking.ConnectionNetworkService
+import org.darthacheron.pantrypal.networking.ConnectionNetworkServiceImpl
 import org.darthacheron.pantrypal.networking.ImageNetworkService
+import org.darthacheron.pantrypal.networking.ImageNetworkServiceImpl
 import org.darthacheron.pantrypal.profile.AdminNetworkService
+import org.darthacheron.pantrypal.profile.AdminNetworkServiceImpl
 import org.darthacheron.pantrypal.profile.AdminView
 import org.darthacheron.pantrypal.profile.AdminViewModel
 import org.darthacheron.pantrypal.profile.EditRemoteProfileViewModel
 import org.darthacheron.pantrypal.profile.ProfileNetworkService
+import org.darthacheron.pantrypal.profile.ProfileNetworkServiceImpl
 import org.darthacheron.pantrypal.profile.ProfileRepository
 import org.darthacheron.pantrypal.profile.ProfileRepositoryImpl
 import org.darthacheron.pantrypal.profile.ProfileView
@@ -84,7 +92,7 @@ import pantrypal.shared.generated.resources.inventory_list_empty_selection
 expect val platformModule: Module
 
 val navigationModule = module {
-    single { Navigator() }
+    single<Navigator> { NavigatorImpl() }
 
     navigation<NavRoute.Main> {
         MainView()
@@ -235,13 +243,13 @@ val sharedModule =
     module {
         includes(navigationModule)
         single { FileSystem.SYSTEM }
-        factoryOf(::AuthenticationService)
-        factoryOf(::FoodNetworkService)
-        factoryOf(::InventoryNetworkService)
-        factoryOf(::ProfileNetworkService)
-        factoryOf(::AdminNetworkService)
-        factoryOf(::ConnectionNetworkService)
-        factoryOf(::ImageNetworkService)
+        factory<AuthenticationService> { AuthenticationServiceImpl(get()) }
+        factory<FoodNetworkService> { FoodNetworkServiceImpl(get()) }
+        factory<InventoryNetworkService> { InventoryNetworkServiceImpl(get()) }
+        factory<ProfileNetworkService> { ProfileNetworkServiceImpl(get()) }
+        factory<AdminNetworkService> { AdminNetworkServiceImpl(get()) }
+        factory<ConnectionNetworkService> { ConnectionNetworkServiceImpl() }
+        factory<ImageNetworkService> { ImageNetworkServiceImpl(get()) }
         factory<FoodRepository> { FoodRepositoryImpl(get(), get(), get(), get(), get(), get(), get(), get()) }
         factory<InventoryRepository> { InventoryRepositoryImpl(get(), get(), get(), get(), get(), get(), get(), get()) }
         factory<ProfileRepository> { ProfileRepositoryImpl(get(), get(), get(), get()) }
