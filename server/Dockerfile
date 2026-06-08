@@ -1,18 +1,18 @@
 # Stage 1: Cache
-From gradle:9.5.1-jdk25 AS cache
-RUN mkdir -p /home/gradle/cache_home
-ENV GRADLE_USER_HOME=/home/gradle/cache_home
-COPY build.gradle.* gradle.properties /home/gradle/app/
-COPY gradle /home/gradle/app/gradle
-WORKDIR /home/gradle/app
-RUN gradle server:dependencies --no-daemon
+#FROM gradle:9.5.1-jdk25 AS cache
+#RUN mkdir -p /home/gradle/cache_home
+#ENV GRADLE_USER_HOME=/home/gradle/cache_home
+#COPY build.gradle.* settings.gradle.* gradle.properties /home/gradle/app/
+#COPY gradle /home/gradle/app/gradle
+#WORKDIR /home/gradle/app
+#RUN gradle :server:dependencies --no-daemon
 
 # Stage 2: Build
 FROM gradle:9.5.1-jdk25 AS build
-COPY --from=cache /home/gradle/cache_home /home/gradle/.gradle
+#COPY --from=cache /home/gradle/cache_home /home/gradle/.gradle
 COPY --chown=gradle:gradle . /home/gradle/src
 WORKDIR /home/gradle/src
-RUN gradle server:buildFatJar --no-deamon
+RUN gradle :server:buildFatJar --no-daemon
 #FROM gradle:9.5.1-jdk25 AS build
 #COPY --chown=gradle:gradle . /home/gradle/src
 #WORKDIR /home/gradle/src

@@ -65,6 +65,7 @@ fun AdminView(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminConfigForm(
     config: ServerDynamicConfiguration,

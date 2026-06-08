@@ -46,37 +46,37 @@ class AdminViewModel(
 
     fun updateConfig(config: ServerDynamicConfiguration) {
         viewModelScope.launch {
-            val currentData = _uiState.value.data ?: return@launch
-            _uiState.value = UiState.loading(currentData)
+            val currentData = _uiState.value
+            _uiState.value = UiState.loading()
             
             val prefs = preferencesRepository.authenticationPreferencesFlow.firstOrNull()
             val serverUrl = prefs?.serverUrl
             if (serverUrl.isNullOrBlank()) {
-                _uiState.value = UiState.error(Res.string.settings_error_saving, currentData)
+                _uiState.value = UiState.error(currentData, Res.string.settings_error_saving)
                 return@launch
             }
 
             adminNetworkService.updateConfig(serverUrl, config)
                 .onSuccess { _uiState.value = UiState.success(it) }
-                .onFailure { _uiState.value = UiState.error(Res.string.settings_error_saving, currentData) }
+                .onFailure { _uiState.value = UiState.error(currentData, Res.string.settings_error_saving) }
         }
     }
 
     fun reloadConfigFromServer() {
         viewModelScope.launch {
-            val currentData = _uiState.value.data ?: return@launch
-            _uiState.value = UiState.loading(currentData)
+            val currentData = _uiState.value
+            _uiState.value = UiState.loading()
 
             val prefs = preferencesRepository.authenticationPreferencesFlow.firstOrNull()
             val serverUrl = prefs?.serverUrl
             if (serverUrl.isNullOrBlank()) {
-                _uiState.value = UiState.error(Res.string.settings_error_loading, currentData)
+                _uiState.value = UiState.error(currentData, Res.string.settings_error_loading)
                 return@launch
             }
 
             adminNetworkService.reloadConfig(serverUrl)
                 .onSuccess { _uiState.value = UiState.success(it) }
-                .onFailure { _uiState.value = UiState.error(Res.string.settings_error_loading, currentData) }
+                .onFailure { _uiState.value = UiState.error(currentData, Res.string.settings_error_loading) }
         }
     }
 }
