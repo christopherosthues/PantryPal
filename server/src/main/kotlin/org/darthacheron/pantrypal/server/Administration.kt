@@ -8,9 +8,9 @@ import io.ktor.server.response.respond
 import io.ktor.server.routing.*
 import org.darthacheron.pantrypal.server.authentication.AuthenticationService
 import org.darthacheron.pantrypal.server.configuration.DynamicConfigurationService
-import org.darthacheron.pantrypal.server.configuration.ServerDynamicConfig
 import org.darthacheron.pantrypal.server.networking.respondProblem
 import org.darthacheron.pantrypal.core.auth.LoginDto
+import org.darthacheron.pantrypal.core.configuration.ServerDynamicConfiguration
 import org.koin.ktor.ext.inject
 
 fun Application.configureAdministration() {
@@ -35,7 +35,7 @@ fun Application.configureAdministration() {
                 }
 
                 put("/config") {
-                    val newConfig = call.receive<ServerDynamicConfig>()
+                    val newConfig = call.receive<ServerDynamicConfiguration>()
                     dynamicConfigService.saveConfiguration(newConfig)
                     call.respond(HttpStatusCode.OK, dynamicConfigService.config)
                 }
