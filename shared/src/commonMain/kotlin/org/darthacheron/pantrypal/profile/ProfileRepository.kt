@@ -4,6 +4,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlin.uuid.Uuid
 
 interface ProfileRepository {
+    val remoteAccountDeleted: Flow<Boolean>
     fun getProfileById(id: Uuid): Flow<Profile?>
     fun getProfileByUsername(username: String): Flow<Profile?>
     fun getProfileByEmail(email: String): Flow<Profile?>

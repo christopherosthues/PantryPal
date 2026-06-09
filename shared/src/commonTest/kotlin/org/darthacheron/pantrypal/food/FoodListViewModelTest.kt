@@ -6,6 +6,7 @@ import dev.mokkery.every
 import dev.mokkery.everySuspend
 import dev.mokkery.matcher.any
 import dev.mokkery.mock
+import dev.mokkery.verify
 import dev.mokkery.verifySuspend
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -28,7 +29,7 @@ import kotlin.uuid.Uuid
 @OptIn(ExperimentalCoroutinesApi::class, ExperimentalUuidApi::class)
 class FoodListViewModelTest {
 
-    private val testDispatcher = StandardTestDispatcher()
+    private val testDispatcher = UnconfinedTestDispatcher()
     private lateinit var viewModel: FoodListViewModel
     private lateinit var repository: FoodRepository
     private lateinit var inventoryRepository: InventoryRepository
@@ -48,7 +49,7 @@ class FoodListViewModelTest {
             every { getFilteredAndSorted(any(), any(), any(), any(), any()) } returns foodFlow
         }
         inventoryRepository = mock<InventoryRepository>()
-        navigator = Navigator()
+        navigator = mock<Navigator>()
         viewModel = FoodListViewModel(repository, inventoryRepository, authRepository, navigator)
     }
 
@@ -121,10 +122,13 @@ class FoodListViewModelTest {
         val food = createFood("Apple", profileId)
         everySuspend { repository.delete(food.id) } returns Unit
 
-        viewModel.deleteFood(food)
+        viewModel.messages.test {
+            assertEquals(null, awaitItem())
+            viewModel.deleteFood(food)
+            assertEquals(Res.string.food_list_card_delete_success, awaitItem()?.messageResource)
+        }
 
         verifySuspend { repository.delete(food.id) }
-        assertEquals(Res.string.food_list_card_delete_success, viewModel.messages.value?.messageResource)
     }
 
     @Test
@@ -132,10 +136,13 @@ class FoodListViewModelTest {
         val food = createFood("Apple", profileId)
         everySuspend { repository.upsert(any()) } returns Unit
 
-        viewModel.copyFood(food)
+        viewModel.messages.test {
+            assertEquals(null, awaitItem())
+            viewModel.copyFood(food)
+            assertEquals(Res.string.food_list_card_copy_success, awaitItem()?.messageResource)
+        }
 
         verifySuspend { repository.upsert(any()) }
-        assertEquals(Res.string.food_list_card_copy_success, viewModel.messages.value?.messageResource)
     }
 
     @Test
@@ -143,10 +150,39 @@ class FoodListViewModelTest {
         val food = createFood("Apple", profileId)
         everySuspend { repository.delete(food.id) } returns Unit
 
-        viewModel.consumeFood(food)
+        viewModel.messages.test {
+            assertEquals(null, awaitItem())
+            viewModel.consumeFood(food)
+            assertEquals(Res.string.food_list_card_consume_success, awaitItem()?.messageResource)
+        }
 
         verifySuspend { repository.delete(food.id) }
-        assertEquals(Res.string.food_list_card_consume_success, viewModel.messages.value?.messageResource)
+    }
+
+    @Test
+    fun testAddToInventory() = runTest {
+        val food = createFood("Apple", profileId)
+        everySuspend { inventoryRepository.upsert(any()) } returns Unit
+        every { navigator.goToInventoryDetail(any()) } returns Unit
+
+        viewModel.addToInventory(food)
+
+        verifySuspend { inventoryRepository.upsert(any()) }
+        verify { navigator.goToInventoryDetail(any()) }
+    }
+
+    @Test
+    fun testGoToFoodDetail() {
+        every { navigator.goToFoodDetail(any()) } returns Unit
+        viewModel.goToFoodDetail("123")
+        verify { navigator.goToFoodDetail("123") }
+    }
+
+    @Test
+    fun testGoToSettings() {
+        every { navigator.goToSettings() } returns Unit
+        viewModel.goToSettings()
+        verify { navigator.goToSettings() }
     }
 
     private fun createFood(name: String, profileId: Uuid) = Food(

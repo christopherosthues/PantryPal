@@ -137,7 +137,7 @@ class ProfileRepositoryImpl(
     }
 
     private val _remoteAccountDeleted = MutableSharedFlow<Boolean>()
-    val remoteAccountDeleted: Flow<Boolean> = _remoteAccountDeleted
+    override val remoteAccountDeleted: Flow<Boolean> = _remoteAccountDeleted
 
     override suspend fun syncWithServer() = withContext(Dispatchers.IO) {
         val prefs = authenticationPreferencesRepository.authenticationPreferencesFlow.firstOrNull()

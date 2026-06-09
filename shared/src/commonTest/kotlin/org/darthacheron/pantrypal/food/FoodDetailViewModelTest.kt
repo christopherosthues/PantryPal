@@ -16,6 +16,7 @@ import org.darthacheron.pantrypal.authentication.AuthenticationPreferences
 import org.darthacheron.pantrypal.authentication.AuthenticationPreferencesRepository
 import org.darthacheron.pantrypal.navigation.FoodNavRoute
 import org.darthacheron.pantrypal.navigation.Navigator
+import org.darthacheron.pantrypal.navigation.NavigatorImpl
 import kotlin.test.*
 import kotlin.time.Clock
 import kotlin.uuid.ExperimentalUuidApi
@@ -37,7 +38,7 @@ class FoodDetailViewModelTest {
             every { authenticationPreferencesFlow } returns authPreferencesFlow
         }
         repository = mock<FoodRepository>()
-        navigator = Navigator()
+        navigator = NavigatorImpl()
     }
 
     @AfterTest
