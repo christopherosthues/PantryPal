@@ -136,6 +136,7 @@ kotlin {
             implementation(libs.androidx.room.testing)
             implementation(libs.turbine.test)
             implementation(libs.mokkery)
+            implementation(libs.ktor.client.mock)
         }
         val androidHostTest by getting {
             dependencies {
