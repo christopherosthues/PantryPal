@@ -2,21 +2,23 @@ package org.darthacheron.pantrypal.profile
 
 import io.ktor.client.call.body
 import io.ktor.client.request.get
+import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.client.request.put
 import io.ktor.client.request.setBody
-import io.ktor.http.ContentType
+import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
-import io.ktor.http.contentType
 import kotlinx.coroutines.flow.firstOrNull
 import org.darthacheron.pantrypal.authentication.AuthenticationPreferencesRepository
 import org.darthacheron.pantrypal.core.configuration.ServerDynamicConfiguration
-import org.darthacheron.pantrypal.utils.createHttpClient
+import org.darthacheron.pantrypal.utils.HttpClientFactory
 import kotlin.uuid.ExperimentalUuidApi
 
 @OptIn(ExperimentalUuidApi::class)
-class AdminNetworkServiceImpl(private val preferencesRepository: AuthenticationPreferencesRepository) :
-    AdminNetworkService {
+class AdminNetworkServiceImpl(
+    private val preferencesRepository: AuthenticationPreferencesRepository,
+    private val clientFactory: HttpClientFactory
+) : AdminNetworkService {
 
     override suspend fun fetchConfig(serverUrl: String): Result<ServerDynamicConfiguration> {
         val auth = preferencesRepository.authenticationPreferencesFlow.firstOrNull()
@@ -24,8 +26,10 @@ class AdminNetworkServiceImpl(private val preferencesRepository: AuthenticationP
         if (token.isNullOrBlank()) return Result.failure(Exception("Not authenticated"))
 
         return runCatching {
-            createHttpClient(token).use { client ->
-                client.get("$serverUrl/admin/config").body<ServerDynamicConfiguration>()
+            clientFactory.create().use { httpClient ->
+                httpClient.get("$serverUrl/admin/config") {
+                    header(HttpHeaders.Authorization, "Bearer $token")
+                }.body<ServerDynamicConfiguration>()
             }
         }
     }
@@ -39,9 +43,9 @@ class AdminNetworkServiceImpl(private val preferencesRepository: AuthenticationP
         if (token.isNullOrBlank()) return Result.failure(Exception("Not authenticated"))
 
         return runCatching {
-            createHttpClient(token).use { client ->
-                val response = client.put("$serverUrl/admin/config") {
-                    contentType(ContentType.Application.Json)
+            clientFactory.create().use { httpClient ->
+                val response = httpClient.put("$serverUrl/admin/config") {
+                    header(HttpHeaders.Authorization, "Bearer $token")
                     setBody(config)
                 }
                 if (response.status != HttpStatusCode.OK) {
@@ -58,8 +62,10 @@ class AdminNetworkServiceImpl(private val preferencesRepository: AuthenticationP
         if (token.isNullOrBlank()) return Result.failure(Exception("Not authenticated"))
 
         return runCatching {
-            createHttpClient(token).use { client ->
-                client.post("$serverUrl/admin/config/reload").body<ServerDynamicConfiguration>()
+            clientFactory.create().use { httpClient ->
+                httpClient.post("$serverUrl/admin/config/reload") {
+                    header(HttpHeaders.Authorization, "Bearer $token")
+                }.body<ServerDynamicConfiguration>()
             }
         }
     }

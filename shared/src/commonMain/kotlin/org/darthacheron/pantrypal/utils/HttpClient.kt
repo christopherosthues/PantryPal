@@ -1,7 +1,7 @@
 package org.darthacheron.pantrypal.utils
 
 import io.ktor.client.HttpClient
-import io.ktor.client.engine.cio.CIO
+import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.plugins.logging.LogLevel
@@ -13,7 +13,15 @@ import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 
-internal fun createHttpClient(accessToken: String? = null): HttpClient = HttpClient(CIO) {
+interface HttpClientFactory {
+    fun create(): HttpClient
+}
+
+class HttpClientFactoryImpl(private val engine: HttpClientEngine) : HttpClientFactory {
+    override fun create(): HttpClient = createHttpClient(engine)
+}
+
+internal fun createHttpClient(engine: HttpClientEngine): HttpClient = HttpClient(engine) {
     install(ContentNegotiation) {
         json(Json {
             ignoreUnknownKeys = true
@@ -26,12 +34,9 @@ internal fun createHttpClient(accessToken: String? = null): HttpClient = HttpCli
         sanitizeHeader { header -> header == HttpHeaders.Authorization }
     }
     defaultRequest {
-        if (accessToken != null) {
-            header(HttpHeaders.Authorization, "Bearer $accessToken")
-        }
         // Required for server CSRF/CORS validation
         header(HttpHeaders.Origin, "http://localhost:8081")
-        header("X-CSRF-Token", "PantryPal") // TODO: provide csrf token
+        header("X-CSRF-Token", "pantrypal-default-app-token") // TODO: provide csrf token
         contentType(ContentType.Application.Json)
     }
     expectSuccess = true

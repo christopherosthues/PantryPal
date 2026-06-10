@@ -20,6 +20,7 @@ import androidx.navigation3.ui.NavDisplay
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import okio.FileSystem
 import okio.SYSTEM
+import io.ktor.client.engine.cio.CIO
 import org.darthacheron.pantrypal.MainView
 import org.darthacheron.pantrypal.MainViewModel
 import org.darthacheron.pantrypal.authentication.AuthenticationPreferencesRepository
@@ -77,6 +78,9 @@ import org.darthacheron.pantrypal.profile.ProfileView
 import org.darthacheron.pantrypal.profile.ProfileViewModel
 import org.darthacheron.pantrypal.settings.SettingsView
 import org.darthacheron.pantrypal.settings.SettingsViewModel
+import org.darthacheron.pantrypal.utils.HttpClientFactory
+import org.darthacheron.pantrypal.utils.HttpClientFactoryImpl
+import org.darthacheron.pantrypal.utils.createHttpClient
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.module.Module
@@ -243,13 +247,15 @@ val sharedModule =
     module {
         includes(navigationModule)
         single { FileSystem.SYSTEM }
-        factory<AuthenticationService> { AuthenticationServiceImpl(get()) }
-        factory<FoodNetworkService> { FoodNetworkServiceImpl(get()) }
-        factory<InventoryNetworkService> { InventoryNetworkServiceImpl(get()) }
-        factory<ProfileNetworkService> { ProfileNetworkServiceImpl(get()) }
-        factory<AdminNetworkService> { AdminNetworkServiceImpl(get()) }
-        factory<ConnectionNetworkService> { ConnectionNetworkServiceImpl() }
-        factory<ImageNetworkService> { ImageNetworkServiceImpl(get()) }
+        single { CIO.create() }
+        single<HttpClientFactory> { HttpClientFactoryImpl(get()) }
+        factory<AuthenticationService> { AuthenticationServiceImpl(get(), get()) }
+        factory<FoodNetworkService> { FoodNetworkServiceImpl(get(), get()) }
+        factory<InventoryNetworkService> { InventoryNetworkServiceImpl(get(), get()) }
+        factory<ProfileNetworkService> { ProfileNetworkServiceImpl(get(), get()) }
+        factory<AdminNetworkService> { AdminNetworkServiceImpl(get(), get()) }
+        factory<ConnectionNetworkService> { ConnectionNetworkServiceImpl(get()) }
+        factory<ImageNetworkService> { ImageNetworkServiceImpl(get(), get()) }
         factory<FoodRepository> { FoodRepositoryImpl(get(), get(), get(), get(), get(), get(), get(), get()) }
         factory<InventoryRepository> { InventoryRepositoryImpl(get(), get(), get(), get(), get(), get(), get(), get()) }
         factory<ProfileRepository> { ProfileRepositoryImpl(get(), get(), get(), get()) }

@@ -3,22 +3,24 @@ package org.darthacheron.pantrypal.profile
 import io.ktor.client.call.body
 import io.ktor.client.request.delete
 import io.ktor.client.request.get
+import io.ktor.client.request.header
 import io.ktor.client.request.parameter
 import io.ktor.client.request.put
 import io.ktor.client.request.setBody
-import io.ktor.http.ContentType
+import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
-import io.ktor.http.contentType
 import kotlinx.coroutines.flow.firstOrNull
 import org.darthacheron.pantrypal.authentication.AuthenticationPreferencesRepository
 import org.darthacheron.pantrypal.core.profile.ProfileDto
-import org.darthacheron.pantrypal.utils.createHttpClient
+import org.darthacheron.pantrypal.utils.HttpClientFactory
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 @OptIn(ExperimentalUuidApi::class)
-class ProfileNetworkServiceImpl(private val preferencesRepository: AuthenticationPreferencesRepository) :
-    ProfileNetworkService {
+class ProfileNetworkServiceImpl(
+    private val preferencesRepository: AuthenticationPreferencesRepository,
+    private val clientFactory: HttpClientFactory
+) : ProfileNetworkService {
 
     override suspend fun fetchProfile(serverUrl: String): Result<ProfileDto?> {
         val auth = preferencesRepository.authenticationPreferencesFlow.firstOrNull()
@@ -26,8 +28,10 @@ class ProfileNetworkServiceImpl(private val preferencesRepository: Authenticatio
         if (token.isNullOrBlank()) return Result.failure(Exception("Not authenticated"))
 
         return runCatching {
-            createHttpClient(token).use { client ->
-                val response = client.get("$serverUrl/profile")
+            clientFactory.create().use { httpClient ->
+                val response = httpClient.get("$serverUrl/profile") {
+                    header(HttpHeaders.Authorization, "Bearer $token")
+                }
                 if (response.status == HttpStatusCode.NotFound || response.status == HttpStatusCode.Gone) {
                     throw RemoteAccountDeletedException()
                 }
@@ -48,9 +52,9 @@ class ProfileNetworkServiceImpl(private val preferencesRepository: Authenticatio
         if (token.isNullOrBlank()) return Result.failure(Exception("Not authenticated"))
 
         return runCatching {
-            createHttpClient(token).use { client ->
-                val response = client.put("$serverUrl/profile") {
-                    contentType(ContentType.Application.Json)
+            clientFactory.create().use { httpClient ->
+                val response = httpClient.put("$serverUrl/profile") {
+                    header(HttpHeaders.Authorization, "Bearer $token")
                     setBody(profile.toDto(serverId, usernameOverride, emailOverride))
                 }
                 if (response.status == HttpStatusCode.NotFound || response.status == HttpStatusCode.Gone) {
@@ -67,8 +71,9 @@ class ProfileNetworkServiceImpl(private val preferencesRepository: Authenticatio
         if (token.isNullOrBlank()) return Result.failure(Exception("Not authenticated"))
 
         return runCatching {
-            createHttpClient(token).use { client ->
-                val response = client.delete("$serverUrl/profile") {
+            clientFactory.create().use { httpClient ->
+                val response = httpClient.delete("$serverUrl/profile") {
+                    header(HttpHeaders.Authorization, "Bearer $token")
                     parameter("remote", remote)
                 }
                 if (response.status == HttpStatusCode.NotFound || response.status == HttpStatusCode.Gone) {

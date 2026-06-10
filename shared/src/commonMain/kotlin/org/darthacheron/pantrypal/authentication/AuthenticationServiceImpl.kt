@@ -2,10 +2,12 @@ package org.darthacheron.pantrypal.authentication
 
 import co.touchlab.kermit.Logger
 import io.ktor.client.call.body
+import io.ktor.client.request.header
 import io.ktor.client.request.patch
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
+import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.flow.firstOrNull
 import org.darthacheron.pantrypal.core.auth.LoginDto
@@ -16,7 +18,7 @@ import org.darthacheron.pantrypal.core.auth.RegistrationDto
 import org.darthacheron.pantrypal.core.auth.RegistrationResponse
 import org.darthacheron.pantrypal.core.auth.TokenResponse
 import org.darthacheron.pantrypal.core.auth.UpdateUserDto
-import org.darthacheron.pantrypal.utils.createHttpClient
+import org.darthacheron.pantrypal.utils.HttpClientFactory
 import kotlin.time.Clock
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -24,6 +26,7 @@ import kotlin.uuid.Uuid
 @OptIn(ExperimentalUuidApi::class)
 class AuthenticationServiceImpl(
     private val authenticationPreferencesRepository: AuthenticationPreferencesRepository,
+    private val clientFactory: HttpClientFactory
 ) : AuthenticationService {
     private val authenticationTag = "Authentication"
 
@@ -35,8 +38,8 @@ class AuthenticationServiceImpl(
         val loginUrl = "$serverUrl/login"
 
         try {
-            val response: HttpResponse = createHttpClient().use { client ->
-                client.post(loginUrl) {
+            val response: HttpResponse = clientFactory.create().use { httpClient ->
+                httpClient.post(loginUrl) {
                     setBody(
                         LoginDto(username, password)
                     )
@@ -57,7 +60,11 @@ class AuthenticationServiceImpl(
 
                 return Result.success(loginResponse)
             } else {
-                val problem = try { response.body<ProblemDetails>() } catch (e: Exception) { null }
+                val problem = try {
+                    response.body<ProblemDetails>()
+                } catch (e: Exception) {
+                    null
+                }
                 val detail = problem?.detail ?: "Login failed with status ${response.status}"
                 return when (response.status) {
                     HttpStatusCode.Unauthorized -> Result.failure(InvalidCredentialsException(detail))
@@ -101,8 +108,9 @@ class AuthenticationServiceImpl(
             val token = authenticationPreferences.accessToken
             if (token.isBlank()) return Result.failure(NotAuthenticatedException("No access token found"))
 
-            val response: HttpResponse = createHttpClient(token).use {
-                it.post(refreshUrl) {
+            val response: HttpResponse = clientFactory.create().use { httpClient ->
+                httpClient.post(refreshUrl) {
+                    header(HttpHeaders.Authorization, "Bearer $token")
                     setBody(
                         RefreshTokenDto(authenticationPreferences.refreshToken)
                     )
@@ -141,8 +149,8 @@ class AuthenticationServiceImpl(
         val registerUrl = "$serverUrl/register"
 
         try {
-            val response: HttpResponse = createHttpClient().use {
-                it.post(registerUrl) {
+            val response: HttpResponse = clientFactory.create().use { httpClient ->
+                httpClient.post(registerUrl) {
                     setBody(
                         RegistrationDto(username, email, password)
                     )
@@ -161,7 +169,11 @@ class AuthenticationServiceImpl(
                 )
                 return Result.success(registrationResponse)
             } else {
-                val problem = try { response.body<ProblemDetails>() } catch (e: Exception) { null }
+                val problem = try {
+                    response.body<ProblemDetails>()
+                } catch (e: Exception) {
+                    null
+                }
                 val detail = problem?.detail ?: "Registration failed with status ${response.status}"
                 return when (response.status) {
                     HttpStatusCode.Conflict -> Result.failure(UserAlreadyExistsException(detail))
@@ -190,8 +202,9 @@ class AuthenticationServiceImpl(
             val token = prefs.accessToken
             if (token.isBlank()) return Result.failure(NotAuthenticatedException("No access token found"))
 
-            val response: HttpResponse = createHttpClient(token).use {
-                it.patch(updateUrl) {
+            val response: HttpResponse = clientFactory.create().use { httpClient ->
+                httpClient.patch(updateUrl) {
+                    header(HttpHeaders.Authorization, "Bearer $token")
                     setBody(UpdateUserDto(username, email, password, currentPassword))
                 }
             }
