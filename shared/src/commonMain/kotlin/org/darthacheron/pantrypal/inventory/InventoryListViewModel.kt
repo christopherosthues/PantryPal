@@ -24,6 +24,8 @@ import org.darthacheron.pantrypal.food.Message
 import org.darthacheron.pantrypal.navigation.Navigator
 import org.darthacheron.pantrypal.ui.UiState
 import pantrypal.shared.generated.resources.Res
+import pantrypal.shared.generated.resources.food_list_card_delete_error
+import pantrypal.shared.generated.resources.food_list_card_delete_success
 import pantrypal.shared.generated.resources.food_list_error_loading
 import kotlin.time.Clock
 import kotlin.uuid.ExperimentalUuidApi
@@ -106,8 +108,10 @@ class InventoryListViewModel(
         viewModelScope.launch {
             try {
                 inventoryRepository.delete(item.id)
+                _messages.value = Message(Res.string.food_list_card_delete_success, item.name)
             } catch (e: Exception) {
                 Logger.withTag(loggerTag).e { "Error deleting inventory item: ${e.message}" }
+                _messages.value = Message(Res.string.food_list_card_delete_error, item.name)
             }
         }
     }

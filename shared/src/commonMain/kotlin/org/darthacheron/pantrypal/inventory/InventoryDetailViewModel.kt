@@ -15,6 +15,7 @@ import org.darthacheron.pantrypal.common.ProductViewModel
 import org.darthacheron.pantrypal.ui.UiState
 import pantrypal.shared.generated.resources.Res
 import pantrypal.shared.generated.resources.food_detail_delete_error
+import pantrypal.shared.generated.resources.food_detail_delete_success
 import pantrypal.shared.generated.resources.food_detail_error_loading
 import pantrypal.shared.generated.resources.food_detail_error_saving
 import kotlin.time.Clock
@@ -136,11 +137,13 @@ class InventoryDetailViewModel(
             internalUiState.value = UiState.loading()
             try {
                 inventoryRepository.delete(id)
+                internalSnackbarMessage.value = Res.string.food_detail_delete_success
                 internalIsSaved.value = true
-                goBack()
+                internalUiState.value = UiState.success(null)
             } catch (e: Exception) {
                 Logger.withTag(loggerTag).e { "Error deleting inventory item: ${e.message}" }
                 internalUiState.value = UiState.error(internalUiState.value, Res.string.food_detail_delete_error)
+                internalSnackbarMessage.value = Res.string.food_detail_delete_error
             }
         }
     }
