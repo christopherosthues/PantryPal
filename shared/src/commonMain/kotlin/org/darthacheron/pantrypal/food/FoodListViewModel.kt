@@ -24,6 +24,8 @@ import org.darthacheron.pantrypal.navigation.Navigator
 import org.darthacheron.pantrypal.ui.UiState
 import org.jetbrains.compose.resources.StringResource
 import pantrypal.shared.generated.resources.Res
+import pantrypal.shared.generated.resources.food_list_card_add_to_inventory_error
+import pantrypal.shared.generated.resources.food_list_card_add_to_inventory_success
 import pantrypal.shared.generated.resources.food_list_card_consume_error
 import pantrypal.shared.generated.resources.food_list_card_consume_success
 import pantrypal.shared.generated.resources.food_list_card_copy_error
@@ -203,9 +205,11 @@ class FoodListViewModel(
                     additionalImages = emptyList()
                 )
                 inventoryRepository.upsert(inventoryItem)
-                navigator.goToInventoryDetail(inventoryItem.id.toString())
+                _messages.value = Message(Res.string.food_list_card_add_to_inventory_success, food.name)
+                 navigator.goToInventoryDetail(inventoryItem.id.toString())
             } catch (e: Exception) {
                 Logger.withTag(loggerTag).e { "Error adding to inventory list: ${e.message}" }
+                _messages.value = Message(Res.string.food_list_card_add_to_inventory_error, food.name)
             }
         }
     }

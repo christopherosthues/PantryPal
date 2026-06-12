@@ -41,13 +41,13 @@ import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import pantrypal.shared.generated.resources.Res
 import pantrypal.shared.generated.resources.ic_fridge
-import pantrypal.shared.generated.resources.login_stay_logged_in
 import pantrypal.shared.generated.resources.registration_email
 import pantrypal.shared.generated.resources.registration_login
 import pantrypal.shared.generated.resources.registration_password
 import pantrypal.shared.generated.resources.registration_register
 import pantrypal.shared.generated.resources.registration_register_or_login
 import pantrypal.shared.generated.resources.registration_repeat_password
+import pantrypal.shared.generated.resources.registration_stay_logged_in
 import pantrypal.shared.generated.resources.registration_title
 import pantrypal.shared.generated.resources.registration_username
 
@@ -157,7 +157,7 @@ fun RegistrationView(registrationViewModel: RegistrationViewModel) {
                     onCheckedChange = { registrationViewModel.onStayLoggedInChanged(it) }
                 )
                 Text(
-                    text = stringResource(Res.string.login_stay_logged_in),
+                    text = stringResource(Res.string.registration_stay_logged_in),
                     style = MaterialTheme.typography.bodyMedium
                 )
             }

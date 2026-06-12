@@ -39,6 +39,8 @@
     <string name="food_list_card_consume_error">Failed to consume %1$s</string>
     <string name="food_list_card_copy_success">%1$s successfully duplicated</string>
     <string name="food_list_card_copy_error">Failed to duplicate %1$s</string>
+    <string name="food_list_card_add_to_inventory_success">%1$s added to inventory</string>
+    <string name="food_list_card_add_to_inventory_error">Failed to add %1$s to inventory</string>
     <string name="food_list_sort_name_asc">Name (A-Z)</string>
     <string name="food_list_sort_name_desc">Name (Z-A)</string>
     <string name="food_list_sort_date_asc">Date (Oldest first)</string>
@@ -169,6 +171,7 @@
     <string name="registration_error_password_mismatch">Passwords do not match</string>
     <string name="registration_error_username_exists">Username already exists</string>
     <string name="registration_error_email_exists">Email already exists</string>
+    <string name="registration_stay_logged_in">Stay logged in</string>
 
     <!-- Main -->
     <string name="main_tab_food">Food</string>
@@ -270,6 +273,10 @@
     <string name="inventory_list_empty">No templates found. Create one!</string>
     <string name="inventory_list_search_placeholder">Search templates...</string>
     <string name="inventory_list_error_loading">Error loading templates</string>
+    <string name="inventory_list_card_delete_success">%1$s template deleted</string>
+    <string name="inventory_list_card_delete_error">Failed to delete %1$s template</string>
+    <string name="inventory_list_card_add_to_food_success">%1$s added to pantry</string>
+    <string name="inventory_list_card_add_to_food_error">Failed to add %1$s to pantry</string>
     <string name="inventory_list_card_content_description_delete">Delete template</string>
     <string name="inventory_list_card_content_description_add_to_pantry">Add to Pantry</string>
     <string name="inventory_list_sort_name_asc">Name (A-Z)</string>
@@ -293,9 +300,18 @@
     <string name="inventory_detail_scan_table">Scan table</string>
     <string name="inventory_detail_ocr_name">Scan name</string>
     <string name="inventory_detail_ocr_amount">Scan weight or volume</string>
+    <string name="inventory_detail_error_loading">Failed to load template details.</string>
+    <string name="inventory_detail_error_saving">Failed to save template.</string>
+    <string name="inventory_detail_delete_success">Template deleted successfully</string>
+    <string name="inventory_detail_delete_error">Failed to delete template</string>
 
     <!-- Admin -->
     <string name="admin_title">Server Administration</string>
+    <string name="admin_config_load_error">Failed to load server configuration</string>
+    <string name="admin_config_save_success">Configuration applied successfully</string>
+    <string name="admin_config_save_error">Failed to apply configuration</string>
+    <string name="admin_config_reload_success">Configuration reloaded from disk</string>
+    <string name="admin_config_reload_error">Failed to reload configuration</string>
     <string name="admin_section_deletion">Data Deletion</string>
     <string name="admin_grace_period_label">Grace Period (Days)</string>
     <string name="admin_section_features">Feature Toggles</string>

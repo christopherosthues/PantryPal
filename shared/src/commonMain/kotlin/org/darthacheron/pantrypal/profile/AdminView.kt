@@ -22,8 +22,18 @@ fun AdminView(
     onBack: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    uiState.message?.let {
+        val message = stringResource(it)
+        LaunchedEffect(message) {
+            snackbarHostState.showSnackbar(message)
+            viewModel.clearMessage()
+        }
+    }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(Res.string.admin_title)) },
@@ -33,7 +43,7 @@ fun AdminView(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { viewModel.reloadConfigFromServer() }) {
+                    IconButton(onClick = { viewModel.reloadConfig() }) {
                         Icon(painter = org.jetbrains.compose.resources.painterResource(Res.drawable.ic_sync), contentDescription = stringResource(Res.string.admin_reload_button))
                     }
                 }
@@ -55,11 +65,10 @@ fun AdminView(
             }
 
             uiState.error?.let {
-                Text(
-                    text = stringResource(it),
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp)
-                )
+                val error = stringResource(it)
+                LaunchedEffect(error) {
+                    snackbarHostState.showSnackbar(error)
+                }
             }
         }
     }

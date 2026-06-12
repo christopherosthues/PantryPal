@@ -8,11 +8,14 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import org.darthacheron.pantrypal.authentication.AuthenticationPreferencesRepository
-import org.darthacheron.pantrypal.ui.UiState
 import org.darthacheron.pantrypal.core.configuration.ServerDynamicConfiguration
+import org.darthacheron.pantrypal.ui.UiState
 import pantrypal.shared.generated.resources.Res
-import pantrypal.shared.generated.resources.settings_error_loading
-import pantrypal.shared.generated.resources.settings_error_saving
+import pantrypal.shared.generated.resources.admin_config_load_error
+import pantrypal.shared.generated.resources.admin_config_reload_error
+import pantrypal.shared.generated.resources.admin_config_reload_success
+import pantrypal.shared.generated.resources.admin_config_save_error
+import pantrypal.shared.generated.resources.admin_config_save_success
 import kotlin.uuid.ExperimentalUuidApi
 
 @OptIn(ExperimentalUuidApi::class)
@@ -34,49 +37,49 @@ class AdminViewModel(
             val prefs = preferencesRepository.authenticationPreferencesFlow.firstOrNull()
             val serverUrl = prefs?.serverUrl
             if (serverUrl.isNullOrBlank()) {
-                _uiState.value = UiState.error(Res.string.settings_error_loading)
+                _uiState.value = UiState.error(Res.string.admin_config_load_error)
                 return@launch
             }
 
             adminNetworkService.fetchConfig(serverUrl)
                 .onSuccess { _uiState.value = UiState.success(it) }
-                .onFailure { _uiState.value = UiState.error(Res.string.settings_error_loading) }
+                .onFailure { _uiState.value = UiState.error(Res.string.admin_config_load_error) }
         }
     }
 
     fun updateConfig(config: ServerDynamicConfiguration) {
         viewModelScope.launch {
-            val currentData = _uiState.value
-            _uiState.value = UiState.loading()
-            
             val prefs = preferencesRepository.authenticationPreferencesFlow.firstOrNull()
-            val serverUrl = prefs?.serverUrl
-            if (serverUrl.isNullOrBlank()) {
-                _uiState.value = UiState.error(currentData, Res.string.settings_error_saving)
-                return@launch
-            }
+            val serverUrl = prefs?.serverUrl ?: return@launch
 
+            _uiState.value = UiState.loading(config)
             adminNetworkService.updateConfig(serverUrl, config)
-                .onSuccess { _uiState.value = UiState.success(it) }
-                .onFailure { _uiState.value = UiState.error(currentData, Res.string.settings_error_saving) }
+                .onSuccess {
+                    _uiState.value = UiState.success(it, Res.string.admin_config_save_success)
+                }
+                .onFailure {
+                    _uiState.value = UiState.error(Res.string.admin_config_save_error, config)
+                }
         }
     }
 
-    fun reloadConfigFromServer() {
+    fun reloadConfig() {
         viewModelScope.launch {
-            val currentData = _uiState.value
-            _uiState.value = UiState.loading()
-
             val prefs = preferencesRepository.authenticationPreferencesFlow.firstOrNull()
-            val serverUrl = prefs?.serverUrl
-            if (serverUrl.isNullOrBlank()) {
-                _uiState.value = UiState.error(currentData, Res.string.settings_error_loading)
-                return@launch
-            }
+            val serverUrl = prefs?.serverUrl ?: return@launch
 
+            _uiState.value = UiState.loading(_uiState.value.data)
             adminNetworkService.reloadConfig(serverUrl)
-                .onSuccess { _uiState.value = UiState.success(it) }
-                .onFailure { _uiState.value = UiState.error(currentData, Res.string.settings_error_loading) }
+                .onSuccess {
+                    _uiState.value = UiState.success(it, Res.string.admin_config_reload_success)
+                }
+                .onFailure {
+                    _uiState.value = UiState.error(Res.string.admin_config_reload_error, _uiState.value.data)
+                }
         }
+    }
+
+    fun clearMessage() {
+        _uiState.value = _uiState.value.copy(message = null)
     }
 }

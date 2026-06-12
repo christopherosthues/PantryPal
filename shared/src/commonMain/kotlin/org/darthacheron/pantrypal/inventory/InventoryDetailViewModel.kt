@@ -9,15 +9,15 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.darthacheron.pantrypal.authentication.AuthenticationPreferencesRepository
 import org.darthacheron.pantrypal.camera.Image
+import org.darthacheron.pantrypal.common.ProductViewModel
 import org.darthacheron.pantrypal.navigation.InventoryNavRoute
 import org.darthacheron.pantrypal.navigation.Navigator
-import org.darthacheron.pantrypal.common.ProductViewModel
 import org.darthacheron.pantrypal.ui.UiState
 import pantrypal.shared.generated.resources.Res
-import pantrypal.shared.generated.resources.food_detail_delete_error
-import pantrypal.shared.generated.resources.food_detail_delete_success
-import pantrypal.shared.generated.resources.food_detail_error_loading
-import pantrypal.shared.generated.resources.food_detail_error_saving
+import pantrypal.shared.generated.resources.inventory_detail_delete_error
+import pantrypal.shared.generated.resources.inventory_detail_delete_success
+import pantrypal.shared.generated.resources.inventory_detail_error_loading
+import pantrypal.shared.generated.resources.inventory_detail_error_saving
 import kotlin.time.Clock
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -60,31 +60,23 @@ class InventoryDetailViewModel(
         viewModelScope.launch {
             internalUiState.value = UiState.loading()
             try {
-                val preferences = authenticationPreferencesRepository.authenticationPreferencesFlow.first()
-                val profileId = if (preferences.localProfileId.isNotBlank()) Uuid.parse(preferences.localProfileId) else null
-
-                if (profileId == null) {
-                    internalUiState.value = UiState.error(Res.string.food_detail_error_loading)
-                    return@launch
+                val profileId = authenticationPreferencesRepository.authenticationPreferencesFlow.first().localProfileId
+                if (profileId.isNotBlank()) {
+                    item = item.copy(profileId = Uuid.parse(profileId))
                 }
 
                 if (navigationRoute.itemId != null) {
-                    val loaded = inventoryRepository.getById(id)
-                    if (loaded != null) {
-                        item = loaded
-                        originalItem = loaded.copy()
-                        updateStringsFrom(loaded)
-                        internalUiState.value = UiState.success(item)
-                    } else {
-                        internalUiState.value = UiState.error(Res.string.food_detail_error_loading)
+                    val existingItem = inventoryRepository.getById(id)
+                    if (existingItem != null) {
+                        item = existingItem
+                        originalItem = existingItem
+                        updateStringsFrom(existingItem)
                     }
-                } else {
-                    item = item.copy(profileId = profileId)
-                    internalUiState.value = UiState.success(item)
                 }
+                internalUiState.value = UiState.success(item)
             } catch (e: Exception) {
                 Logger.withTag(loggerTag).e { "Error loading inventory item: ${e.message}" }
-                internalUiState.value = UiState.error(Res.string.food_detail_error_loading)
+                internalUiState.value = UiState.error(Res.string.inventory_detail_error_loading)
             }
         }
     }
@@ -105,7 +97,7 @@ class InventoryDetailViewModel(
     }
 
     fun save() {
-        if (!canSave){
+        if (!canSave) {
             return
         }
 
@@ -127,7 +119,7 @@ class InventoryDetailViewModel(
                 }
             } catch (e: Exception) {
                 Logger.withTag(loggerTag).e { "Error saving inventory item: ${e.message}" }
-                internalUiState.value = UiState.error(internalUiState.value, Res.string.food_detail_error_saving)
+                internalUiState.value = UiState.error(Res.string.inventory_detail_error_saving, item)
             }
         }
     }
@@ -137,13 +129,13 @@ class InventoryDetailViewModel(
             internalUiState.value = UiState.loading()
             try {
                 inventoryRepository.delete(id)
-                internalSnackbarMessage.value = Res.string.food_detail_delete_success
+                internalSnackbarMessage.value = Res.string.inventory_detail_delete_success
                 internalIsSaved.value = true
                 internalUiState.value = UiState.success(null)
             } catch (e: Exception) {
                 Logger.withTag(loggerTag).e { "Error deleting inventory item: ${e.message}" }
-                internalUiState.value = UiState.error(internalUiState.value, Res.string.food_detail_delete_error)
-                internalSnackbarMessage.value = Res.string.food_detail_delete_error
+                internalUiState.value = UiState.error(Res.string.inventory_detail_delete_error, item)
+                internalSnackbarMessage.value = Res.string.inventory_detail_delete_error
             }
         }
     }

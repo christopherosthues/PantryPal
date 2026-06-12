@@ -24,9 +24,11 @@ import org.darthacheron.pantrypal.food.Message
 import org.darthacheron.pantrypal.navigation.Navigator
 import org.darthacheron.pantrypal.ui.UiState
 import pantrypal.shared.generated.resources.Res
-import pantrypal.shared.generated.resources.food_list_card_delete_error
-import pantrypal.shared.generated.resources.food_list_card_delete_success
-import pantrypal.shared.generated.resources.food_list_error_loading
+import pantrypal.shared.generated.resources.inventory_list_card_add_to_food_error
+import pantrypal.shared.generated.resources.inventory_list_card_add_to_food_success
+import pantrypal.shared.generated.resources.inventory_list_card_delete_error
+import pantrypal.shared.generated.resources.inventory_list_card_delete_success
+import pantrypal.shared.generated.resources.inventory_list_error_loading
 import kotlin.time.Clock
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -78,7 +80,7 @@ class InventoryListViewModel(
                         .onStart { emit(UiState.loading()) }
                         .catch { e ->
                             Logger.withTag(loggerTag).e { "Error loading inventory: ${e.message}" }
-                            emit(UiState.error(Res.string.food_list_error_loading))
+                            emit(UiState.error(Res.string.inventory_list_error_loading))
                         }
                 }
             }
@@ -108,10 +110,10 @@ class InventoryListViewModel(
         viewModelScope.launch {
             try {
                 inventoryRepository.delete(item.id)
-                _messages.value = Message(Res.string.food_list_card_delete_success, item.name)
+                _messages.value = Message(Res.string.inventory_list_card_delete_success, item.name)
             } catch (e: Exception) {
                 Logger.withTag(loggerTag).e { "Error deleting inventory item: ${e.message}" }
-                _messages.value = Message(Res.string.food_list_card_delete_error, item.name)
+                _messages.value = Message(Res.string.inventory_list_card_delete_error, item.name)
             }
         }
     }
@@ -142,10 +144,12 @@ class InventoryListViewModel(
                     additionalImages = item.additionalImages
                 )
                 foodRepository.upsert(food)
+                _messages.value = Message(Res.string.inventory_list_card_add_to_food_success, item.name)
                 // Optionally navigate to food detail to let user set dates
                 navigator.goToFoodDetail(food.id.toString())
             } catch (e: Exception) {
                 Logger.withTag(loggerTag).e { "Error adding to food list: ${e.message}" }
+                _messages.value = Message(Res.string.inventory_list_card_add_to_food_error, item.name)
             }
         }
     }

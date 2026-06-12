@@ -38,6 +38,8 @@
     <string name="food_list_card_consume_error">Fehler beim Konsumieren von %1$s</string>
     <string name="food_list_card_copy_success">%1$s erfolgreich kopiert</string>
     <string name="food_list_card_copy_error">Fehler beim Kopieren von %1$s</string>
+    <string name="food_list_card_add_to_inventory_success">%1$s zum Inventar hinzugefügt</string>
+    <string name="food_list_card_add_to_inventory_error">Fehler beim Hinzufügen von %1$s zum Inventar</string>
     <string name="food_list_sort_name_asc">Name (A-Z)</string>
     <string name="food_list_sort_name_desc">Name (Z-A)</string>
     <string name="food_list_sort_date_asc">Datum (Älteste zuerst)</string>
@@ -162,6 +164,7 @@
     <string name="registration_error_password_mismatch">Passwörter stimmen nicht überein</string>
     <string name="registration_error_username_exists">Benutzername existiert bereits</string>
     <string name="registration_error_email_exists">E-Mail existiert bereits</string>
+    <string name="registration_stay_logged_in">Angemeldet bleiben</string>
 
     <!-- Main -->
     <string name="main_tab_food">Lebensmittel</string>
@@ -262,6 +265,10 @@
     <string name="inventory_list_content_description_settings">Einstellungen öffnen</string>
     <string name="inventory_list_empty">Keine Vorlagen gefunden. Erstelle eine!</string>
     <string name="inventory_list_error_loading">Fehler beim Laden des Inventars</string>
+    <string name="inventory_list_card_delete_success">Vorlage %1$s gelöscht</string>
+    <string name="inventory_list_card_delete_error">Fehler beim Löschen der Vorlage %1$s</string>
+    <string name="inventory_list_card_add_to_food_success">%1$s zum Vorrat hinzugefügt</string>
+    <string name="inventory_list_card_add_to_food_error">Fehler beim Hinzufügen von %1$s zum Vorrat</string>
     <string name="inventory_list_search_placeholder">Vorlagen suchen...</string>
     <string name="inventory_list_card_content_description_delete">Vorlage löschen</string>
     <string name="inventory_list_card_content_description_add_to_pantry">Zum Vorrat hinzufügen</string>
@@ -286,9 +293,18 @@
     <string name="inventory_detail_scan_table">Tabelle scannen</string>
     <string name="inventory_detail_ocr_name">Name scannen</string>
     <string name="inventory_detail_ocr_amount">Gewicht oder Volumen scannen</string>
+    <string name="inventory_detail_error_loading">Fehler beim Laden der Vorlagendetails.</string>
+    <string name="inventory_detail_error_saving">Fehler beim Speichern der Vorlage.</string>
+    <string name="inventory_detail_delete_success">Vorlage erfolgreich gelöscht</string>
+    <string name="inventory_detail_delete_error">Fehler beim Löschen der Vorlage</string>
 
     <!-- Admin -->
     <string name="admin_title">Server-Administration</string>
+    <string name="admin_config_load_error">Server-Konfiguration konnte nicht geladen werden</string>
+    <string name="admin_config_save_success">Konfiguration erfolgreich angewendet</string>
+    <string name="admin_config_save_error">Konfiguration konnte nicht angewendet werden</string>
+    <string name="admin_config_reload_success">Konfiguration von Festplatte neu geladen</string>
+    <string name="admin_config_reload_error">Konfiguration konnte nicht neu geladen werden</string>
     <string name="admin_section_deletion">Datenlöschung</string>
     <string name="admin_grace_period_label">Nachfrist (Tage)</string>
     <string name="admin_section_features">Funktions-Schalter</string>
