@@ -1,0 +1,157 @@
+package org.darthacheron.pantrypal.profile
+
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.mock.MockEngine
+import io.ktor.client.engine.mock.respond
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.http.*
+import io.ktor.serialization.kotlinx.json.json
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.json.Json
+import org.darthacheron.pantrypal.authentication.AuthenticationPreferences
+import org.darthacheron.pantrypal.authentication.AuthenticationPreferencesRepository
+import org.darthacheron.pantrypal.utils.HttpClientFactory
+import dev.mokkery.mock
+import dev.mokkery.every
+import dev.mokkery.answering.returns
+import org.darthacheron.pantrypal.settings.DataSynchronization
+import kotlin.test.*
+import kotlin.time.Clock
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
+
+@OptIn(ExperimentalUuidApi::class)
+class ProfileNetworkServiceImplTest {
+
+    private lateinit var authRepository: AuthenticationPreferencesRepository
+    private lateinit var clientFactory: HttpClientFactory
+    private lateinit var service: ProfileNetworkServiceImpl
+
+    @BeforeTest
+    fun setup() {
+        authRepository = mock<AuthenticationPreferencesRepository>()
+        clientFactory = mock<HttpClientFactory>()
+    }
+
+    private fun setupService(mockEngine: MockEngine) {
+        val client = HttpClient(mockEngine) {
+            install(ContentNegotiation) {
+                json(Json { ignoreUnknownKeys = true })
+            }
+        }
+        every { clientFactory.create() } returns client
+        service = ProfileNetworkServiceImpl(authRepository, clientFactory)
+    }
+
+    @Test
+    fun testFetchProfile_Success() = runTest {
+        val serverUrl = "http://localhost"
+        val mockEngine = MockEngine { request ->
+            assertEquals("/api/v1/profile", request.url.encodedPath)
+            assertEquals("Bearer token123", request.headers[HttpHeaders.Authorization])
+            respond(
+                content = """
+                    {
+                        "serverId": "server-uuid",
+                        "clientId": "client-uuid",
+                        "username": "testuser",
+                        "email": "test@example.com",
+                        "createdAt": "2023-01-01T00:00:00Z",
+                        "lastModifiedAt": "2023-01-01T00:00:00Z",
+                        "lastSyncedAt": "2023-01-01T00:00:00Z"
+                    }
+                """.trimIndent(),
+                status = HttpStatusCode.OK,
+                headers = headersOf(HttpHeaders.ContentType, "application/json")
+            )
+        }
+        setupService(mockEngine)
+        every { authRepository.authenticationPreferencesFlow } returns flowOf(
+            AuthenticationPreferences("token123", "refresh", 3600, 7200)
+        )
+
+        val result = service.fetchProfile(serverUrl)
+        
+        assertTrue(result.isSuccess)
+        val profile = result.getOrNull()
+        assertNotNull(profile)
+        assertEquals("testuser", profile.username)
+    }
+
+    @Test
+    fun testFetchProfile_NotFound() = runTest {
+        val serverUrl = "http://localhost"
+        val mockEngine = MockEngine { _ ->
+            respond(content = "", status = HttpStatusCode.NotFound)
+        }
+        setupService(mockEngine)
+        every { authRepository.authenticationPreferencesFlow } returns flowOf(
+            AuthenticationPreferences("token123", "refresh", 3600, 7200)
+        )
+
+        val result = service.fetchProfile(serverUrl)
+        
+        assertTrue(result.isFailure)
+        assertTrue(result.exceptionOrNull() is RemoteAccountDeletedException)
+    }
+
+    @Test
+    fun testUpdateProfile_Success() = runTest {
+        val serverUrl = "http://localhost"
+        val profileId = Uuid.random()
+        val profile = Profile(
+            id = profileId,
+            username = "testuser",
+            email = "test@example.com",
+            createdAt = Clock.System.now(),
+            lastModifiedAt = Clock.System.now()
+        )
+        
+        val mockEngine = MockEngine { request ->
+            assertEquals(HttpMethod.Put, request.method)
+            respond(
+                content = """
+                    {
+                        "serverId": "server-uuid",
+                        "clientId": "$profileId",
+                        "username": "testuser",
+                        "email": "test@example.com",
+                        "createdAt": "2023-01-01T00:00:00Z",
+                        "lastModifiedAt": "2023-01-01T00:00:00Z"
+                    }
+                """.trimIndent(),
+                status = HttpStatusCode.OK,
+                headers = headersOf(HttpHeaders.ContentType, "application/json")
+            )
+        }
+        setupService(mockEngine)
+        every { authRepository.authenticationPreferencesFlow } returns flowOf(
+            AuthenticationPreferences("token123", "refresh", 3600, 7200)
+        )
+
+        val result = service.updateProfile(profile, serverUrl, null, null, null)
+        
+        assertTrue(result.isSuccess)
+        assertNotNull(result.getOrNull())
+    }
+
+    @Test
+    fun testDeleteProfile_Success() = runTest {
+        val serverUrl = "http://localhost"
+        val mockEngine = MockEngine { request ->
+            assertEquals(HttpMethod.Delete, request.method)
+            assertEquals("true", request.url.parameters["remote"])
+            respond(content = "", status = HttpStatusCode.NoContent)
+        }
+        setupService(mockEngine)
+        every { authRepository.authenticationPreferencesFlow } returns flowOf(
+            AuthenticationPreferences("token123", "refresh", 3600, 7200)
+        )
+
+        val result = service.deleteProfile(serverUrl, true)
+        
+        assertTrue(result.isSuccess)
+        assertTrue(result.getOrDefault(false))
+    }
+}
