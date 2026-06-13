@@ -56,7 +56,7 @@ class InventoryDetailViewModelTest {
         val itemId = Uuid.generateV7()
         val item = createInventoryItem(itemId, "Apple", profileId)
 
-        everySuspend { repository.getById(itemId) } returns item
+        everySuspend { repository.getById(itemId) } returns Result.success(item)
 
         val route = InventoryNavRoute.InventoryDetail(itemId.toString())
         val viewModel = InventoryDetailViewModel(route, repository, authRepository, navigator)
@@ -72,7 +72,7 @@ class InventoryDetailViewModelTest {
     @Test
     fun testLoadingExistingInventoryItemNotFound() = runTest {
         val itemId = Uuid.generateV7()
-        everySuspend { repository.getById(itemId) } returns null
+        everySuspend { repository.getById(itemId) } returns Result.success(null)
 
         val route = InventoryNavRoute.InventoryDetail(itemId.toString())
         val viewModel = InventoryDetailViewModel(route, repository, authRepository, navigator)
@@ -86,7 +86,7 @@ class InventoryDetailViewModelTest {
     @Test
     fun testLoadingException() = runTest {
         val itemId = Uuid.generateV7()
-        everySuspend { repository.getById(itemId) } throws RuntimeException("Load error")
+        everySuspend { repository.getById(itemId) } returns Result.failure(RuntimeException("Load error"))
 
         val route = InventoryNavRoute.InventoryDetail(itemId.toString())
         val viewModel = InventoryDetailViewModel(route, repository, authRepository, navigator)
@@ -132,7 +132,7 @@ class InventoryDetailViewModelTest {
         viewModel.updateName("Banana")
         assertTrue(viewModel.canSave)
 
-        everySuspend { repository.upsert(any()) } returns Unit
+        everySuspend { repository.upsert(any()) } returns Result.success(Unit)
         every { navigator.goToInventoryDetail(any()) } returns Unit
 
         viewModel.save()
@@ -146,8 +146,8 @@ class InventoryDetailViewModelTest {
     fun testSaveExistingInventoryItem() = runTest {
         val itemId = Uuid.generateV7()
         val item = createInventoryItem(itemId, "Apple", profileId)
-        everySuspend { repository.getById(itemId) } returns item
-        everySuspend { repository.upsert(any()) } returns Unit
+        everySuspend { repository.getById(itemId) } returns Result.success(item)
+        everySuspend { repository.upsert(any()) } returns Result.success(Unit)
 
         val route = InventoryNavRoute.InventoryDetail(itemId.toString())
         val viewModel = InventoryDetailViewModel(route, repository, authRepository, navigator)
@@ -167,7 +167,7 @@ class InventoryDetailViewModelTest {
         val viewModel = InventoryDetailViewModel(route, repository, authRepository, navigator)
 
         viewModel.updateName("Banana")
-        everySuspend { repository.upsert(any()) } throws RuntimeException("Save error")
+        everySuspend { repository.upsert(any()) } returns Result.failure(RuntimeException("Save error"))
 
         viewModel.save()
 
@@ -181,8 +181,8 @@ class InventoryDetailViewModelTest {
     @Test
     fun testDeleteInventoryItem() = runTest {
         val itemId = Uuid.generateV7()
-        everySuspend { repository.getById(itemId) } returns createInventoryItem(itemId, "To Delete", profileId)
-        everySuspend { repository.delete(itemId) } returns Unit
+        everySuspend { repository.getById(itemId) } returns Result.success(createInventoryItem(itemId, "To Delete", profileId))
+        everySuspend { repository.delete(itemId) } returns Result.success(Unit)
 
         val route = InventoryNavRoute.InventoryDetail(itemId.toString())
         val viewModel = InventoryDetailViewModel(route, repository, authRepository, navigator)
@@ -196,8 +196,8 @@ class InventoryDetailViewModelTest {
     @Test
     fun testDeleteError() = runTest {
         val itemId = Uuid.generateV7()
-        everySuspend { repository.getById(itemId) } returns createInventoryItem(itemId, "To Delete", profileId)
-        everySuspend { repository.delete(itemId) } throws RuntimeException("Delete error")
+        everySuspend { repository.getById(itemId) } returns Result.success(createInventoryItem(itemId, "To Delete", profileId))
+        everySuspend { repository.delete(itemId) } returns Result.failure(RuntimeException("Delete error"))
 
         val route = InventoryNavRoute.InventoryDetail(itemId.toString())
         val viewModel = InventoryDetailViewModel(route, repository, authRepository, navigator)

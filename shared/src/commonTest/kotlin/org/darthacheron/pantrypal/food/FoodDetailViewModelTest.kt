@@ -57,7 +57,7 @@ class FoodDetailViewModelTest {
         val foodId = Uuid.generateV7()
         val food = createFood(foodId, "Apple", profileId)
         
-        everySuspend { repository.getById(foodId) } returns food
+        everySuspend { repository.getById(foodId) } returns Result.success(food)
 
         val route = FoodNavRoute.FoodDetail(foodId.toString())
         val viewModel = FoodDetailViewModel(route, repository, authRepository, navigator)
@@ -73,7 +73,7 @@ class FoodDetailViewModelTest {
     @Test
     fun testLoadingExistingFoodNotFound() = runTest {
         val foodId = Uuid.generateV7()
-        everySuspend { repository.getById(foodId) } returns null
+        everySuspend { repository.getById(foodId) } returns Result.success(null)
 
         val route = FoodNavRoute.FoodDetail(foodId.toString())
         val viewModel = FoodDetailViewModel(route, repository, authRepository, navigator)
@@ -87,7 +87,7 @@ class FoodDetailViewModelTest {
     @Test
     fun testLoadingException() = runTest {
         val foodId = Uuid.generateV7()
-        everySuspend { repository.getById(foodId) } throws RuntimeException("Load error")
+        everySuspend { repository.getById(foodId) } returns Result.failure(RuntimeException("Load error"))
 
         val route = FoodNavRoute.FoodDetail(foodId.toString())
         val viewModel = FoodDetailViewModel(route, repository, authRepository, navigator)
@@ -133,7 +133,7 @@ class FoodDetailViewModelTest {
         viewModel.updateName("Banana")
         assertTrue(viewModel.canSave)
         
-        everySuspend { repository.upsert(any()) } returns Unit
+        everySuspend { repository.upsert(any()) } returns Result.success(Unit)
         every { navigator.goToFoodDetail(any()) } returns Unit
         
         viewModel.save()
@@ -147,8 +147,8 @@ class FoodDetailViewModelTest {
     fun testSaveExistingFood() = runTest {
         val foodId = Uuid.generateV7()
         val food = createFood(foodId, "Apple", profileId)
-        everySuspend { repository.getById(foodId) } returns food
-        everySuspend { repository.upsert(any()) } returns Unit
+        everySuspend { repository.getById(foodId) } returns Result.success(food)
+        everySuspend { repository.upsert(any()) } returns Result.success(Unit)
 
         val route = FoodNavRoute.FoodDetail(foodId.toString())
         val viewModel = FoodDetailViewModel(route, repository, authRepository, navigator)
@@ -168,7 +168,7 @@ class FoodDetailViewModelTest {
         val viewModel = FoodDetailViewModel(route, repository, authRepository, navigator)
 
         viewModel.updateName("Banana")
-        everySuspend { repository.upsert(any()) } throws RuntimeException("Save error")
+        everySuspend { repository.upsert(any()) } returns Result.failure(RuntimeException("Save error"))
 
         viewModel.save()
 
@@ -182,8 +182,8 @@ class FoodDetailViewModelTest {
     @Test
     fun testDeleteFood() = runTest {
         val foodId = Uuid.generateV7()
-        everySuspend { repository.getById(foodId) } returns createFood(foodId, "To Delete", profileId)
-        everySuspend { repository.delete(foodId) } returns Unit
+        everySuspend { repository.getById(foodId) } returns Result.success(createFood(foodId, "To Delete", profileId))
+        everySuspend { repository.delete(foodId) } returns Result.success(Unit)
 
         val route = FoodNavRoute.FoodDetail(foodId.toString())
         val viewModel = FoodDetailViewModel(route, repository, authRepository, navigator)
@@ -197,8 +197,8 @@ class FoodDetailViewModelTest {
     @Test
     fun testDeleteError() = runTest {
         val foodId = Uuid.generateV7()
-        everySuspend { repository.getById(foodId) } returns createFood(foodId, "To Delete", profileId)
-        everySuspend { repository.delete(foodId) } throws RuntimeException("Delete error")
+        everySuspend { repository.getById(foodId) } returns Result.success(createFood(foodId, "To Delete", profileId))
+        everySuspend { repository.delete(foodId) } returns Result.failure(RuntimeException("Delete error"))
 
         val route = FoodNavRoute.FoodDetail(foodId.toString())
         val viewModel = FoodDetailViewModel(route, repository, authRepository, navigator)

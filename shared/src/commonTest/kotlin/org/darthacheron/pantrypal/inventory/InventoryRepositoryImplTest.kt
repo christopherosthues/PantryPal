@@ -94,7 +94,8 @@ class InventoryRepositoryImplTest {
         every { profileDao.getProfileById(profileId) } returns flowOf(profileEntity)
         
         every { remoteItemDao.getRemoteInventoryItem(itemId, serverUrl) } returns flowOf(null)
-        everySuspend { networkService.createInventoryItem(any(), any()) } returns createTestItem().toDto(serverUrl).copy(serverId = Uuid.random())
+        val serverItem = item.toDto(serverUrl).copy(serverId = Uuid.random())
+        everySuspend { networkService.createInventoryItem(any(), any()) } returns Result.success(serverItem)
         everySuspend { remoteItemDao.upsert(any()) } returns Unit
 
         repository.upsert(item)

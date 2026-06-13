@@ -1,7 +1,6 @@
 package org.darthacheron.pantrypal.profile
 
 import dev.mokkery.answering.returns
-import dev.mokkery.answering.throws
 import dev.mokkery.every
 import dev.mokkery.everySuspend
 import dev.mokkery.matcher.any
@@ -25,10 +24,15 @@ import org.darthacheron.pantrypal.navigation.Navigator
 import org.darthacheron.pantrypal.networking.ConnectionNetworkService
 import org.darthacheron.pantrypal.settings.DataSynchronization
 import pantrypal.shared.generated.resources.Res
-import pantrypal.shared.generated.resources.profile_error_update
 import pantrypal.shared.generated.resources.profile_error_email_invalid
+import pantrypal.shared.generated.resources.profile_error_update
 import pantrypal.shared.generated.resources.profile_error_username_empty
-import kotlin.test.*
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.time.Clock
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -116,7 +120,7 @@ class ProfileViewModelTest {
 
     @Test
     fun testSaveProfileSuccess() = runTest {
-        everySuspend { profileRepository.upsert(any()) } returns Unit
+        everySuspend { profileRepository.upsert(any()) } returns Result.success(Unit)
         viewModel.updateUsername("updatedUser")
         viewModel.saveProfile()
         verifySuspend { profileRepository.upsert(any()) }
@@ -125,7 +129,7 @@ class ProfileViewModelTest {
 
     @Test
     fun testSaveProfileFailure() = runTest {
-        everySuspend { profileRepository.upsert(any()) } throws Exception("Database full")
+        everySuspend { profileRepository.upsert(any()) } returns Result.failure(Exception("Database full"))
         viewModel.saveProfile()
         assertNotNull(viewModel.uiState.value.error)
         assertEquals(Res.string.profile_error_update, viewModel.uiState.value.error)
@@ -133,7 +137,7 @@ class ProfileViewModelTest {
 
     @Test
     fun testUnlinkAccount() = runTest {
-        everySuspend { profileRepository.upsert(any()) } returns Unit
+        everySuspend { profileRepository.upsert(any()) } returns Result.success(Unit)
         everySuspend { authService.logoutRemotely() } returns Result.success(true)
 
         viewModel.unlinkAccount()
@@ -155,7 +159,7 @@ class ProfileViewModelTest {
 
     @Test
     fun testDeleteLocalProfile() = runTest {
-        everySuspend { profileRepository.deleteLocal() } returns Unit
+        everySuspend { profileRepository.deleteLocal() } returns Result.success(Unit)
         everySuspend { authService.logout() } returns Result.success(true)
         every { navigator.goToLogin() } returns Unit
 

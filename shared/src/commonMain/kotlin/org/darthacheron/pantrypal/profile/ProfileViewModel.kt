@@ -197,7 +197,12 @@ class ProfileViewModel(
                 _profileValidationState.value = ProfileValidationState()
 
                 profileRepository.upsert(profile)
-                _uiState.value = UiState.success(profile)
+                    .onSuccess {
+                        _uiState.value = UiState.success(profile)
+                    }
+                    .onFailure { e ->
+                        _uiState.value = capturedState.copy(error = Res.string.profile_error_update)
+                    }
             } catch (e: Exception) {
                 _uiState.value = capturedState.copy(error = Res.string.profile_error_update)
             }
@@ -243,9 +248,13 @@ class ProfileViewModel(
                 _passwordValidationState.value = PasswordValidationState()
                 val updatedProfile = profile.copy(passwordHash = hashPassword(changeData.new))
                 profileRepository.upsert(updatedProfile)
-                
-                _uiState.value = UiState.success(updatedProfile)
-                _passwordChangeState.value = UiState.success(PasswordChange())
+                    .onSuccess {
+                        _uiState.value = UiState.success(updatedProfile)
+                        _passwordChangeState.value = UiState.success(PasswordChange())
+                    }
+                    .onFailure { e ->
+                        _passwordChangeState.value = capturedPasswordUiState.copy(error = Res.string.profile_error_update)
+                    }
             } catch (e: Exception) {
                 _passwordChangeState.value = capturedPasswordUiState.copy(error = Res.string.profile_error_update)
             }
@@ -278,9 +287,11 @@ class ProfileViewModel(
                 lastSyncedAt = null
             )
             profileRepository.upsert(updatedProfile)
-            // Also ensure remote login state is cleared
-            authenticationService.logoutRemotely()
-            loadProfile()
+                .onSuccess {
+                    // Also ensure remote login state is cleared
+                    authenticationService.logoutRemotely()
+                    loadProfile()
+                }
         }
     }
 
@@ -395,13 +406,14 @@ class ProfileViewModel(
 
     fun deleteLocalProfile() {
         viewModelScope.launch {
-            try {
-                profileRepository.deleteLocal()
-                authenticationService.logout()
-                navigator.goToLogin()
-            } catch (e: Exception) {
-                // Log error
-            }
+            profileRepository.deleteLocal()
+                .onSuccess {
+                    authenticationService.logout()
+                    navigator.goToLogin()
+                }
+                .onFailure { e ->
+                    // Log error
+                }
         }
     }
 
@@ -423,9 +435,14 @@ class ProfileViewModel(
                 }
 
                 profileRepository.deleteRemote()
-                authenticationService.logoutRemotely()
-                dismissDeleteRemoteDialog()
-                loadProfile() // Reload to reflect local-only state
+                    .onSuccess {
+                        authenticationService.logoutRemotely()
+                        dismissDeleteRemoteDialog()
+                        loadProfile() // Reload to reflect local-only state
+                    }
+                    .onFailure { e ->
+                        _remoteDeleteError.value = e.message ?: "Deletion failed"
+                    }
             } catch (e: Exception) {
                 _remoteDeleteError.value = e.message ?: "Deletion failed"
             }

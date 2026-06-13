@@ -139,19 +139,18 @@ class FoodListViewModel(
 
     fun copyFood(food: Food) {
         viewModelScope.launch {
-            try {
-                foodRepository.upsert(
-                    food.copy(
-                        id = Uuid.generateV7(),
-                        createdAt = Clock.System.now(),
-                        lastModifiedAt = Clock.System.now(),
-                        image = null,
-                        additionalImages = emptyList(),
-                        remoteProducts = emptyList()
-                    )
+            foodRepository.upsert(
+                food.copy(
+                    id = Uuid.generateV7(),
+                    createdAt = Clock.System.now(),
+                    lastModifiedAt = Clock.System.now(),
+                    image = null,
+                    additionalImages = emptyList(),
+                    remoteProducts = emptyList()
                 )
+            ).onSuccess {
                 _messages.value = Message(Res.string.food_list_card_copy_success, food.name)
-            } catch (exception: Exception) {
+            }.onFailure { exception ->
                 Logger.withTag(loggerTag).e { "Error copying food: ${exception.message}" }
                 _messages.value = Message(Res.string.food_list_card_copy_error, food.name)
             }
@@ -160,57 +159,57 @@ class FoodListViewModel(
 
     fun deleteFood(food: Food) {
         viewModelScope.launch {
-            try {
-                foodRepository.delete(food.id)
-                _messages.value = Message(Res.string.food_list_card_delete_success, food.name)
-            } catch (exception: Exception) {
-                Logger.withTag(loggerTag).e { "Error deleting food: ${exception.message}" }
-                _messages.value = Message(Res.string.food_list_card_delete_error, food.name)
-            }
+            foodRepository.delete(food.id)
+                .onSuccess {
+                    _messages.value = Message(Res.string.food_list_card_delete_success, food.name)
+                }.onFailure { exception ->
+                    Logger.withTag(loggerTag).e { "Error deleting food: ${exception.message}" }
+                    _messages.value = Message(Res.string.food_list_card_delete_error, food.name)
+                }
         }
     }
 
     fun consumeFood(food: Food) {
         viewModelScope.launch {
-            try {
-                foodRepository.delete(food.id)
-                _messages.value = Message(Res.string.food_list_card_consume_success, food.name)
-            } catch (exception: Exception) {
-                Logger.withTag(loggerTag).e { "Error deleting food: ${exception.message}" }
-                _messages.value = Message(Res.string.food_list_card_consume_error, food.name)
-            }
+            foodRepository.delete(food.id)
+                .onSuccess {
+                    _messages.value = Message(Res.string.food_list_card_consume_success, food.name)
+                }.onFailure { exception ->
+                    Logger.withTag(loggerTag).e { "Error deleting food: ${exception.message}" }
+                    _messages.value = Message(Res.string.food_list_card_consume_error, food.name)
+                }
         }
     }
 
     fun addToInventory(food: Food) {
         viewModelScope.launch {
-            try {
-                val inventoryItem = InventoryItem(
-                    profileId = food.profileId,
-                    name = food.name,
-                    kiloCalories = food.kiloCalories,
-                    kiloJoule = food.kiloJoule,
-                    fatInGrams = food.fatInGrams,
-                    saturatedFattyAcidsInGrams = food.saturatedFattyAcidsInGrams,
-                    carbsInGrams = food.carbsInGrams,
-                    sugarInGrams = food.sugarInGrams,
-                    dietaryFiberInGrams = food.dietaryFiberInGrams,
-                    proteinInGrams = food.proteinInGrams,
-                    saltInGrams = food.saltInGrams,
-                    fillingQuantity = food.fillingQuantity,
-                    isLiquid = food.isLiquid,
-                    createdAt = Clock.System.now(),
-                    lastModifiedAt = Clock.System.now(),
-                    image = null,
-                    additionalImages = emptyList()
-                )
-                inventoryRepository.upsert(inventoryItem)
-                _messages.value = Message(Res.string.food_list_card_add_to_inventory_success, food.name)
-                 navigator.goToInventoryDetail(inventoryItem.id.toString())
-            } catch (e: Exception) {
-                Logger.withTag(loggerTag).e { "Error adding to inventory list: ${e.message}" }
-                _messages.value = Message(Res.string.food_list_card_add_to_inventory_error, food.name)
-            }
+            val inventoryItem = InventoryItem(
+                profileId = food.profileId,
+                name = food.name,
+                kiloCalories = food.kiloCalories,
+                kiloJoule = food.kiloJoule,
+                fatInGrams = food.fatInGrams,
+                saturatedFattyAcidsInGrams = food.saturatedFattyAcidsInGrams,
+                carbsInGrams = food.carbsInGrams,
+                sugarInGrams = food.sugarInGrams,
+                dietaryFiberInGrams = food.dietaryFiberInGrams,
+                proteinInGrams = food.proteinInGrams,
+                saltInGrams = food.saltInGrams,
+                fillingQuantity = food.fillingQuantity,
+                isLiquid = food.isLiquid,
+                createdAt = Clock.System.now(),
+                lastModifiedAt = Clock.System.now(),
+                image = null,
+                additionalImages = emptyList()
+            )
+            inventoryRepository.upsert(inventoryItem)
+                .onSuccess {
+                    _messages.value = Message(Res.string.food_list_card_add_to_inventory_success, food.name)
+                    navigator.goToInventoryDetail(inventoryItem.id.toString())
+                }.onFailure { e ->
+                    Logger.withTag(loggerTag).e { "Error adding to inventory list: ${e.message}" }
+                    _messages.value = Message(Res.string.food_list_card_add_to_inventory_error, food.name)
+                }
         }
     }
 }

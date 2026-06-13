@@ -39,5 +39,5 @@ internal fun createHttpClient(engine: HttpClientEngine): HttpClient = HttpClient
         header("X-CSRF-Token", "pantrypal-default-app-token") // TODO: provide csrf token
         contentType(ContentType.Application.Json)
     }
-    expectSuccess = true
+    expectSuccess = false
 }

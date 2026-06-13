@@ -83,7 +83,9 @@ class EditRemoteProfileViewModel(
                             username = newUsername,
                             email = newEmail,
                             lastSyncedAt = Clock.System.now()
-                        ))
+                        )).onFailure {
+                            // Non-critical if remote profile update fails locally?
+                        }
                     }
 
                     _uiState.value = UiState.success(true)

@@ -86,9 +86,9 @@ class ProfileRepositoryImplTest {
     fun testDeleteRemote_NotLoggedIn() = runTest {
         every { authRepository.authenticationPreferencesFlow } returns flowOf(AuthenticationPreferences("", "", 0, 0, isLoggedInRemotely = false))
         
-        assertFailsWith<Exception> {
-            repository.deleteRemote()
-        }
+        val result = repository.deleteRemote()
+        assertTrue(result.isFailure)
+        assertEquals("Not logged in to remote server", result.exceptionOrNull()?.message)
     }
 
     @Test

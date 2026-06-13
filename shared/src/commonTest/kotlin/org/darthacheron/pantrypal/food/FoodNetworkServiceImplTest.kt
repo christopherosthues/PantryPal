@@ -19,7 +19,7 @@ import org.darthacheron.pantrypal.utils.HttpClientFactoryImpl
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.fail
+import kotlin.test.assertTrue
 import kotlin.time.Instant
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -64,8 +64,10 @@ class FoodNetworkServiceImplTest {
 
         val result = service.pushFoods(foods, serverUrl)
 
-        assertEquals(1, result.size)
-        assertEquals("Apple", result[0].name)
+        assertTrue(result.isSuccess)
+        val list = result.getOrNull()!!
+        assertEquals(1, list.size)
+        assertEquals("Apple", list[0].name)
     }
 
     @Test
@@ -74,7 +76,7 @@ class FoodNetworkServiceImplTest {
         setupMockEngine("")
         
         val result = service.pushFoods(emptyList(), serverUrl)
-        assertEquals(0, result.size)
+        assertTrue(result.isFailure)
     }
 
     @Test
@@ -84,40 +86,35 @@ class FoodNetworkServiceImplTest {
 
         val result = service.fetchChanges(Instant.fromEpochSeconds(0), serverUrl)
 
-        assertEquals(1, result.size)
-        assertEquals("Banana", result[0].name)
+        assertTrue(result.isSuccess)
+        val list = result.getOrNull()!!
+        assertEquals(1, list.size)
+        assertEquals("Banana", list[0].name)
     }
 
     @Test
     fun testDeleteFood() = runTest {
         setupMockEngine("", HttpStatusCode.NoContent)
 
-        service.deleteFood(Uuid.generateV7(), serverUrl)
-        // No exception thrown means success
+        val result = service.deleteFood(Uuid.generateV7(), serverUrl)
+        assertTrue(result.isSuccess)
+        assertEquals(result.getOrNull(), true)
     }
 
     @Test
     fun testPushFoodsServerError() = runTest {
         setupMockEngine("Internal Server Error", HttpStatusCode.InternalServerError)
 
-        try {
-            service.pushFoods(listOf(createTestFoodDto("Apple")), serverUrl)
-            fail("Should have thrown an exception")
-        } catch (e: Exception) {
-            // Success
-        }
+        val result = service.pushFoods(listOf(createTestFoodDto("Apple")), serverUrl)
+        assertTrue(result.isFailure)
     }
 
     @Test
     fun testFetchChangesServerError() = runTest {
         setupMockEngine("Internal Server Error", HttpStatusCode.InternalServerError)
 
-        try {
-            service.fetchChanges(Instant.fromEpochSeconds(0), serverUrl)
-            fail("Should have thrown an exception")
-        } catch (e: Exception) {
-            // Success
-        }
+        val result = service.fetchChanges(Instant.fromEpochSeconds(0), serverUrl)
+        assertTrue(result.isFailure)
     }
 
     private fun createTestFoodDto(name: String) = FoodDto(

@@ -63,7 +63,7 @@ class MainViewModelTest {
 
     @Test
     fun testDeleteLocalAccount() = runTest {
-        everySuspend { profileRepository.delete(false) } returns Unit
+        everySuspend { profileRepository.delete(false) } returns Result.success(Unit)
         everySuspend { authService.logout() } returns Result.success(true)
         every { navigator.goToLogin() } returns Unit
 

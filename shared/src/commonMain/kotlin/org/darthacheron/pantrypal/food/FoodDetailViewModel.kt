@@ -68,37 +68,38 @@ class FoodDetailViewModel(
     init {
         viewModelScope.launch {
             internalUiState.value = UiState.loading()
-            try {
-                val preferences = authenticationPreferencesRepository.authenticationPreferencesFlow.first()
-                val currentProfileId = if (preferences.localProfileId.isNotBlank()) {
-                    Uuid.parse(preferences.localProfileId)
-                } else {
-                    null
-                }
+            val preferences = authenticationPreferencesRepository.authenticationPreferencesFlow.first()
+            val currentProfileId = if (preferences.localProfileId.isNotBlank()) {
+                Uuid.parse(preferences.localProfileId)
+            } else {
+                null
+            }
 
-                if (currentProfileId == null) {
-                    internalUiState.value = UiState.error(Res.string.food_detail_error_loading)
-                    return@launch
-                }
+            if (currentProfileId == null) {
+                internalUiState.value = UiState.error(Res.string.food_detail_error_loading)
+                return@launch
+            }
 
-                if (navigationRoute.foodId != null) {
-                    val existingItem = foodRepository.getById(id)
-                    if (existingItem != null) {
-                        item = existingItem
-                        originalItem = existingItem
-                        updateStringsFrom(existingItem)
-                        internalUiState.value = UiState.success(item)
-                    } else {
-                        Logger.withTag(foodDetailLoggerTag).e { "Error loading food: $id" }
+            if (navigationRoute.foodId != null) {
+                foodRepository.getById(id)
+                    .onSuccess { existingItem ->
+                        if (existingItem != null) {
+                            item = existingItem
+                            originalItem = existingItem
+                            updateStringsFrom(existingItem)
+                            internalUiState.value = UiState.success(item)
+                        } else {
+                            Logger.withTag(foodDetailLoggerTag).e { "Error loading food: $id (not found)" }
+                            internalUiState.value = UiState.error(Res.string.food_detail_error_loading)
+                        }
+                    }
+                    .onFailure { e ->
+                        Logger.withTag(foodDetailLoggerTag).e { "Error loading food: ${e.message}" }
                         internalUiState.value = UiState.error(Res.string.food_detail_error_loading)
                     }
-                } else {
-                    item = item.copy(profileId = currentProfileId)
-                    internalUiState.value = UiState.success(item)
-                }
-            } catch (e: Exception) {
-                Logger.withTag(foodDetailLoggerTag).e { "Error loading food: ${e.message}" }
-                internalUiState.value = UiState.error(Res.string.food_detail_error_loading)
+            } else {
+                item = item.copy(profileId = currentProfileId)
+                internalUiState.value = UiState.success(item)
             }
         }
     }
@@ -127,39 +128,41 @@ class FoodDetailViewModel(
 
         viewModelScope.launch {
             internalUiState.value = UiState.loading()
-            try {
-                val createdAt = originalItem?.createdAt ?: Clock.System.now()
-                val lastModifiedAt = Clock.System.now()
-                foodRepository.upsert(item.copy(createdAt = createdAt, lastModifiedAt = lastModifiedAt))
-                internalIsSaved.value = true
-
-                if (originalItem == null) {
-                    navigator.goToFoodDetail(id.toString())
-                } else {
-                    originalItem = foodRepository.getById(id)
-                    internalUiState.value = UiState.success(item)
+            val createdAt = originalItem?.createdAt ?: Clock.System.now()
+            val lastModifiedAt = Clock.System.now()
+            foodRepository.upsert(item.copy(createdAt = createdAt, lastModifiedAt = lastModifiedAt))
+                .onSuccess {
+                    internalIsSaved.value = true
+                    if (originalItem == null) {
+                        navigator.goToFoodDetail(id.toString())
+                    } else {
+                        foodRepository.getById(id).onSuccess { refreshed ->
+                            originalItem = refreshed
+                        }
+                        internalUiState.value = UiState.success(item)
+                    }
                 }
-
-            } catch (e: Exception) {
-                Logger.withTag(foodDetailLoggerTag).e { "Error saving food: ${e.message}" }
-                internalUiState.value = UiState.error(Res.string.food_detail_error_saving, item)
-            }
+                .onFailure { e ->
+                    Logger.withTag(foodDetailLoggerTag).e { "Error saving food: ${e.message}" }
+                    internalUiState.value = UiState.error(Res.string.food_detail_error_saving, item)
+                }
         }
     }
 
     fun delete() {
         viewModelScope.launch {
             internalUiState.value = UiState.loading()
-            try {
-                foodRepository.delete(id = id)
-                internalSnackbarMessage.value = Res.string.food_detail_delete_success
-                internalIsSaved.value = true
-                internalUiState.value = UiState.success(null)
-            } catch (e: Exception) {
-                Logger.withTag(foodDetailLoggerTag).e { "Error deleting food: ${e.message}" }
-                internalUiState.value = UiState.error(Res.string.food_detail_delete_error, item)
-                internalSnackbarMessage.value = Res.string.food_detail_delete_error
-            }
+            foodRepository.delete(id = id)
+                .onSuccess {
+                    internalSnackbarMessage.value = Res.string.food_detail_delete_success
+                    internalIsSaved.value = true
+                    internalUiState.value = UiState.success(null)
+                }
+                .onFailure { e ->
+                    Logger.withTag(foodDetailLoggerTag).e { "Error deleting food: ${e.message}" }
+                    internalUiState.value = UiState.error(Res.string.food_detail_delete_error, item)
+                    internalSnackbarMessage.value = Res.string.food_detail_delete_error
+                }
         }
     }
 

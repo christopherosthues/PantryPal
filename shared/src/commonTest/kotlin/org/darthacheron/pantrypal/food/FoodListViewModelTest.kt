@@ -2,7 +2,6 @@ package org.darthacheron.pantrypal.food
 
 import app.cash.turbine.test
 import dev.mokkery.answering.returns
-import dev.mokkery.answering.throws
 import dev.mokkery.every
 import dev.mokkery.everySuspend
 import dev.mokkery.matcher.any
@@ -126,7 +125,7 @@ class FoodListViewModelTest {
     @Test
     fun testDeleteFood() = runTest {
         val food = createFood("Apple", profileId)
-        everySuspend { repository.delete(food.id) } returns Unit
+        everySuspend { repository.delete(food.id) } returns Result.success(Unit)
 
         viewModel.messages.test {
             assertEquals(null, awaitItem())
@@ -140,7 +139,7 @@ class FoodListViewModelTest {
     @Test
     fun testCopyFood() = runTest {
         val food = createFood("Apple", profileId)
-        everySuspend { repository.upsert(any()) } returns Unit
+        everySuspend { repository.upsert(any()) } returns Result.success(Unit)
 
         viewModel.messages.test {
             assertEquals(null, awaitItem())
@@ -154,7 +153,7 @@ class FoodListViewModelTest {
     @Test
     fun testConsumeFood() = runTest {
         val food = createFood("Apple", profileId)
-        everySuspend { repository.delete(food.id) } returns Unit
+        everySuspend { repository.delete(food.id) } returns Result.success(Unit)
 
         viewModel.messages.test {
             assertEquals(null, awaitItem())
@@ -168,7 +167,7 @@ class FoodListViewModelTest {
     @Test
     fun testAddToInventory() = runTest {
         val food = createFood("Apple", profileId)
-        everySuspend { inventoryRepository.upsert(any()) } returns Unit
+        everySuspend { inventoryRepository.upsert(any()) } returns Result.success(Unit)
         every { navigator.goToInventoryDetail(any()) } returns Unit
 
         viewModel.messages.test {
@@ -205,7 +204,7 @@ class FoodListViewModelTest {
     @Test
     fun testClearMessage() = runTest {
         val food = createFood("Apple", profileId)
-        everySuspend { repository.delete(food.id) } returns Unit
+        everySuspend { repository.delete(food.id) } returns Result.success(Unit)
 
         viewModel.messages.test {
             assertEquals(null, awaitItem())
@@ -220,7 +219,7 @@ class FoodListViewModelTest {
     @Test
     fun testDeleteFoodError() = runTest {
         val food = createFood("Apple", profileId)
-        everySuspend { repository.delete(food.id) } throws RuntimeException("Delete error")
+        everySuspend { repository.delete(food.id) } returns Result.failure(RuntimeException("Delete error"))
 
         viewModel.messages.test {
             assertEquals(null, awaitItem())
@@ -232,7 +231,7 @@ class FoodListViewModelTest {
     @Test
     fun testCopyFoodError() = runTest {
         val food = createFood("Apple", profileId)
-        everySuspend { repository.upsert(any()) } throws RuntimeException("Copy error")
+        everySuspend { repository.upsert(any()) } returns Result.failure(RuntimeException("Copy error"))
 
         viewModel.messages.test {
             assertEquals(null, awaitItem())
@@ -244,7 +243,7 @@ class FoodListViewModelTest {
     @Test
     fun testConsumeFoodError() = runTest {
         val food = createFood("Apple", profileId)
-        everySuspend { repository.delete(food.id) } throws RuntimeException("Consume error")
+        everySuspend { repository.delete(food.id) } returns Result.failure(RuntimeException("Consume error"))
 
         viewModel.messages.test {
             assertEquals(null, awaitItem())
@@ -256,7 +255,7 @@ class FoodListViewModelTest {
     @Test
     fun testAddToInventoryError() = runTest {
         val food = createFood("Apple", profileId)
-        everySuspend { inventoryRepository.upsert(any()) } throws RuntimeException("Inventory error")
+        everySuspend { inventoryRepository.upsert(any()) } returns Result.failure(RuntimeException("Inventory error"))
 
         viewModel.messages.test {
             assertEquals(null, awaitItem())

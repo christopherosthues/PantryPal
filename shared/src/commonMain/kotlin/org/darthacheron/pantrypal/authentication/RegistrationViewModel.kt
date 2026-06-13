@@ -190,7 +190,7 @@ class RegistrationViewModel(
                 isLocalOnly = true
             )
 
-            profileRepository.upsert(profile)
+            profileRepository.upsert(profile).getOrThrow()
             profile
         }
     }

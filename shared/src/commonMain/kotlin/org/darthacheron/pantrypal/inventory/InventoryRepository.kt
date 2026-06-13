@@ -11,12 +11,12 @@ interface InventoryRepository {
         direction: InventorySortDirection = InventorySortDirection.Ascending,
     ): Flow<List<InventoryItem>>
 
-    suspend fun getById(id: Uuid): InventoryItem?
+    suspend fun getById(id: Uuid): Result<InventoryItem?>
 
-    suspend fun upsert(inventoryItem: InventoryItem)
+    suspend fun upsert(inventoryItem: InventoryItem): Result<Unit>
 
-    suspend fun delete(id: Uuid)
+    suspend fun delete(id: Uuid): Result<Unit>
 
-    suspend fun syncWithServer()
+    suspend fun syncWithServer(): Result<Unit>
 }
 

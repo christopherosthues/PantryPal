@@ -16,10 +16,7 @@ import org.darthacheron.pantrypal.authentication.AuthenticationPreferences
 import org.darthacheron.pantrypal.authentication.AuthenticationPreferencesRepository
 import org.darthacheron.pantrypal.core.inventory.InventoryItemDto
 import org.darthacheron.pantrypal.utils.HttpClientFactoryImpl
-import kotlin.test.BeforeTest
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
+import kotlin.test.*
 import kotlin.time.Clock
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -29,6 +26,12 @@ class InventoryNetworkServiceImplTest {
 
     private lateinit var authRepository: AuthenticationPreferencesRepository
     private lateinit var service: InventoryNetworkServiceImpl
+
+    private val testJson = Json {
+        ignoreUnknownKeys = true
+        prettyPrint = true
+        isLenient = true
+    }
 
     @BeforeTest
     fun setup() {
@@ -44,7 +47,7 @@ class InventoryNetworkServiceImplTest {
     fun testPushInventoryItems_Success() = runTest {
         val serverUrl = "http://localhost"
         val responseItem = createTestItemDto("Sugar").copy(serverId = Uuid.random())
-        val responseJson = Json.encodeToString(listOf(responseItem))
+        val responseJson = testJson.encodeToString(listOf(responseItem))
         
         val mockEngine = MockEngine { request ->
             assertEquals("/api/v1/inventory/batch", request.url.encodedPath)
@@ -62,9 +65,11 @@ class InventoryNetworkServiceImplTest {
         val items = listOf(createTestItemDto("Sugar"))
         val result = service.pushInventoryItems(items, serverUrl)
         
-        assertEquals(1, result.size)
-        assertEquals("Sugar", result[0].name)
-        assertNotNull(result[0].serverId)
+        assertTrue(result.isSuccess)
+        val list = result.getOrNull()!!
+        assertEquals(1, list.size)
+        assertEquals("Sugar", list[0].name)
+        assertNotNull(list[0].serverId)
     }
 
     @Test
@@ -81,7 +86,9 @@ class InventoryNetworkServiceImplTest {
             AuthenticationPreferences("token123", "refresh", 3600, 7200)
         )
 
-        service.deleteInventoryItem(serverId, serverUrl)
+        val result = service.deleteInventoryItem(serverId, serverUrl)
+        assertTrue(result.isSuccess)
+        assertEquals(result.getOrNull(), true)
     }
 
     private fun createTestItemDto(name: String) = InventoryItemDto(

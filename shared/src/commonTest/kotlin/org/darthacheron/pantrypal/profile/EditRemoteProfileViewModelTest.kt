@@ -56,7 +56,7 @@ class EditRemoteProfileViewModelTest {
         )
         
         everySuspend { authService.updateUser(any(), any(), any(), any(), any()) } returns Result.success(true)
-        everySuspend { profileRepository.upsertRemoteProfile(any()) } returns Unit
+        everySuspend { profileRepository.upsertRemoteProfile(any()) } returns Result.success(Unit)
 
         viewModel.onUsernameChanged("new")
         viewModel.onEmailChanged("new@ex.com")

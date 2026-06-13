@@ -108,49 +108,51 @@ class InventoryListViewModel(
 
     fun deleteItem(item: InventoryItem) {
         viewModelScope.launch {
-            try {
-                inventoryRepository.delete(item.id)
-                _messages.value = Message(Res.string.inventory_list_card_delete_success, item.name)
-            } catch (e: Exception) {
-                Logger.withTag(loggerTag).e { "Error deleting inventory item: ${e.message}" }
-                _messages.value = Message(Res.string.inventory_list_card_delete_error, item.name)
-            }
+            inventoryRepository.delete(item.id)
+                .onSuccess {
+                    _messages.value = Message(Res.string.inventory_list_card_delete_success, item.name)
+                }
+                .onFailure { e ->
+                    Logger.withTag(loggerTag).e { "Error deleting inventory item: ${e.message}" }
+                    _messages.value = Message(Res.string.inventory_list_card_delete_error, item.name)
+                }
         }
     }
 
     fun addToFoodList(item: InventoryItem) {
         viewModelScope.launch {
-            try {
-                val food = Food(
-                    profileId = item.profileId,
-                    name = item.name,
-                    kiloCalories = item.kiloCalories,
-                    kiloJoule = item.kiloJoule,
-                    fatInGrams = item.fatInGrams,
-                    saturatedFattyAcidsInGrams = item.saturatedFattyAcidsInGrams,
-                    carbsInGrams = item.carbsInGrams,
-                    sugarInGrams = item.sugarInGrams,
-                    dietaryFiberInGrams = item.dietaryFiberInGrams,
-                    proteinInGrams = item.proteinInGrams,
-                    saltInGrams = item.saltInGrams,
-                    fillingQuantity = item.fillingQuantity,
-                    isLiquid = item.isLiquid,
-                    bestBeforeUsedByDate = null,
-                    isUseBy = false,
-                    openedAt = null,
-                    createdAt = Clock.System.now(),
-                    lastModifiedAt = Clock.System.now(),
-                    image = item.image,
-                    additionalImages = item.additionalImages
-                )
-                foodRepository.upsert(food)
-                _messages.value = Message(Res.string.inventory_list_card_add_to_food_success, item.name)
-                // Optionally navigate to food detail to let user set dates
-                navigator.goToFoodDetail(food.id.toString())
-            } catch (e: Exception) {
-                Logger.withTag(loggerTag).e { "Error adding to food list: ${e.message}" }
-                _messages.value = Message(Res.string.inventory_list_card_add_to_food_error, item.name)
-            }
+            val food = Food(
+                profileId = item.profileId,
+                name = item.name,
+                kiloCalories = item.kiloCalories,
+                kiloJoule = item.kiloJoule,
+                fatInGrams = item.fatInGrams,
+                saturatedFattyAcidsInGrams = item.saturatedFattyAcidsInGrams,
+                carbsInGrams = item.carbsInGrams,
+                sugarInGrams = item.sugarInGrams,
+                dietaryFiberInGrams = item.dietaryFiberInGrams,
+                proteinInGrams = item.proteinInGrams,
+                saltInGrams = item.saltInGrams,
+                fillingQuantity = item.fillingQuantity,
+                isLiquid = item.isLiquid,
+                bestBeforeUsedByDate = null,
+                isUseBy = false,
+                openedAt = null,
+                createdAt = Clock.System.now(),
+                lastModifiedAt = Clock.System.now(),
+                image = item.image,
+                additionalImages = item.additionalImages
+            )
+            foodRepository.upsert(food)
+                .onSuccess {
+                    _messages.value = Message(Res.string.inventory_list_card_add_to_food_success, item.name)
+                    // Optionally navigate to food detail to let user set dates
+                    navigator.goToFoodDetail(food.id.toString())
+                }
+                .onFailure { e ->
+                    Logger.withTag(loggerTag).e { "Error adding to food list: ${e.message}" }
+                    _messages.value = Message(Res.string.inventory_list_card_add_to_food_error, item.name)
+                }
         }
     }
 

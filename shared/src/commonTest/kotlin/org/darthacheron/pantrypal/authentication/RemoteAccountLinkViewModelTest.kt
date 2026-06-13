@@ -119,8 +119,8 @@ class RemoteAccountLinkViewModelTest {
         )
         every { profileRepository.getProfileById(localProfileId) } returns flowOf(profile)
         everySuspend { authenticationService.loginRemotely("remote", "pass", "http://localhost") } returns Result.success(loginResponse)
-        everySuspend { profileRepository.upsert(any()) } returns Unit
-        everySuspend { profileRepository.upsertRemoteProfile(any()) } returns Unit
+        everySuspend { profileRepository.upsert(any()) } returns Result.success(Unit)
+        everySuspend { profileRepository.upsertRemoteProfile(any()) } returns Result.success(Unit)
 
         viewModel.onServerUrlChanged("http://localhost")
         viewModel.onUsernameChanged("remote")

@@ -50,9 +50,11 @@ class MainViewModel(
         // TODO: error handling
         viewModelScope.launch {
             profileRepository.delete(remote = false)
-            authenticationService.logout()
-            _showRemoteDeletedDialog.value = false
-            navigator.goToLogin()
+                .onSuccess {
+                    authenticationService.logout()
+                    _showRemoteDeletedDialog.value = false
+                    navigator.goToLogin()
+                }
         }
     }
 

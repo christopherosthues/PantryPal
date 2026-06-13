@@ -10,17 +10,17 @@ interface ProfileRepository {
     fun getProfileByEmail(email: String): Flow<Profile?>
     fun getProfileByIdentifier(identifier: String): Flow<Profile?>
 
-    suspend fun upsert(profile: Profile)
+    suspend fun upsert(profile: Profile): Result<Unit>
 
-    suspend fun upsertRemoteProfile(remoteProfile: RemoteProfile)
+    suspend fun upsertRemoteProfile(remoteProfile: RemoteProfile): Result<Unit>
 
-    suspend fun deleteLocal()
+    suspend fun deleteLocal(): Result<Unit>
 
     suspend fun deleteRemote(): Result<Boolean>
 
-    suspend fun delete(remote: Boolean)
+    suspend fun delete(remote: Boolean): Result<Unit>
 
-    suspend fun unlinkRemote(localProfileId: Uuid, serverUrl: String)
+    suspend fun unlinkRemote(localProfileId: Uuid, serverUrl: String): Result<Unit>
 
-    suspend fun syncWithServer()
+    suspend fun syncWithServer(): Result<Unit>
 }

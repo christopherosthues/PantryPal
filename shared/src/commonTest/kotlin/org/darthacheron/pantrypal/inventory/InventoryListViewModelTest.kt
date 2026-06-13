@@ -112,7 +112,7 @@ class InventoryListViewModelTest {
     @Test
     fun testDeleteItem() = runTest {
         val item = createInventoryItem("Apple", profileId)
-        everySuspend { repository.delete(item.id) } returns Unit
+        everySuspend { repository.delete(item.id) } returns Result.success(Unit)
 
         viewModel.messages.test {
             assertEquals(null, awaitItem())
@@ -128,7 +128,7 @@ class InventoryListViewModelTest {
     @Test
     fun testDeleteItemError() = runTest {
         val item = createInventoryItem("Apple", profileId)
-        everySuspend { repository.delete(item.id) } throws RuntimeException("Delete error")
+        everySuspend { repository.delete(item.id) } returns Result.failure(RuntimeException("Delete error"))
 
         viewModel.messages.test {
             assertEquals(null, awaitItem())
@@ -144,7 +144,7 @@ class InventoryListViewModelTest {
     @Test
     fun testAddToFoodList() = runTest {
         val item = createInventoryItem("Apple", profileId)
-        everySuspend { foodRepository.upsert(any()) } returns Unit
+        everySuspend { foodRepository.upsert(any()) } returns Result.success(Unit)
         every { navigator.goToFoodDetail(any()) } returns Unit
 
         viewModel.messages.test {
@@ -162,7 +162,7 @@ class InventoryListViewModelTest {
     @Test
     fun testAddToFoodListError() = runTest {
         val item = createInventoryItem("Apple", profileId)
-        everySuspend { foodRepository.upsert(any()) } throws RuntimeException("Food error")
+        everySuspend { foodRepository.upsert(any()) } returns Result.failure(RuntimeException("Food error"))
 
         viewModel.messages.test {
             assertEquals(null, awaitItem())
@@ -199,7 +199,7 @@ class InventoryListViewModelTest {
     @Test
     fun testClearMessage() = runTest {
         val inventoryItem = createInventoryItem("Apple", profileId)
-        everySuspend { repository.delete(inventoryItem.id) } returns Unit
+        everySuspend { repository.delete(inventoryItem.id) } returns Result.success(Unit)
 
         viewModel.messages.test {
             assertEquals(null, awaitItem())
@@ -237,10 +237,19 @@ class InventoryListViewModelTest {
             }
             assertTrue(item.hasData)
 
+            // Change items so the success state is different
+            val newItems = listOf(createInventoryItem("Banana", profileId))
+            inventoryFlow.value = newItems
+            
             viewModel.setSearchQuery("Banana")
+            
             item = awaitItem()
-            // Should still have data or be loading
-            assertTrue(item.hasData || item.isLoading)
+            // Should see loading or new success
+            if (item.isLoading) {
+                item = awaitItem()
+            }
+            assertTrue(item.hasData)
+            assertEquals("Banana", item.data?.first()?.name)
         }
     }
 
@@ -256,9 +265,18 @@ class InventoryListViewModelTest {
             }
             assertTrue(item.hasData)
 
+            // Change items
+            val newItems = listOf(createInventoryItem("Z-Apple", profileId))
+            inventoryFlow.value = newItems
+
             viewModel.setSort(InventorySortOrder.Name, InventorySortDirection.Descending)
+            
             item = awaitItem()
-            assertTrue(item.hasData || item.isLoading)
+            if (item.isLoading) {
+                item = awaitItem()
+            }
+            assertTrue(item.hasData)
+            assertEquals("Z-Apple", item.data?.first()?.name)
         }
     }
 
