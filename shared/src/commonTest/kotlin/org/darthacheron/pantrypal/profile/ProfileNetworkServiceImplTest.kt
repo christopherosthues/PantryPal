@@ -1,22 +1,25 @@
 package org.darthacheron.pantrypal.profile
 
-import io.ktor.client.HttpClient
+import dev.mokkery.answering.returns
+import dev.mokkery.every
+import dev.mokkery.mock
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
-import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.http.*
-import io.ktor.serialization.kotlinx.json.json
+import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpMethod
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.headersOf
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
-import kotlinx.serialization.json.Json
 import org.darthacheron.pantrypal.authentication.AuthenticationPreferences
 import org.darthacheron.pantrypal.authentication.AuthenticationPreferencesRepository
-import org.darthacheron.pantrypal.utils.HttpClientFactory
-import dev.mokkery.mock
-import dev.mokkery.every
-import dev.mokkery.answering.returns
-import org.darthacheron.pantrypal.settings.DataSynchronization
-import kotlin.test.*
+import org.darthacheron.pantrypal.utils.HttpClientFactoryImpl
+import kotlin.test.BeforeTest
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 import kotlin.time.Clock
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -25,36 +28,31 @@ import kotlin.uuid.Uuid
 class ProfileNetworkServiceImplTest {
 
     private lateinit var authRepository: AuthenticationPreferencesRepository
-    private lateinit var clientFactory: HttpClientFactory
     private lateinit var service: ProfileNetworkServiceImpl
 
     @BeforeTest
     fun setup() {
         authRepository = mock<AuthenticationPreferencesRepository>()
-        clientFactory = mock<HttpClientFactory>()
     }
 
     private fun setupService(mockEngine: MockEngine) {
-        val client = HttpClient(mockEngine) {
-            install(ContentNegotiation) {
-                json(Json { ignoreUnknownKeys = true })
-            }
-        }
-        every { clientFactory.create() } returns client
+        val clientFactory = HttpClientFactoryImpl(mockEngine)
         service = ProfileNetworkServiceImpl(authRepository, clientFactory)
     }
 
     @Test
     fun testFetchProfile_Success() = runTest {
         val serverUrl = "http://localhost"
+        val serverId = Uuid.random().toString()
+        val clientId = Uuid.random().toString()
         val mockEngine = MockEngine { request ->
             assertEquals("/api/v1/profile", request.url.encodedPath)
             assertEquals("Bearer token123", request.headers[HttpHeaders.Authorization])
             respond(
                 content = """
                     {
-                        "serverId": "server-uuid",
-                        "clientId": "client-uuid",
+                        "serverId": "$serverId",
+                        "clientId": "$clientId",
                         "username": "testuser",
                         "email": "test@example.com",
                         "createdAt": "2023-01-01T00:00:00Z",
@@ -117,6 +115,7 @@ class ProfileNetworkServiceImplTest {
     fun testUpdateProfile_Success() = runTest {
         val serverUrl = "http://localhost"
         val profileId = Uuid.random()
+        val serverUserId = Uuid.random().toString()
         val profile = Profile(
             id = profileId,
             username = "testuser",
@@ -130,7 +129,7 @@ class ProfileNetworkServiceImplTest {
             respond(
                 content = """
                     {
-                        "serverId": "server-uuid",
+                        "serverId": "$serverUserId",
                         "clientId": "$profileId",
                         "username": "testuser",
                         "email": "test@example.com",

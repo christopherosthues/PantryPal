@@ -3,20 +3,23 @@ package org.darthacheron.pantrypal.inventory
 import dev.mokkery.answering.returns
 import dev.mokkery.every
 import dev.mokkery.mock
-import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
-import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.http.*
-import io.ktor.serialization.kotlinx.json.json
+import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpMethod
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.headersOf
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import org.darthacheron.pantrypal.authentication.AuthenticationPreferences
 import org.darthacheron.pantrypal.authentication.AuthenticationPreferencesRepository
 import org.darthacheron.pantrypal.core.inventory.InventoryItemDto
-import org.darthacheron.pantrypal.utils.HttpClientFactory
-import kotlin.test.*
+import org.darthacheron.pantrypal.utils.HttpClientFactoryImpl
+import kotlin.test.BeforeTest
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.time.Clock
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -25,44 +28,28 @@ import kotlin.uuid.Uuid
 class InventoryNetworkServiceImplTest {
 
     private lateinit var authRepository: AuthenticationPreferencesRepository
-    private lateinit var clientFactory: HttpClientFactory
     private lateinit var service: InventoryNetworkServiceImpl
 
     @BeforeTest
     fun setup() {
         authRepository = mock<AuthenticationPreferencesRepository>()
-        clientFactory = mock<HttpClientFactory>()
     }
 
     private fun setupService(mockEngine: MockEngine) {
-        val client = HttpClient(mockEngine) {
-            install(ContentNegotiation) {
-                json(Json { ignoreUnknownKeys = true })
-            }
-        }
-        every { clientFactory.create() } returns client
+        val clientFactory = HttpClientFactoryImpl(mockEngine)
         service = InventoryNetworkServiceImpl(authRepository, clientFactory)
     }
 
     @Test
     fun testPushInventoryItems_Success() = runTest {
         val serverUrl = "http://localhost"
+        val responseItem = createTestItemDto("Sugar").copy(serverId = Uuid.random())
+        val responseJson = Json.encodeToString(listOf(responseItem))
+        
         val mockEngine = MockEngine { request ->
             assertEquals("/api/v1/inventory/batch", request.url.encodedPath)
             respond(
-                content = """
-                    [
-                        {
-                            "serverId": "server-uuid",
-                            "clientId": "client-uuid",
-                            "name": "Sugar",
-                            "profileId": "profile-uuid",
-                            "isUseBy": false,
-                            "createdAt": "2023-01-01T00:00:00Z",
-                            "lastModifiedAt": "2023-01-01T00:00:00Z"
-                        }
-                    ]
-                """.trimIndent(),
+                content = responseJson,
                 status = HttpStatusCode.OK,
                 headers = headersOf(HttpHeaders.ContentType, "application/json")
             )
@@ -77,6 +64,7 @@ class InventoryNetworkServiceImplTest {
         
         assertEquals(1, result.size)
         assertEquals("Sugar", result[0].name)
+        assertNotNull(result[0].serverId)
     }
 
     @Test

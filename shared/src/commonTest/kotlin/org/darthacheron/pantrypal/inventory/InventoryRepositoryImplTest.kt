@@ -61,6 +61,7 @@ class InventoryRepositoryImplTest {
     @Test
     fun testUpsertLocally() = runTest {
         val item = createTestItem()
+        everySuspend { itemDao.getByIdWithImages(item.id) } returns null
         everySuspend { itemDao.upsert(any()) } returns Unit
         every { authRepository.authenticationPreferencesFlow } returns flowOf(AuthenticationPreferences("", "", 0, 0))
 
@@ -76,6 +77,7 @@ class InventoryRepositoryImplTest {
         val item = createTestItem(itemId, profileId)
         val serverUrl = "http://localhost"
         
+        everySuspend { itemDao.getByIdWithImages(itemId) } returns null
         everySuspend { itemDao.upsert(any()) } returns Unit
         every { authRepository.authenticationPreferencesFlow } returns flowOf(
             AuthenticationPreferences("token", "refresh", 3600, 7200, localProfileId = profileId.toString(), isLoggedInRemotely = true, serverUrl = serverUrl)

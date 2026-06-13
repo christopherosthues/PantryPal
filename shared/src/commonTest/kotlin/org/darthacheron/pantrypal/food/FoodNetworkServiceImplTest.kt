@@ -15,8 +15,7 @@ import kotlinx.serialization.json.Json
 import org.darthacheron.pantrypal.authentication.AuthenticationPreferences
 import org.darthacheron.pantrypal.authentication.AuthenticationPreferencesRepository
 import org.darthacheron.pantrypal.core.food.FoodDto
-import org.darthacheron.pantrypal.utils.HttpClientFactory
-import org.darthacheron.pantrypal.utils.createHttpClient
+import org.darthacheron.pantrypal.utils.HttpClientFactoryImpl
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -29,17 +28,21 @@ import kotlin.uuid.Uuid
 class FoodNetworkServiceImplTest {
 
     private lateinit var authRepository: AuthenticationPreferencesRepository
-    private lateinit var clientFactory: HttpClientFactory
     private lateinit var service: FoodNetworkServiceImpl
     private val authFlow = MutableStateFlow(AuthenticationPreferences("test-token", "refresh", 3600, 3600, "profile-id"))
     private val serverUrl = "https://example.com"
+
+    private val testJson = Json {
+        ignoreUnknownKeys = true
+        prettyPrint = true
+        isLenient = true
+    }
 
     @BeforeTest
     fun setup() {
         authRepository = mock<AuthenticationPreferencesRepository> {
             every { authenticationPreferencesFlow } returns authFlow
         }
-        clientFactory = mock<HttpClientFactory>()
     }
 
     private fun setupMockEngine(responseBody: String, status: HttpStatusCode = HttpStatusCode.OK) {
@@ -50,16 +53,15 @@ class FoodNetworkServiceImplTest {
                 headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
             )
         }
-        val client = createHttpClient(mockEngine)
-        every { clientFactory.create() } returns client
+        val clientFactory = HttpClientFactoryImpl(mockEngine)
+        service = FoodNetworkServiceImpl(authRepository, clientFactory)
     }
 
     @Test
     fun testPushFoods() = runTest {
         val foods = listOf(createTestFoodDto("Apple"))
-        setupMockEngine(Json.encodeToString(foods))
+        setupMockEngine(testJson.encodeToString(foods))
 
-        service = FoodNetworkServiceImpl(authRepository, clientFactory)
         val result = service.pushFoods(foods, serverUrl)
 
         assertEquals(1, result.size)
@@ -69,7 +71,7 @@ class FoodNetworkServiceImplTest {
     @Test
     fun testPushFoodsNotAuthenticated() = runTest {
         authFlow.value = authFlow.value.copy(accessToken = "")
-        service = FoodNetworkServiceImpl(authRepository, clientFactory)
+        setupMockEngine("")
         
         val result = service.pushFoods(emptyList(), serverUrl)
         assertEquals(0, result.size)
@@ -78,9 +80,8 @@ class FoodNetworkServiceImplTest {
     @Test
     fun testFetchChanges() = runTest {
         val foods = listOf(createTestFoodDto("Banana"))
-        setupMockEngine(Json.encodeToString(foods))
+        setupMockEngine(testJson.encodeToString(foods))
 
-        service = FoodNetworkServiceImpl(authRepository, clientFactory)
         val result = service.fetchChanges(Instant.fromEpochSeconds(0), serverUrl)
 
         assertEquals(1, result.size)
@@ -91,7 +92,6 @@ class FoodNetworkServiceImplTest {
     fun testDeleteFood() = runTest {
         setupMockEngine("", HttpStatusCode.NoContent)
 
-        service = FoodNetworkServiceImpl(authRepository, clientFactory)
         service.deleteFood(Uuid.generateV7(), serverUrl)
         // No exception thrown means success
     }
@@ -100,8 +100,6 @@ class FoodNetworkServiceImplTest {
     fun testPushFoodsServerError() = runTest {
         setupMockEngine("Internal Server Error", HttpStatusCode.InternalServerError)
 
-        service = FoodNetworkServiceImpl(authRepository, clientFactory)
-        
         try {
             service.pushFoods(listOf(createTestFoodDto("Apple")), serverUrl)
             fail("Should have thrown an exception")
@@ -114,8 +112,6 @@ class FoodNetworkServiceImplTest {
     fun testFetchChangesServerError() = runTest {
         setupMockEngine("Internal Server Error", HttpStatusCode.InternalServerError)
 
-        service = FoodNetworkServiceImpl(authRepository, clientFactory)
-        
         try {
             service.fetchChanges(Instant.fromEpochSeconds(0), serverUrl)
             fail("Should have thrown an exception")

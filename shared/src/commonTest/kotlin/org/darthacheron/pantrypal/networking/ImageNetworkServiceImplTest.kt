@@ -3,19 +3,21 @@ package org.darthacheron.pantrypal.networking
 import dev.mokkery.answering.returns
 import dev.mokkery.every
 import dev.mokkery.mock
-import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
-import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.http.*
-import io.ktor.serialization.kotlinx.json.json
+import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpMethod
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.headersOf
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
-import kotlinx.serialization.json.Json
 import org.darthacheron.pantrypal.authentication.AuthenticationPreferences
 import org.darthacheron.pantrypal.authentication.AuthenticationPreferencesRepository
-import org.darthacheron.pantrypal.utils.HttpClientFactory
-import kotlin.test.*
+import org.darthacheron.pantrypal.utils.HttpClientFactoryImpl
+import kotlin.test.BeforeTest
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -23,22 +25,15 @@ import kotlin.uuid.Uuid
 class ImageNetworkServiceImplTest {
 
     private lateinit var authRepository: AuthenticationPreferencesRepository
-    private lateinit var clientFactory: HttpClientFactory
     private lateinit var service: ImageNetworkServiceImpl
 
     @BeforeTest
     fun setup() {
         authRepository = mock<AuthenticationPreferencesRepository>()
-        clientFactory = mock<HttpClientFactory>()
     }
 
     private fun setupService(mockEngine: MockEngine) {
-        val client = HttpClient(mockEngine) {
-            install(ContentNegotiation) {
-                json(Json { ignoreUnknownKeys = true })
-            }
-        }
-        every { clientFactory.create() } returns client
+        val clientFactory = HttpClientFactoryImpl(mockEngine)
         service = ImageNetworkServiceImpl(authRepository, clientFactory)
     }
 

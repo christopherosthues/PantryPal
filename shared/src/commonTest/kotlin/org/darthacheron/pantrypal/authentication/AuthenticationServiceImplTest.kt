@@ -1,68 +1,72 @@
 package org.darthacheron.pantrypal.authentication
 
-import io.ktor.client.HttpClient
-import io.ktor.client.engine.mock.MockEngine
-import io.ktor.client.engine.mock.respond
-import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.http.*
-import io.ktor.serialization.kotlinx.json.json
-import kotlinx.coroutines.test.runTest
-import kotlinx.serialization.json.Json
-import org.darthacheron.pantrypal.utils.HttpClientFactory
-import dev.mokkery.mock
+import dev.mokkery.answering.returns
 import dev.mokkery.every
 import dev.mokkery.everySuspend
-import dev.mokkery.verifySuspend
-import dev.mokkery.answering.returns
 import dev.mokkery.matcher.any
+import dev.mokkery.mock
+import dev.mokkery.verifySuspend
+import io.ktor.client.engine.mock.MockEngine
+import io.ktor.client.engine.mock.respond
 import io.ktor.client.network.sockets.ConnectTimeoutException
-import kotlin.test.*
+import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpMethod
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.headersOf
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.json.Json
+import org.darthacheron.pantrypal.core.auth.RegistrationResponse
+import org.darthacheron.pantrypal.core.auth.TokenResponse
+import org.darthacheron.pantrypal.core.auth.UserResponse
+import org.darthacheron.pantrypal.utils.HttpClientFactoryImpl
+import kotlin.test.BeforeTest
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
 @OptIn(ExperimentalUuidApi::class)
 class AuthenticationServiceImplTest {
 
     private lateinit var authRepository: AuthenticationPreferencesRepository
-    private lateinit var clientFactory: HttpClientFactory
     private lateinit var service: AuthenticationServiceImpl
 
     @BeforeTest
     fun setup() {
-        authRepository = mock<AuthenticationPreferencesRepository>()
-        clientFactory = mock<HttpClientFactory>()
+        authRepository = mock<AuthenticationPreferencesRepository> {
+            everySuspend { logoutRemotely() } returns Unit
+            everySuspend { logout() } returns Unit
+        }
+    }
+
+    private val testJson = Json {
+        ignoreUnknownKeys = true
+        prettyPrint = true
+        isLenient = true
     }
 
     private fun setupService(mockEngine: MockEngine) {
-        val client = HttpClient(mockEngine) {
-            install(ContentNegotiation) {
-                json(Json { ignoreUnknownKeys = true })
-            }
-        }
-        every { clientFactory.create() } returns client
+        val clientFactory = HttpClientFactoryImpl(mockEngine)
         service = AuthenticationServiceImpl(authRepository, clientFactory)
     }
 
     @Test
     fun testLoginRemotely_Success() = runTest {
+        val loginResponse = org.darthacheron.pantrypal.core.auth.LoginResponse(
+            tokenResponse = TokenResponse("access123", "refresh123", 3600, 7200, "Bearer"),
+            user = UserResponse(Uuid.random().toString(), "testuser", "test@example.com")
+        )
+        val responseJson = testJson.encodeToString(loginResponse)
+        
         val mockEngine = MockEngine { request ->
             assertEquals("/api/v1/login", request.url.encodedPath)
             assertEquals(HttpMethod.Post, request.method)
             respond(
-                content = """
-                    {
-                        "tokenResponse": {
-                            "accessToken": "access123",
-                            "refreshToken": "refresh123",
-                            "expiresIn": 3600,
-                            "refreshExpiresIn": 7200
-                        },
-                        "userResponse": {
-                            "id": "user-uuid",
-                            "username": "testuser",
-                            "email": "test@example.com"
-                        }
-                    }
-                """.trimIndent(),
+                content = responseJson,
                 status = HttpStatusCode.OK,
                 headers = headersOf(HttpHeaders.ContentType, "application/json")
             )
@@ -73,7 +77,7 @@ class AuthenticationServiceImplTest {
 
         val result = service.loginRemotely("testuser", "password", "http://localhost")
         
-        assertTrue(result.isSuccess)
+        assertTrue(result.isSuccess, "Expected success but got ${result.exceptionOrNull()}")
         assertNotNull(result.getOrNull())
         verifySuspend { authRepository.loginRemotely("access123", "refresh123", 3600, 7200, "http://localhost", any()) }
     }
@@ -129,24 +133,16 @@ class AuthenticationServiceImplTest {
 
     @Test
     fun testRegisterUser_Success() = runTest {
+        val registrationResponse = RegistrationResponse(
+            tokenResponse = TokenResponse("access123", "refresh123", 3600, 7200, "Bearer"),
+            user = UserResponse(Uuid.random().toString(), "newuser", "new@example.com")
+        )
+        val responseJson = testJson.encodeToString(registrationResponse)
+        
         val mockEngine = MockEngine { request ->
             assertEquals("/api/v1/register", request.url.encodedPath)
             respond(
-                content = """
-                    {
-                        "tokenResponse": {
-                            "accessToken": "access123",
-                            "refreshToken": "refresh123",
-                            "expiresIn": 3600,
-                            "refreshExpiresIn": 7200
-                        },
-                        "userResponse": {
-                            "id": "new-user-uuid",
-                            "username": "newuser",
-                            "email": "new@example.com"
-                        }
-                    }
-                """.trimIndent(),
+                content = responseJson,
                 status = HttpStatusCode.Created,
                 headers = headersOf(HttpHeaders.ContentType, "application/json")
             )
@@ -157,7 +153,7 @@ class AuthenticationServiceImplTest {
 
         val result = service.registerUser("newuser", "new@example.com", "password", "http://localhost")
         
-        assertTrue(result.isSuccess)
+        assertTrue(result.isSuccess, "Expected success but got ${result.exceptionOrNull()}")
         assertNotNull(result.getOrNull())
         verifySuspend { authRepository.loginRemotely("access123", "refresh123", 3600, 7200, "http://localhost", any()) }
     }
@@ -190,7 +186,7 @@ class AuthenticationServiceImplTest {
         }
         setupService(mockEngine)
 
-        every { authRepository.authenticationPreferencesFlow } returns kotlinx.coroutines.flow.flowOf(
+        every { authRepository.authenticationPreferencesFlow } returns flowOf(
             AuthenticationPreferences("access123", "refresh123", 3600, 7200, "profile-id")
         )
 
@@ -207,7 +203,7 @@ class AuthenticationServiceImplTest {
         }
         setupService(mockEngine)
 
-        every { authRepository.authenticationPreferencesFlow } returns kotlinx.coroutines.flow.flowOf(
+        every { authRepository.authenticationPreferencesFlow } returns flowOf(
             AuthenticationPreferences("access123", "refresh123", 3600, 7200, "profile-id")
         )
 
@@ -219,31 +215,27 @@ class AuthenticationServiceImplTest {
 
     @Test
     fun testRefreshToken_Success() = runTest {
+        val tokenResponse = TokenResponse("newAccess", "newRefresh", 3600, 7200, "Bearer")
+        val responseJson = testJson.encodeToString(tokenResponse)
+        
         val mockEngine = MockEngine { request ->
             assertEquals("/api/v1/refresh", request.url.encodedPath)
             respond(
-                content = """
-                    {
-                        "accessToken": "newAccess",
-                        "refreshToken": "newRefresh",
-                        "expiresIn": 3600,
-                        "refreshExpiresIn": 7200
-                    }
-                """.trimIndent(),
+                content = responseJson,
                 status = HttpStatusCode.OK,
                 headers = headersOf(HttpHeaders.ContentType, "application/json")
             )
         }
         setupService(mockEngine)
 
-        every { authRepository.authenticationPreferencesFlow } returns kotlinx.coroutines.flow.flowOf(
+        every { authRepository.authenticationPreferencesFlow } returns flowOf(
             AuthenticationPreferences("oldAccess", "oldRefresh", 3600, 7200, "profile-id")
         )
         everySuspend { authRepository.updateAccessToken(any(), any(), any(), any(), any()) } returns Unit
 
         val result = service.refreshToken("http://localhost")
 
-        assertTrue(result.isSuccess)
+        assertTrue(result.isSuccess, "Expected success but got ${result.exceptionOrNull()}")
         assertTrue(result.getOrDefault(false))
         verifySuspend { authRepository.updateAccessToken("newAccess", "newRefresh", 3600, 7200, any()) }
     }
@@ -255,7 +247,7 @@ class AuthenticationServiceImplTest {
         }
         setupService(mockEngine)
 
-        every { authRepository.authenticationPreferencesFlow } returns kotlinx.coroutines.flow.flowOf(
+        every { authRepository.authenticationPreferencesFlow } returns flowOf(
             AuthenticationPreferences("oldAccess", "oldRefresh", 3600, 7200, "profile-id")
         )
         everySuspend { authRepository.logoutRemotely() } returns Unit

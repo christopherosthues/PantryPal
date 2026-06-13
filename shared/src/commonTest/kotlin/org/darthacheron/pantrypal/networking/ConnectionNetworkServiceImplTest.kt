@@ -1,29 +1,25 @@
 package org.darthacheron.pantrypal.networking
 
-import dev.mokkery.answering.returns
-import dev.mokkery.every
-import dev.mokkery.mock
-import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
-import io.ktor.http.*
+import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.test.runTest
-import org.darthacheron.pantrypal.utils.HttpClientFactory
-import kotlin.test.*
+import org.darthacheron.pantrypal.utils.HttpClientFactoryImpl
+import kotlin.test.BeforeTest
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class ConnectionNetworkServiceImplTest {
 
-    private lateinit var clientFactory: HttpClientFactory
     private lateinit var service: ConnectionNetworkServiceImpl
 
     @BeforeTest
     fun setup() {
-        clientFactory = mock<HttpClientFactory>()
     }
 
     private fun setupService(mockEngine: MockEngine) {
-        val client = HttpClient(mockEngine)
-        every { clientFactory.create() } returns client
+        val clientFactory = HttpClientFactoryImpl(mockEngine)
         service = ConnectionNetworkServiceImpl(clientFactory)
     }
 
