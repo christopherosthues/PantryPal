@@ -9,6 +9,7 @@ import dev.mokkery.verify
 import dev.mokkery.verifySuspend
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.*
 import org.darthacheron.pantrypal.navigation.Navigator
@@ -16,6 +17,7 @@ import org.darthacheron.pantrypal.profile.Profile
 import org.darthacheron.pantrypal.profile.ProfileRepository
 import pantrypal.shared.generated.resources.*
 import kotlin.time.Clock
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.test.*
 import kotlin.uuid.ExperimentalUuidApi
 
@@ -73,6 +75,23 @@ class RegistrationViewModelTest {
 
         viewModel.onEmailChanged("invalid-email")
         assertEquals(Res.string.registration_error_invalid_email, viewModel.registrationState.value.data?.emailError)
+    }
+
+    @Test
+    fun testOnEmailChanged_Exists() = runTest {
+        every { profileRepository.getProfileByEmail("existing@example.com") } returns flowOf(
+            Profile(
+                username = "other",
+                email = "existing@example.com",
+                createdAt = Clock.System.now(),
+                lastModifiedAt = Clock.System.now()
+            )
+        )
+
+        viewModel.onEmailChanged("existing@example.com")
+        // Wait for validation job
+        delay(400.milliseconds)
+        assertEquals(Res.string.registration_error_email_exists, viewModel.registrationState.value.data?.emailError)
     }
 
     @Test

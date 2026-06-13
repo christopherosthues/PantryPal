@@ -15,6 +15,7 @@ import dev.mokkery.everySuspend
 import dev.mokkery.verifySuspend
 import dev.mokkery.answering.returns
 import dev.mokkery.matcher.any
+import io.ktor.client.network.sockets.ConnectTimeoutException
 import kotlin.test.*
 import kotlin.uuid.ExperimentalUuidApi
 
@@ -96,6 +97,37 @@ class AuthenticationServiceImplTest {
     }
 
     @Test
+    fun testLoginRemotely_ProfileNotFound() = runTest {
+        val mockEngine = MockEngine { _ ->
+            respond(
+                content = """{"detail": "Profile not found"}""",
+                status = HttpStatusCode.NotFound,
+                headers = headersOf(HttpHeaders.ContentType, "application/json")
+            )
+        }
+        setupService(mockEngine)
+
+        val result = service.loginRemotely("testuser", "password", "http://localhost")
+
+        assertTrue(result.isFailure)
+        assertTrue(result.exceptionOrNull() is ProfileNotFoundException)
+        assertEquals("Profile not found", result.exceptionOrNull()?.message)
+    }
+
+    @Test
+    fun testLoginRemotely_ServerUnreachable() = runTest {
+        val mockEngine = MockEngine { _ ->
+            throw ConnectTimeoutException("Timeout")
+        }
+        setupService(mockEngine)
+
+        val result = service.loginRemotely("testuser", "password", "http://localhost")
+
+        assertTrue(result.isFailure)
+        assertTrue(result.exceptionOrNull() is ServerUnreachableException)
+    }
+
+    @Test
     fun testRegisterUser_Success() = runTest {
         val mockEngine = MockEngine { request ->
             assertEquals("/api/v1/register", request.url.encodedPath)
@@ -131,6 +163,24 @@ class AuthenticationServiceImplTest {
     }
 
     @Test
+    fun testRegisterUser_UserAlreadyExists() = runTest {
+        val mockEngine = MockEngine { _ ->
+            respond(
+                content = """{"detail": "User already exists"}""",
+                status = HttpStatusCode.Conflict,
+                headers = headersOf(HttpHeaders.ContentType, "application/json")
+            )
+        }
+        setupService(mockEngine)
+
+        val result = service.registerUser("newuser", "new@example.com", "password", "http://localhost")
+
+        assertTrue(result.isFailure)
+        assertTrue(result.exceptionOrNull() is UserAlreadyExistsException)
+        assertEquals("User already exists", result.exceptionOrNull()?.message)
+    }
+
+    @Test
     fun testUpdateUser_Success() = runTest {
         val mockEngine = MockEngine { request ->
             assertEquals("/api/v1/profile", request.url.encodedPath)
@@ -148,5 +198,72 @@ class AuthenticationServiceImplTest {
         
         assertTrue(result.isSuccess)
         assertTrue(result.getOrDefault(false))
+    }
+
+    @Test
+    fun testUpdateUser_Conflict() = runTest {
+        val mockEngine = MockEngine { _ ->
+            respond(content = "", status = HttpStatusCode.Conflict)
+        }
+        setupService(mockEngine)
+
+        every { authRepository.authenticationPreferencesFlow } returns kotlinx.coroutines.flow.flowOf(
+            AuthenticationPreferences("access123", "refresh123", 3600, 7200, "profile-id")
+        )
+
+        val result = service.updateUser("http://localhost", "existingname", null, null, "current")
+
+        assertTrue(result.isFailure)
+        assertTrue(result.exceptionOrNull() is UserAlreadyExistsException)
+    }
+
+    @Test
+    fun testRefreshToken_Success() = runTest {
+        val mockEngine = MockEngine { request ->
+            assertEquals("/api/v1/refresh", request.url.encodedPath)
+            respond(
+                content = """
+                    {
+                        "accessToken": "newAccess",
+                        "refreshToken": "newRefresh",
+                        "expiresIn": 3600,
+                        "refreshExpiresIn": 7200
+                    }
+                """.trimIndent(),
+                status = HttpStatusCode.OK,
+                headers = headersOf(HttpHeaders.ContentType, "application/json")
+            )
+        }
+        setupService(mockEngine)
+
+        every { authRepository.authenticationPreferencesFlow } returns kotlinx.coroutines.flow.flowOf(
+            AuthenticationPreferences("oldAccess", "oldRefresh", 3600, 7200, "profile-id")
+        )
+        everySuspend { authRepository.updateAccessToken(any(), any(), any(), any(), any()) } returns Unit
+
+        val result = service.refreshToken("http://localhost")
+
+        assertTrue(result.isSuccess)
+        assertTrue(result.getOrDefault(false))
+        verifySuspend { authRepository.updateAccessToken("newAccess", "newRefresh", 3600, 7200, any()) }
+    }
+
+    @Test
+    fun testRefreshToken_Unauthorized() = runTest {
+        val mockEngine = MockEngine { _ ->
+            respond(content = "", status = HttpStatusCode.Unauthorized)
+        }
+        setupService(mockEngine)
+
+        every { authRepository.authenticationPreferencesFlow } returns kotlinx.coroutines.flow.flowOf(
+            AuthenticationPreferences("oldAccess", "oldRefresh", 3600, 7200, "profile-id")
+        )
+        everySuspend { authRepository.logoutRemotely() } returns Unit
+
+        val result = service.refreshToken("http://localhost")
+
+        assertTrue(result.isSuccess)
+        assertFalse(result.getOrDefault(true))
+        verifySuspend { authRepository.logoutRemotely() }
     }
 }
