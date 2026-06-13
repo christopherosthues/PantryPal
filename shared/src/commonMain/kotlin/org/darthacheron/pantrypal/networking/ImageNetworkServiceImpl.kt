@@ -32,7 +32,7 @@ class ImageNetworkServiceImpl(
 
         return runCatching {
             clientFactory.create().use { httpClient ->
-                httpClient.post("$serverUrl/api/food/$foodId/images") {
+                httpClient.post("$serverUrl/api/v1/food/$foodId/images") {
                     header(HttpHeaders.Authorization, "Bearer $token")
                     parameter("isPrimary", isPrimary)
                     setBody(imageData)
@@ -52,7 +52,7 @@ class ImageNetworkServiceImpl(
 
         return runCatching {
             clientFactory.create().use { httpClient ->
-                httpClient.post("$serverUrl/api/inventory/$inventoryItemId/images") {
+                httpClient.post("$serverUrl/api/v1/inventory/$inventoryItemId/images") {
                     header(HttpHeaders.Authorization, "Bearer $token")
                     parameter("isPrimary", isPrimary)
                     setBody(imageData)
@@ -67,7 +67,7 @@ class ImageNetworkServiceImpl(
 
         return runCatching {
             clientFactory.create().use { httpClient ->
-                val response = httpClient.delete("$serverUrl/api/food/$foodId/images/$imageId") {
+                val response = httpClient.delete("$serverUrl/api/v1/food/$foodId/images/$imageId") {
                     header(HttpHeaders.Authorization, "Bearer $token")
                 }
                 response.status == HttpStatusCode.NoContent
@@ -85,7 +85,7 @@ class ImageNetworkServiceImpl(
 
         return runCatching {
             clientFactory.create().use { httpClient ->
-                val response = httpClient.delete("$serverUrl/api/inventory/$inventoryItemId/images/$imageId") {
+                val response = httpClient.delete("$serverUrl/api/v1/inventory/$inventoryItemId/images/$imageId") {
                     header(HttpHeaders.Authorization, "Bearer $token")
                 }
                 response.status == HttpStatusCode.NoContent

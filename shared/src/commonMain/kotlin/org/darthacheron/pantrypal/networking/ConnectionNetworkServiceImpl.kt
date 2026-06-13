@@ -10,7 +10,7 @@ class ConnectionNetworkServiceImpl(private val clientFactory: HttpClientFactory)
     override suspend fun testConnection(serverUrl: String): Result<String> {
         return try {
             clientFactory.create().use { httpClient ->
-                val response = httpClient.get("$serverUrl/api/connection/test") {
+                val response = httpClient.get("$serverUrl/api/v1/connection/test") {
                     header(NetworkingConstants.APP_TOKEN_HEADER, NetworkingConstants.APP_TOKEN)
                     // Required for server CSRF/CORS validation
                     header("X-CSRF-Token", "PantryPal")
