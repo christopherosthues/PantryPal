@@ -21,6 +21,7 @@ import org.darthacheron.pantrypal.navigation.FoodNavRoute
 import org.darthacheron.pantrypal.navigation.Navigator
 import pantrypal.shared.generated.resources.Res
 import pantrypal.shared.generated.resources.food_detail_delete_error
+import pantrypal.shared.generated.resources.food_detail_error_loading
 import pantrypal.shared.generated.resources.food_detail_error_saving
 import kotlin.test.*
 import kotlin.time.Clock
@@ -62,9 +63,9 @@ class FoodDetailViewModelTest {
         val viewModel = FoodDetailViewModel(route, repository, authRepository, navigator)
 
         viewModel.uiState.test {
-            val item = awaitItem()
-            assertEquals("Apple", item.data?.name)
-            assertEquals(profileId, item.data?.profileId)
+            val itemState = awaitItem()
+            assertEquals("Apple", itemState.data?.name)
+            assertEquals(profileId, itemState.data?.profileId)
             assertFalse(viewModel.isAdding)
         }
     }
@@ -78,8 +79,8 @@ class FoodDetailViewModelTest {
         val viewModel = FoodDetailViewModel(route, repository, authRepository, navigator)
 
         viewModel.uiState.test {
-            val item = awaitItem()
-            assertTrue(item.hasError)
+            val itemState = awaitItem()
+            assertTrue(itemState.hasError)
         }
     }
 
@@ -92,8 +93,9 @@ class FoodDetailViewModelTest {
         val viewModel = FoodDetailViewModel(route, repository, authRepository, navigator)
 
         viewModel.uiState.test {
-            val item = awaitItem()
-            assertTrue(item.hasError)
+            val itemState = awaitItem()
+            assertTrue(itemState.hasError)
+            assertEquals(Res.string.food_detail_error_loading, itemState.error)
         }
     }
 
@@ -103,10 +105,10 @@ class FoodDetailViewModelTest {
         val viewModel = FoodDetailViewModel(route, repository, authRepository, navigator)
 
         viewModel.uiState.test {
-            val item = awaitItem()
-            assertTrue(item.hasData)
-            assertEquals("", item.data?.name)
-            assertEquals(profileId, item.data?.profileId)
+            val itemState = awaitItem()
+            assertTrue(itemState.hasData)
+            assertEquals("", itemState.data?.name)
+            assertEquals(profileId, itemState.data?.profileId)
             assertTrue(viewModel.isAdding)
         }
     }
@@ -118,8 +120,8 @@ class FoodDetailViewModelTest {
         val viewModel = FoodDetailViewModel(route, repository, authRepository, navigator)
 
         viewModel.uiState.test {
-            val item = awaitItem()
-            assertTrue(item.hasError)
+            val itemState = awaitItem()
+            assertTrue(itemState.hasError)
         }
     }
 
@@ -171,9 +173,9 @@ class FoodDetailViewModelTest {
         viewModel.save()
 
         viewModel.uiState.test {
-            val item = awaitItem()
-            assertTrue(item.hasError)
-            assertEquals(Res.string.food_detail_error_saving, item.error)
+            val itemState = awaitItem()
+            assertTrue(itemState.hasError)
+            assertEquals(Res.string.food_detail_error_saving, itemState.error)
         }
     }
 
@@ -205,6 +207,7 @@ class FoodDetailViewModelTest {
 
         assertEquals(Res.string.food_detail_delete_error, viewModel.snackbarMessage.value)
         assertTrue(viewModel.uiState.value.hasError)
+        assertEquals(Res.string.food_detail_delete_error, viewModel.uiState.value.error)
     }
 
     @Test

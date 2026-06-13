@@ -18,6 +18,7 @@ import org.darthacheron.pantrypal.authentication.AuthenticationPreferences
 import org.darthacheron.pantrypal.authentication.AuthenticationPreferencesRepository
 import org.darthacheron.pantrypal.food.FoodRepository
 import org.darthacheron.pantrypal.navigation.Navigator
+import pantrypal.shared.generated.resources.*
 import kotlin.test.*
 import kotlin.time.Clock
 import kotlin.uuid.ExperimentalUuidApi
@@ -104,6 +105,7 @@ class InventoryListViewModelTest {
                 item = awaitItem()
             }
             assertTrue(item.hasError)
+            assertEquals(Res.string.inventory_list_error_loading, item.error)
         }
     }
 
@@ -112,7 +114,13 @@ class InventoryListViewModelTest {
         val item = createInventoryItem("Apple", profileId)
         everySuspend { repository.delete(item.id) } returns Unit
 
-        viewModel.deleteItem(item)
+        viewModel.messages.test {
+            assertEquals(null, awaitItem())
+            viewModel.deleteItem(item)
+            val msg = awaitItem()
+            assertNotNull(msg)
+            assertEquals(Res.string.inventory_list_card_delete_success, msg.messageResource)
+        }
 
         verifySuspend { repository.delete(item.id) }
     }
@@ -122,7 +130,13 @@ class InventoryListViewModelTest {
         val item = createInventoryItem("Apple", profileId)
         everySuspend { repository.delete(item.id) } throws RuntimeException("Delete error")
 
-        viewModel.deleteItem(item)
+        viewModel.messages.test {
+            assertEquals(null, awaitItem())
+            viewModel.deleteItem(item)
+            val msg = awaitItem()
+            assertNotNull(msg)
+            assertEquals(Res.string.inventory_list_card_delete_error, msg.messageResource)
+        }
 
         verifySuspend { repository.delete(item.id) }
     }
@@ -133,7 +147,13 @@ class InventoryListViewModelTest {
         everySuspend { foodRepository.upsert(any()) } returns Unit
         every { navigator.goToFoodDetail(any()) } returns Unit
 
-        viewModel.addToFoodList(item)
+        viewModel.messages.test {
+            assertEquals(null, awaitItem())
+            viewModel.addToFoodList(item)
+            val msg = awaitItem()
+            assertNotNull(msg)
+            assertEquals(Res.string.inventory_list_card_add_to_food_success, msg.messageResource)
+        }
 
         verifySuspend { foodRepository.upsert(any()) }
         verify { navigator.goToFoodDetail(any()) }
@@ -144,7 +164,13 @@ class InventoryListViewModelTest {
         val item = createInventoryItem("Apple", profileId)
         everySuspend { foodRepository.upsert(any()) } throws RuntimeException("Food error")
 
-        viewModel.addToFoodList(item)
+        viewModel.messages.test {
+            assertEquals(null, awaitItem())
+            viewModel.addToFoodList(item)
+            val msg = awaitItem()
+            assertNotNull(msg)
+            assertEquals(Res.string.inventory_list_card_add_to_food_error, msg.messageResource)
+        }
 
         verifySuspend { foodRepository.upsert(any()) }
     }

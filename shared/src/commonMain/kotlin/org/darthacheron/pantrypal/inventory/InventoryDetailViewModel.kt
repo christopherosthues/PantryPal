@@ -14,6 +14,7 @@ import org.darthacheron.pantrypal.navigation.InventoryNavRoute
 import org.darthacheron.pantrypal.navigation.Navigator
 import org.darthacheron.pantrypal.ui.UiState
 import pantrypal.shared.generated.resources.Res
+import pantrypal.shared.generated.resources.food_detail_error_loading
 import pantrypal.shared.generated.resources.inventory_detail_delete_error
 import pantrypal.shared.generated.resources.inventory_detail_delete_success
 import pantrypal.shared.generated.resources.inventory_detail_error_loading
@@ -60,9 +61,16 @@ class InventoryDetailViewModel(
         viewModelScope.launch {
             internalUiState.value = UiState.loading()
             try {
-                val profileId = authenticationPreferencesRepository.authenticationPreferencesFlow.first().localProfileId
-                if (profileId.isNotBlank()) {
-                    item = item.copy(profileId = Uuid.parse(profileId))
+                val preferences = authenticationPreferencesRepository.authenticationPreferencesFlow.first()
+                val currentProfileId = if (preferences.localProfileId.isNotBlank()) {
+                    Uuid.parse(preferences.localProfileId)
+                } else {
+                    null
+                }
+
+                if (currentProfileId == null) {
+                    internalUiState.value = UiState.error(Res.string.inventory_detail_error_loading)
+                    return@launch
                 }
 
                 if (navigationRoute.itemId != null) {
@@ -71,9 +79,15 @@ class InventoryDetailViewModel(
                         item = existingItem
                         originalItem = existingItem
                         updateStringsFrom(existingItem)
+                        internalUiState.value = UiState.success(item)
+                    } else {
+                        Logger.withTag(loggerTag).e { "Error loading inventory item: $id" }
+                        internalUiState.value = UiState.error(Res.string.inventory_detail_error_loading, item)
                     }
+                } else {
+                    item = item.copy(profileId = currentProfileId)
+                    internalUiState.value = UiState.success(item)
                 }
-                internalUiState.value = UiState.success(item)
             } catch (e: Exception) {
                 Logger.withTag(loggerTag).e { "Error loading inventory item: ${e.message}" }
                 internalUiState.value = UiState.error(Res.string.inventory_detail_error_loading)

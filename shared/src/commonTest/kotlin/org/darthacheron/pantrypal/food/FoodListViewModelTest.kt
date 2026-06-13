@@ -19,6 +19,8 @@ import org.darthacheron.pantrypal.authentication.AuthenticationPreferencesReposi
 import org.darthacheron.pantrypal.inventory.InventoryRepository
 import org.darthacheron.pantrypal.navigation.Navigator
 import pantrypal.shared.generated.resources.Res
+import pantrypal.shared.generated.resources.food_list_card_add_to_inventory_error
+import pantrypal.shared.generated.resources.food_list_card_add_to_inventory_success
 import pantrypal.shared.generated.resources.food_list_card_consume_error
 import pantrypal.shared.generated.resources.food_list_card_consume_success
 import pantrypal.shared.generated.resources.food_list_card_copy_error
@@ -75,8 +77,8 @@ class FoodListViewModelTest {
 
     @Test
     fun testSortUpdate() = runTest {
-        viewModel.setSort(FoodSortOrder.Date, FoodSortDirection.Descending)
-        assertEquals(FoodSortOrder.Date, viewModel.sortOrder.value)
+        viewModel.setSort(FoodSortOrder.Name, FoodSortDirection.Descending)
+        assertEquals(FoodSortOrder.Name, viewModel.sortOrder.value)
         assertEquals(FoodSortDirection.Descending, viewModel.sortDirection.value)
     }
 
@@ -169,7 +171,11 @@ class FoodListViewModelTest {
         everySuspend { inventoryRepository.upsert(any()) } returns Unit
         every { navigator.goToInventoryDetail(any()) } returns Unit
 
-        viewModel.addToInventory(food)
+        viewModel.messages.test {
+            assertEquals(null, awaitItem())
+            viewModel.addToInventory(food)
+            assertEquals(Res.string.food_list_card_add_to_inventory_success, awaitItem()?.messageResource)
+        }
 
         verifySuspend { inventoryRepository.upsert(any()) }
         verify { navigator.goToInventoryDetail(any()) }
@@ -252,7 +258,11 @@ class FoodListViewModelTest {
         val food = createFood("Apple", profileId)
         everySuspend { inventoryRepository.upsert(any()) } throws RuntimeException("Inventory error")
 
-        viewModel.addToInventory(food)
+        viewModel.messages.test {
+            assertEquals(null, awaitItem())
+            viewModel.addToInventory(food)
+            assertEquals(Res.string.food_list_card_add_to_inventory_error, awaitItem()?.messageResource)
+        }
         verifySuspend { inventoryRepository.upsert(any()) }
     }
 

@@ -16,12 +16,12 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.*
 import org.darthacheron.pantrypal.authentication.AuthenticationPreferences
 import org.darthacheron.pantrypal.authentication.AuthenticationPreferencesRepository
-import org.darthacheron.pantrypal.food.FoodRepository
 import org.darthacheron.pantrypal.navigation.InventoryNavRoute
 import org.darthacheron.pantrypal.navigation.Navigator
 import pantrypal.shared.generated.resources.Res
-import pantrypal.shared.generated.resources.food_detail_delete_error
-import pantrypal.shared.generated.resources.food_detail_error_saving
+import pantrypal.shared.generated.resources.inventory_detail_delete_error
+import pantrypal.shared.generated.resources.inventory_detail_error_saving
+import pantrypal.shared.generated.resources.inventory_detail_error_loading
 import kotlin.test.*
 import kotlin.time.Clock
 import kotlin.uuid.ExperimentalUuidApi
@@ -62,9 +62,9 @@ class InventoryDetailViewModelTest {
         val viewModel = InventoryDetailViewModel(route, repository, authRepository, navigator)
 
         viewModel.uiState.test {
-            val item = awaitItem()
-            assertEquals("Apple", item.data?.name)
-            assertEquals(profileId, item.data?.profileId)
+            val itemState = awaitItem()
+            assertEquals("Apple", itemState.data?.name)
+            assertEquals(profileId, itemState.data?.profileId)
             assertFalse(viewModel.isAdding)
         }
     }
@@ -78,8 +78,8 @@ class InventoryDetailViewModelTest {
         val viewModel = InventoryDetailViewModel(route, repository, authRepository, navigator)
 
         viewModel.uiState.test {
-            val item = awaitItem()
-            assertTrue(item.hasError)
+            val itemState = awaitItem()
+            assertTrue(itemState.hasError)
         }
     }
 
@@ -92,8 +92,9 @@ class InventoryDetailViewModelTest {
         val viewModel = InventoryDetailViewModel(route, repository, authRepository, navigator)
 
         viewModel.uiState.test {
-            val item = awaitItem()
-            assertTrue(item.hasError)
+            val itemState = awaitItem()
+            assertTrue(itemState.hasError)
+            assertEquals(Res.string.inventory_detail_error_loading, itemState.error)
         }
     }
 
@@ -103,10 +104,10 @@ class InventoryDetailViewModelTest {
         val viewModel = InventoryDetailViewModel(route, repository, authRepository, navigator)
 
         viewModel.uiState.test {
-            val item = awaitItem()
-            assertTrue(item.hasData)
-            assertEquals("", item.data?.name)
-            assertEquals(profileId, item.data?.profileId)
+            val itemState = awaitItem()
+            assertTrue(itemState.hasData)
+            assertEquals("", itemState.data?.name)
+            assertEquals(profileId, itemState.data?.profileId)
             assertTrue(viewModel.isAdding)
         }
     }
@@ -118,8 +119,8 @@ class InventoryDetailViewModelTest {
         val viewModel = InventoryDetailViewModel(route, repository, authRepository, navigator)
 
         viewModel.uiState.test {
-            val item = awaitItem()
-            assertTrue(item.hasError)
+            val itemState = awaitItem()
+            assertTrue(itemState.hasError)
         }
     }
 
@@ -171,9 +172,9 @@ class InventoryDetailViewModelTest {
         viewModel.save()
 
         viewModel.uiState.test {
-            val item = awaitItem()
-            assertTrue(item.hasError)
-            assertEquals(Res.string.food_detail_error_saving, item.error)
+            val itemState = awaitItem()
+            assertTrue(itemState.hasError)
+            assertEquals(Res.string.inventory_detail_error_saving, itemState.error)
         }
     }
 
@@ -203,8 +204,9 @@ class InventoryDetailViewModelTest {
 
         viewModel.delete()
 
-        assertEquals(Res.string.food_detail_delete_error, viewModel.snackbarMessage.value)
+        assertEquals(Res.string.inventory_detail_delete_error, viewModel.snackbarMessage.value)
         assertTrue(viewModel.uiState.value.hasError)
+        assertEquals(Res.string.inventory_detail_delete_error, viewModel.uiState.value.error)
     }
 
     @Test

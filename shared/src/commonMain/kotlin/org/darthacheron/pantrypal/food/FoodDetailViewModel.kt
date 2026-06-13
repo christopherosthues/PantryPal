@@ -82,11 +82,11 @@ class FoodDetailViewModel(
                 }
 
                 if (navigationRoute.foodId != null) {
-                    val loadedFood = foodRepository.getById(id)
-                    if (loadedFood != null) {
-                        item = loadedFood
-                        originalItem = loadedFood.copy()
-                        updateStringsFrom(loadedFood)
+                    val existingItem = foodRepository.getById(id)
+                    if (existingItem != null) {
+                        item = existingItem
+                        originalItem = existingItem
+                        updateStringsFrom(existingItem)
                         internalUiState.value = UiState.success(item)
                     } else {
                         Logger.withTag(foodDetailLoggerTag).e { "Error loading food: $id" }
@@ -142,7 +142,7 @@ class FoodDetailViewModel(
 
             } catch (e: Exception) {
                 Logger.withTag(foodDetailLoggerTag).e { "Error saving food: ${e.message}" }
-                internalUiState.value = UiState.error(internalUiState.value, Res.string.food_detail_error_saving)
+                internalUiState.value = UiState.error(Res.string.food_detail_error_saving, item)
             }
         }
     }
@@ -157,7 +157,7 @@ class FoodDetailViewModel(
                 internalUiState.value = UiState.success(null)
             } catch (e: Exception) {
                 Logger.withTag(foodDetailLoggerTag).e { "Error deleting food: ${e.message}" }
-                internalUiState.value = UiState.error(internalUiState.value, Res.string.food_detail_error_loading)
+                internalUiState.value = UiState.error(Res.string.food_detail_delete_error, item)
                 internalSnackbarMessage.value = Res.string.food_detail_delete_error
             }
         }

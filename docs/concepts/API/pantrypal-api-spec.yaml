@@ -1,0 +1,864 @@
+openapi: 3.1.0
+info:
+  title: PantryPal API
+  description: API for synchronization and management of food items, inventory, and user profiles in the PantryPal ecosystem.
+  version: 1.0.0
+  contact:
+    name: DarthAcheron
+
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+
+paths:
+  # --- Authentication ---
+  /api/auth/register:
+    post:
+      summary: Register a new user
+      tags: [Authentication]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegistrationDto'
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegistrationResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /api/auth/login:
+    post:
+      summary: Authenticate a user
+      tags: [Authentication]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginDto'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/auth/refresh:
+    post:
+      summary: Refresh authentication tokens
+      tags: [Authentication]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenDto'
+      responses:
+        '200':
+          description: Tokens refreshed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # --- Profile ---
+  /api/profile:
+    get:
+      summary: Get current user profile
+      tags: [Profile]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Profile data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileDto'
+    put:
+      summary: Sync profile data
+      tags: [Profile]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProfileDto'
+      responses:
+        '200':
+          description: Profile synced
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileDto'
+    patch:
+      summary: Update specific profile fields
+      tags: [Profile]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserDto'
+      responses:
+        '200':
+          description: Profile updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileDto'
+    delete:
+      summary: Delete user profile
+      tags: [Profile]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: remote
+          in: query
+          schema:
+            type: boolean
+            default: true
+          description: Whether to also delete the account on the authentication server (e.g. Keycloak)
+      responses:
+        '204':
+          description: Profile deleted successfully
+        '410':
+          $ref: '#/components/responses/Gone'
+
+  # --- Food ---
+  /api/food:
+    get:
+      summary: List all food items
+      tags: [Food]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of food items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FoodDto'
+    post:
+      summary: Create a new food item
+      tags: [Food]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FoodDto'
+      responses:
+        '201':
+          description: Food item created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FoodDto'
+    put:
+      summary: Update an existing food item
+      tags: [Food]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FoodDto'
+      responses:
+        '200':
+          description: Food item updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FoodDto'
+
+  /api/food/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      summary: Get food item by ID
+      tags: [Food]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Food item data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FoodDto'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '410':
+          $ref: '#/components/responses/Gone'
+    delete:
+      summary: Delete food item
+      tags: [Food]
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Food item deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/food/batch:
+    post:
+      summary: Batch upload/update food items
+      tags: [Food]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/FoodDto'
+      responses:
+        '200':
+          description: Batch processed successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FoodDto'
+
+  /api/food/sync:
+    get:
+      summary: Synchronize food items since last sync
+      tags: [Food]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: since
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+          description: ISO 8601 timestamp of the last successful sync
+      responses:
+        '200':
+          description: List of changed food items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FoodDto'
+
+  # --- Food Images ---
+  /api/food/{id}/images:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      summary: List all images for a food item
+      tags: [Food, Images]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of image metadata
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ImageDto'
+    post:
+      summary: Upload an image for a food item
+      tags: [Food, Images]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: isPrimary
+          in: query
+          schema:
+            type: boolean
+            default: false
+      requestBody:
+        content:
+          image/jpeg:
+            schema:
+              type: string
+              format: binary
+      responses:
+        '201':
+          description: Image uploaded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImageDto'
+
+  /api/food/{id}/images/{imageId}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: imageId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      summary: Download image binary
+      tags: [Food, Images]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Image binary data
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      summary: Delete an image
+      tags: [Food, Images]
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Image deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # --- Inventory ---
+  /api/inventory:
+    get:
+      summary: List all inventory items
+      tags: [Inventory]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of inventory items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InventoryItemDto'
+    post:
+      summary: Create a new inventory item
+      tags: [Inventory]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventoryItemDto'
+      responses:
+        '201':
+          description: Inventory item created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryItemDto'
+    put:
+      summary: Update an existing inventory item
+      tags: [Inventory]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventoryItemDto'
+      responses:
+        '200':
+          description: Inventory item updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryItemDto'
+
+  /api/inventory/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      summary: Get inventory item by ID
+      tags: [Inventory]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Inventory item data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryItemDto'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      summary: Delete inventory item
+      tags: [Inventory]
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Inventory item deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/inventory/batch:
+    post:
+      summary: Batch upload/update inventory items
+      tags: [Inventory]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/InventoryItemDto'
+      responses:
+        '200':
+          description: Batch processed successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InventoryItemDto'
+
+  /api/inventory/sync:
+    get:
+      summary: Synchronize inventory items since last sync
+      tags: [Inventory]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: since
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: List of changed inventory items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InventoryItemDto'
+
+  # --- Inventory Images ---
+  /api/inventory/{id}/images:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      summary: List all images for an inventory item
+      tags: [Inventory, Images]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of image metadata
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ImageDto'
+    post:
+      summary: Upload an image for an inventory item
+      tags: [Inventory, Images]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: isPrimary
+          in: query
+          schema:
+            type: boolean
+            default: false
+      requestBody:
+        content:
+          image/jpeg:
+            schema:
+              type: string
+              format: binary
+      responses:
+        '201':
+          description: Image uploaded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImageDto'
+
+  /api/inventory/{id}/images/{imageId}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: imageId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      summary: Download image binary
+      tags: [Inventory, Images]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Image binary data
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      summary: Delete an image
+      tags: [Inventory, Images]
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Image deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # --- Receipts ---
+  /api/receipts:
+    get:
+      summary: List all receipts
+      tags: [Receipts]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of receipts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ReceiptDto'
+    post:
+      summary: Upload a receipt image
+      tags: [Receipts]
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          image/jpeg:
+            schema:
+              type: string
+              format: binary
+      responses:
+        '201':
+          description: Receipt uploaded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReceiptDto'
+
+  /api/receipts/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      summary: Download receipt image binary
+      tags: [Receipts]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Receipt image binary data
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+    delete:
+      summary: Delete a receipt
+      tags: [Receipts]
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Receipt deleted
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  responses:
+    BadRequest:
+      description: Invalid request parameters or body
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    Unauthorized:
+      description: Authentication failed or token missing/invalid
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    Forbidden:
+      description: User does not have permission to access the resource
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    NotFound:
+      description: The requested resource was not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    Gone:
+      description: The requested resource has been deleted
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    Conflict:
+      description: Resource state conflict
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+
+  schemas:
+    # --- Authentication ---
+    RegistrationDto:
+      type: object
+      required: [username, email, password]
+      properties:
+        username: { type: string }
+        email: { type: string, format: email }
+        password: { type: string, format: password }
+
+    RegistrationResponse:
+      type: object
+      properties:
+        tokens: { $ref: '#/components/schemas/TokenResponse' }
+        user: { $ref: '#/components/schemas/UserResponse' }
+
+    LoginDto:
+      type: object
+      required: [username, password]
+      properties:
+        username: { type: string }
+        password: { type: string, format: password }
+
+    LoginResponse:
+      type: object
+      properties:
+        tokens: { $ref: '#/components/schemas/TokenResponse' }
+        user: { $ref: '#/components/schemas/UserResponse' }
+
+    RefreshTokenDto:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken: { type: string }
+
+    TokenResponse:
+      type: object
+      properties:
+        accessToken: { type: string }
+        refreshToken: { type: string }
+        expiresIn: { type: integer }
+        refreshExpiresIn: { type: integer }
+
+    UserResponse:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        username: { type: string }
+        email: { type: string, format: email }
+
+    # --- Profile ---
+    ProfileDto:
+      type: object
+      required: [clientId, username, email, createdAt, lastModifiedAt, lastSyncedAt]
+      properties:
+        serverId: { type: string, format: uuid, nullable: true }
+        clientId: { type: string, format: uuid }
+        username: { type: string }
+        email: { type: string, format: email }
+        createdAt: { type: string, format: date-time }
+        lastModifiedAt: { type: string, format: date-time }
+        lastSyncedAt: { type: string, format: date-time }
+        deletedAt: { type: string, format: date-time, nullable: true }
+
+    UpdateUserDto:
+      type: object
+      properties:
+        username: { type: string }
+        email: { type: string, format: email }
+        password: { type: string, format: password }
+
+    # --- Food & Inventory ---
+    FoodDto:
+      type: object
+      required: [clientId, name, isUseBy, createdAt, lastModifiedAt]
+      properties:
+        serverId: { type: string, format: uuid, nullable: true }
+        profileId: { type: string, format: uuid, nullable: true }
+        clientId: { type: string, format: uuid }
+        name: { type: string }
+        kiloCalories: { type: integer, nullable: true }
+        kiloJoule: { type: integer, nullable: true }
+        fatInGrams: { type: number, format: float, nullable: true }
+        saturatedFattyAcidsInGrams: { type: number, format: float, nullable: true }
+        carbsInGrams: { type: number, format: float, nullable: true }
+        sugarInGrams: { type: number, format: float, nullable: true }
+        dietaryFiberInGrams: { type: number, format: float, nullable: true }
+        proteinInGrams: { type: number, format: float, nullable: true }
+        saltInGrams: { type: number, format: float, nullable: true }
+        fillingQuantity: { type: number, format: float, nullable: true }
+        isLiquid: { type: boolean, default: false }
+        bestBeforeUsedByDate: { type: string, format: date, nullable: true }
+        isUseBy: { type: boolean }
+        openedAt: { type: string, format: date, nullable: true }
+        primaryImage: { $ref: '#/components/schemas/ImageDto', nullable: true }
+        additionalImages:
+          type: array
+          items: { $ref: '#/components/schemas/ImageDto' }
+        createdAt: { type: string, format: date-time }
+        lastModifiedAt: { type: string, format: date-time }
+        deletedAt: { type: string, format: date-time, nullable: true }
+        # Planned for FR-1.7
+        purchasePrice: { type: number, format: float, nullable: true }
+
+    InventoryItemDto:
+      type: object
+      required: [clientId, name, createdAt, lastModifiedAt]
+      properties:
+        serverId: { type: string, format: uuid, nullable: true }
+        profileId: { type: string, format: uuid, nullable: true }
+        clientId: { type: string, format: uuid }
+        name: { type: string }
+        kiloCalories: { type: integer, nullable: true }
+        kiloJoule: { type: integer, nullable: true }
+        fatInGrams: { type: number, format: float, nullable: true }
+        saturatedFattyAcidsInGrams: { type: number, format: float, nullable: true }
+        carbsInGrams: { type: number, format: float, nullable: true }
+        sugarInGrams: { type: number, format: float, nullable: true }
+        dietaryFiberInGrams: { type: number, format: float, nullable: true }
+        proteinInGrams: { type: number, format: float, nullable: true }
+        saltInGrams: { type: number, format: float, nullable: true }
+        fillingQuantity: { type: number, format: float, nullable: true }
+        isLiquid: { type: boolean, default: false }
+        primaryImage: { $ref: '#/components/schemas/ImageDto', nullable: true }
+        additionalImages:
+          type: array
+          items: { $ref: '#/components/schemas/ImageDto' }
+        createdAt: { type: string, format: date-time }
+        lastModifiedAt: { type: string, format: date-time }
+        deletedAt: { type: string, format: date-time, nullable: true }
+        # Planned for FR-1.7 & FR-2.4
+        purchasePrice: { type: number, format: float, nullable: true }
+        linkedReceiptId: { type: string, format: uuid, nullable: true }
+
+    ImageDto:
+      type: object
+      required: [clientId, fileName, createdAt]
+      properties:
+        serverId: { type: string, format: uuid, nullable: true }
+        clientId: { type: string, format: uuid }
+        fileName: { type: string }
+        isPrimary: { type: boolean, default: false }
+        createdAt: { type: string, format: date-time }
+        deletedAt: { type: string, format: date-time, nullable: true }
+
+    ReceiptDto:
+      type: object
+      required: [serverId, fileName, createdAt]
+      properties:
+        serverId: { type: string, format: uuid }
+        fileName: { type: string }
+        totalAmount: { type: number, format: float, nullable: true }
+        date: { type: string, format: date, nullable: true }
+        createdAt: { type: string, format: date-time }
+        deletedAt: { type: string, format: date-time, nullable: true }
+
+    # --- Error Handling ---
+    ProblemDetails:
+      type: object
+      properties:
+        type: { type: string, format: uri, description: "A URI reference [RFC3986] that identifies the problem type." }
+        title: { type: string, description: "A short, human-readable summary of the problem type." }
+        status: { type: integer, description: "The HTTP status code [RFC7231, Section 6] generated by the origin server for this occurrence of the problem." }
+        detail: { type: string, description: "A human-readable explanation specific to this occurrence of the problem." }
+        instance: { type: string, format: uri, description: "A URI reference that identifies the specific occurrence of the problem." }
