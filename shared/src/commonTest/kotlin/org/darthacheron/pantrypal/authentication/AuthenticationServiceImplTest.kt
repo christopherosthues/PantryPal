@@ -35,11 +35,11 @@ class AuthenticationServiceImplTest {
     private lateinit var authRepository: AuthenticationPreferencesRepository
     private lateinit var service: AuthenticationServiceImpl
 
-    @BeforeTest
+        @BeforeTest
     fun setup() {
         authRepository = mock<AuthenticationPreferencesRepository> {
-            everySuspend { logoutRemotely() } returns Unit
-            everySuspend { logout() } returns Unit
+            everySuspend { logoutRemotely() } returns Result.success(Unit)
+            everySuspend { logout() } returns Result.success(Unit)
         }
     }
 
@@ -73,7 +73,7 @@ class AuthenticationServiceImplTest {
         }
         setupService(mockEngine)
         
-        everySuspend { authRepository.loginRemotely(any(), any(), any(), any(), any(), any()) } returns Unit
+        everySuspend { authRepository.loginRemotely(any(), any(), any(), any(), any(), any()) } returns Result.success(Unit)
 
         val result = service.loginRemotely("testuser", "password", "http://localhost")
         
@@ -149,7 +149,7 @@ class AuthenticationServiceImplTest {
         }
         setupService(mockEngine)
 
-        everySuspend { authRepository.loginRemotely(any(), any(), any(), any(), any(), any()) } returns Unit
+        everySuspend { authRepository.loginRemotely(any(), any(), any(), any(), any(), any()) } returns Result.success(Unit)
 
         val result = service.registerUser("newuser", "new@example.com", "password", "http://localhost")
         
@@ -231,7 +231,7 @@ class AuthenticationServiceImplTest {
         every { authRepository.authenticationPreferencesFlow } returns flowOf(
             AuthenticationPreferences("oldAccess", "oldRefresh", 3600, 7200, "profile-id")
         )
-        everySuspend { authRepository.updateAccessToken(any(), any(), any(), any(), any()) } returns Unit
+        everySuspend { authRepository.updateAccessToken(any(), any(), any(), any(), any()) } returns Result.success(Unit)
 
         val result = service.refreshToken("http://localhost")
 
@@ -250,7 +250,7 @@ class AuthenticationServiceImplTest {
         every { authRepository.authenticationPreferencesFlow } returns flowOf(
             AuthenticationPreferences("oldAccess", "oldRefresh", 3600, 7200, "profile-id")
         )
-        everySuspend { authRepository.logoutRemotely() } returns Unit
+        everySuspend { authRepository.logoutRemotely() } returns Result.success(Unit)
 
         val result = service.refreshToken("http://localhost")
 
@@ -281,7 +281,7 @@ class AuthenticationServiceImplTest {
     fun testLogoutRemotely_Success() = runTest {
         val mockEngine = MockEngine { _ -> respond(content = "true", status = HttpStatusCode.OK) }
         setupService(mockEngine)
-        everySuspend { authRepository.logoutRemotely() } returns Unit
+        everySuspend { authRepository.logoutRemotely() } returns Result.success(Unit)
         
         val result = service.logoutRemotely()
         
@@ -293,7 +293,7 @@ class AuthenticationServiceImplTest {
     fun testLogout_Success() = runTest {
         val mockEngine = MockEngine { _ -> respond(content = "true", status = HttpStatusCode.OK) }
         setupService(mockEngine)
-        everySuspend { authRepository.logout() } returns Unit
+        everySuspend { authRepository.logout() } returns Result.success(Unit)
         
         val result = service.logout()
         

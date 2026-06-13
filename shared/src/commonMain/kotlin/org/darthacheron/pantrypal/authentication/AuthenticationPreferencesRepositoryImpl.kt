@@ -9,7 +9,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 
-class AuthenticationPreferencesRepositoryImpl(private val dataStore: DataStore<Preferences>) : AuthenticationPreferencesRepository {
+class AuthenticationPreferencesRepositoryImpl(private val dataStore: DataStore<Preferences>) :
+    AuthenticationPreferencesRepository {
     override val authenticationPreferencesFlow: Flow<AuthenticationPreferences> = dataStore.data
         .catch {
             if (it is IOException) {
@@ -27,25 +28,36 @@ class AuthenticationPreferencesRepositoryImpl(private val dataStore: DataStore<P
             val serverUrl = it[AuthenticationPreferencesKeys.SERVER_URL] ?: ""
             val stayLoggedIn = it[AuthenticationPreferencesKeys.STAY_LOGGED_IN] ?: false
             val acquiredAt = it[AuthenticationPreferencesKeys.ACQUIRED_AT] ?: 0
-            AuthenticationPreferences(accessToken, refreshToken, expiresIn, refreshExpiresIn, localProfileId, isLoggedInRemotely, serverUrl, stayLoggedIn, acquiredAt)
+            AuthenticationPreferences(
+                accessToken,
+                refreshToken,
+                expiresIn,
+                refreshExpiresIn,
+                localProfileId,
+                isLoggedInRemotely,
+                serverUrl,
+                stayLoggedIn,
+                acquiredAt
+            )
         }
 
-    override suspend fun loginLocally(localProfileId: String, serverUrl: String?, stayLoggedIn: Boolean) {
-        dataStore.edit {
-            it[AuthenticationPreferencesKeys.LOCAL_PROFILE_ID] = localProfileId
-            it[AuthenticationPreferencesKeys.IS_LOGGED_IN_REMOTELY] = false
-            if (serverUrl != null) {
-                it[AuthenticationPreferencesKeys.SERVER_URL] = serverUrl
+    override suspend fun loginLocally(localProfileId: String, serverUrl: String?, stayLoggedIn: Boolean): Result<Unit> =
+        Result.runCatching {
+            dataStore.edit {
+                it[AuthenticationPreferencesKeys.LOCAL_PROFILE_ID] = localProfileId
+                it[AuthenticationPreferencesKeys.IS_LOGGED_IN_REMOTELY] = false
+                if (serverUrl != null) {
+                    it[AuthenticationPreferencesKeys.SERVER_URL] = serverUrl
+                }
+                it[AuthenticationPreferencesKeys.STAY_LOGGED_IN] = stayLoggedIn
+                // Clear remote tokens to ensure they don't leak between different local profile sessions
+                it[AuthenticationPreferencesKeys.ACCESS_TOKEN] = ""
+                it[AuthenticationPreferencesKeys.REFRESH_TOKEN] = ""
+                it[AuthenticationPreferencesKeys.EXPIRES_IN] = 0
+                it[AuthenticationPreferencesKeys.REFRESH_EXPIRES_IN] = 0
+                it[AuthenticationPreferencesKeys.ACQUIRED_AT] = 0
             }
-            it[AuthenticationPreferencesKeys.STAY_LOGGED_IN] = stayLoggedIn
-            // Clear remote tokens to ensure they don't leak between different local profile sessions
-            it[AuthenticationPreferencesKeys.ACCESS_TOKEN] = ""
-            it[AuthenticationPreferencesKeys.REFRESH_TOKEN] = ""
-            it[AuthenticationPreferencesKeys.EXPIRES_IN] = 0
-            it[AuthenticationPreferencesKeys.REFRESH_EXPIRES_IN] = 0
-            it[AuthenticationPreferencesKeys.ACQUIRED_AT] = 0
         }
-    }
 
     override suspend fun loginRemotely(
         accessToken: String,
@@ -54,7 +66,7 @@ class AuthenticationPreferencesRepositoryImpl(private val dataStore: DataStore<P
         refreshExpiresIn: Int,
         serverUrl: String,
         acquiredAt: Long
-    ) {
+    ): Result<Unit> = Result.runCatching {
         dataStore.edit {
             it[AuthenticationPreferencesKeys.ACCESS_TOKEN] = accessToken
             it[AuthenticationPreferencesKeys.REFRESH_TOKEN] = refreshToken
@@ -72,7 +84,7 @@ class AuthenticationPreferencesRepositoryImpl(private val dataStore: DataStore<P
         expiresIn: Int,
         refreshExpiresIn: Int,
         acquiredAt: Long
-    ) {
+    ): Result<Unit> = Result.runCatching {
         dataStore.edit {
             it[AuthenticationPreferencesKeys.ACCESS_TOKEN] = accessToken
             it[AuthenticationPreferencesKeys.REFRESH_TOKEN] = refreshToken
@@ -82,7 +94,7 @@ class AuthenticationPreferencesRepositoryImpl(private val dataStore: DataStore<P
         }
     }
 
-    override suspend fun logoutRemotely() {
+    override suspend fun logoutRemotely(): Result<Unit> = Result.runCatching {
         dataStore.edit {
             it[AuthenticationPreferencesKeys.ACCESS_TOKEN] = ""
             it[AuthenticationPreferencesKeys.REFRESH_TOKEN] = ""
@@ -93,7 +105,7 @@ class AuthenticationPreferencesRepositoryImpl(private val dataStore: DataStore<P
         }
     }
 
-    override suspend fun logout() {
+    override suspend fun logout(): Result<Unit> = Result.runCatching {
         dataStore.edit {
             it[AuthenticationPreferencesKeys.ACCESS_TOKEN] = ""
             it[AuthenticationPreferencesKeys.REFRESH_TOKEN] = ""
