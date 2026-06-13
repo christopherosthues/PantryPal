@@ -9,6 +9,7 @@ import dev.mokkery.verifySuspend
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import okio.FileSystem
+import okio.SYSTEM
 import org.darthacheron.pantrypal.authentication.AuthenticationPreferences
 import org.darthacheron.pantrypal.authentication.AuthenticationPreferencesRepository
 import org.darthacheron.pantrypal.camera.RemoteImageDao
@@ -43,7 +44,7 @@ class InventoryRepositoryImplTest {
         imageNetworkService = mock<ImageNetworkService>()
         remoteImageDao = mock<RemoteImageDao>()
         authRepository = mock<AuthenticationPreferencesRepository>()
-        fileSystem = mock<FileSystem>()
+        fileSystem = FileSystem.SYSTEM
 
         repository = InventoryRepositoryImpl(
             itemDao,

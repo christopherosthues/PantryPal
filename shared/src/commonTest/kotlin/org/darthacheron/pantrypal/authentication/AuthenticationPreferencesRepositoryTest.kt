@@ -4,6 +4,8 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.emptyPreferences
+import androidx.datastore.preferences.core.preferencesOf
 import dev.mokkery.answering.returns
 import dev.mokkery.every
 import dev.mokkery.everySuspend
@@ -17,7 +19,7 @@ class AuthenticationPreferencesRepositoryTest {
 
     private lateinit var dataStore: DataStore<Preferences>
     private lateinit var repository: AuthenticationPreferencesRepositoryImpl
-    private val preferencesFlow = MutableStateFlow<Preferences>(mock())
+    private val preferencesFlow = MutableStateFlow<Preferences>(emptyPreferences())
 
     @BeforeTest
     fun setup() {
@@ -29,10 +31,7 @@ class AuthenticationPreferencesRepositoryTest {
 
     @Test
     fun testInitialState() = runTest {
-        val prefs = mock<Preferences> {
-            every { get(AuthenticationPreferencesKeys.ACCESS_TOKEN) } returns null
-            every { get(AuthenticationPreferencesKeys.IS_LOGGED_IN_REMOTELY) } returns null
-        }
+        val prefs = emptyPreferences()
         preferencesFlow.value = prefs
 
         val result = repository.authenticationPreferencesFlow.first()
@@ -42,11 +41,11 @@ class AuthenticationPreferencesRepositoryTest {
 
     @Test
     fun testAuthenticationPreferencesMapping() = runTest {
-        val prefs = mock<Preferences> {
-            every { get(AuthenticationPreferencesKeys.ACCESS_TOKEN) } returns "token123"
-            every { get(AuthenticationPreferencesKeys.IS_LOGGED_IN_REMOTELY) } returns true
-            every { get(AuthenticationPreferencesKeys.LOCAL_PROFILE_ID) } returns "profile-uuid"
-        }
+        val prefs = preferencesOf(
+            AuthenticationPreferencesKeys.ACCESS_TOKEN to "token123",
+            AuthenticationPreferencesKeys.IS_LOGGED_IN_REMOTELY to true,
+            AuthenticationPreferencesKeys.LOCAL_PROFILE_ID to "profile-uuid"
+        )
         preferencesFlow.value = prefs
 
         val result = repository.authenticationPreferencesFlow.first()

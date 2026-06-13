@@ -305,12 +305,13 @@ private fun EnhancedCameraScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val cameraController = cameraState.controller
+    val cameraControl = remember(cameraController) { CameraControllerWrapper(cameraController) }
 
-    LaunchedEffect(cameraController) {
+    LaunchedEffect(cameraControl) {
         var tries = 0
         var maxZoom = 1f
         while (maxZoom <= 1f && tries < 10) {
-            maxZoom = cameraController.getMaxZoom()
+            maxZoom = cameraControl.getMaxZoom()
             if (maxZoom <= 1f) {
                 delay(100)
             }
@@ -327,7 +328,7 @@ private fun EnhancedCameraScreen(
             .pointerInput(Unit) {
                 detectTransformGestures { _, _, zoomChange, _ ->
                     if (zoomChange != 1f) {
-                        viewModel.onZoomChanged(cameraController, zoomLevel * zoomChange)
+                        viewModel.onZoomChanged(cameraControl, zoomLevel * zoomChange)
                     }
                 }
             },
@@ -359,9 +360,9 @@ private fun EnhancedCameraScreen(
                 modifier = Modifier.align(Alignment.TopEnd),
                 flashMode = uiState.flashMode,
                 torchMode = uiState.torchMode,
-                onFlashToggle = { viewModel.onFlashToggle(cameraController) },
-                onTorchToggle = { viewModel.onTorchToggle(cameraController) },
-                onLensSwitch = { viewModel.onLensSwitch(cameraController) }
+                onFlashToggle = { viewModel.onFlashToggle(cameraControl) },
+                onTorchToggle = { viewModel.onTorchToggle(cameraControl) },
+                onLensSwitch = { viewModel.onLensSwitch(cameraControl) }
             )
 
             if (uiState.maxZoom > 1f) {
@@ -385,7 +386,7 @@ private fun EnhancedCameraScreen(
 
                         Slider(
                             value = uiState.zoomLevel,
-                            onValueChange = { viewModel.onZoomChanged(cameraController, it) },
+                            onValueChange = { viewModel.onZoomChanged(cameraControl, it) },
                             valueRange = 1f..uiState.maxZoom,
                             modifier = Modifier
                                 .graphicsLayer {
@@ -430,7 +431,7 @@ private fun EnhancedCameraScreen(
             CaptureButton(
                 modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 60.dp),
                 isCapturing = uiState.isCapturing,
-                onCapture = { viewModel.capture(cameraController, ocrPlugin) },
+                onCapture = { viewModel.capture(cameraControl, ocrPlugin) },
             )
 
             IconButton(

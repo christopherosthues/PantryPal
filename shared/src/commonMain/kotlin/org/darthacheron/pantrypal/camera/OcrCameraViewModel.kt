@@ -3,7 +3,6 @@ package org.darthacheron.pantrypal.camera
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import co.touchlab.kermit.Logger
-import com.kashif.cameraK.controller.CameraController
 import com.kashif.cameraK.enums.FlashMode
 import com.kashif.cameraK.enums.TorchMode
 import com.kashif.cameraK.result.ImageCaptureResult
@@ -89,17 +88,17 @@ class OcrCameraViewModel(
     private val sessionFilePaths = mutableListOf<String>()
     private val loggerTag = "OcrCameraViewModel"
 
-    fun onFlashToggle(cameraController: CameraController) {
+    fun onFlashToggle(cameraController: CameraControl) {
         cameraController.toggleFlashMode()
         _uiState.update { it.copy(flashMode = cameraController.getFlashMode() ?: FlashMode.OFF) }
     }
 
-    fun onTorchToggle(cameraController: CameraController) {
+    fun onTorchToggle(cameraController: CameraControl) {
         cameraController.toggleTorchMode()
         _uiState.update { it.copy(torchMode = cameraController.getTorchMode() ?: TorchMode.OFF) }
     }
 
-    fun onLensSwitch(cameraController: CameraController) {
+    fun onLensSwitch(cameraController: CameraControl) {
         cameraController.toggleCameraLens()
         _uiState.update {
             it.copy(
@@ -109,7 +108,7 @@ class OcrCameraViewModel(
         }
     }
 
-    fun onZoomChanged(cameraController: CameraController, zoomLevel: Float) {
+    fun onZoomChanged(cameraController: CameraControl, zoomLevel: Float) {
         cameraController.setZoom(zoomLevel)
         _uiState.update { it.copy(zoomLevel = zoomLevel) }
     }
@@ -219,7 +218,7 @@ class OcrCameraViewModel(
         _uiState.update { it.copy(maxZoom = maxZoom) }
     }
 
-    fun capture(cameraController: CameraController, ocrPlugin: OcrPlugin) {
+    fun capture(cameraController: CameraControl, ocrPlugin: OcrPlugin) {
         if (_uiState.value.isCapturing) return
 
         _uiState.update { it.copy(isCapturing = true) }

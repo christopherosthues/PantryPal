@@ -1,6 +1,5 @@
 package org.darthacheron.pantrypal.camera
 
-import com.kashif.cameraK.controller.CameraController
 import com.kashif.cameraK.enums.FlashMode
 import dev.mokkery.answering.returns
 import dev.mokkery.every
@@ -31,7 +30,7 @@ class OcrCameraViewModelTest {
 
     @Test
     fun testOnFlashToggle() {
-        val cameraController = mock<CameraController> {
+        val cameraController = mock<CameraControl> {
             every { toggleFlashMode() } returns Unit
             every { getFlashMode() } returns FlashMode.ON
         }

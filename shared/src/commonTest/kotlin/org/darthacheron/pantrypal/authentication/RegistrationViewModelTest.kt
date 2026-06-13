@@ -12,8 +12,10 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.*
 import org.darthacheron.pantrypal.navigation.Navigator
+import org.darthacheron.pantrypal.profile.Profile
 import org.darthacheron.pantrypal.profile.ProfileRepository
 import pantrypal.shared.generated.resources.*
+import kotlin.time.Clock
 import kotlin.test.*
 import kotlin.uuid.ExperimentalUuidApi
 
@@ -128,7 +130,14 @@ class RegistrationViewModelTest {
         val username = "existing"
         every { profileRepository.getProfileByUsername(any()) } returns flowOf(null)
         every { profileRepository.getProfileByEmail(any()) } returns flowOf(null)
-        every { profileRepository.getProfileByIdentifier(username) } returns flowOf(mock<org.darthacheron.pantrypal.profile.Profile>())
+        every { profileRepository.getProfileByIdentifier(username) } returns flowOf(
+            Profile(
+                username = username,
+                email = "user@example.com",
+                createdAt = Clock.System.now(),
+                lastModifiedAt = Clock.System.now()
+            )
+        )
 
         viewModel.onUserNameChanged(username)
         viewModel.onEmailChanged("user@example.com")
