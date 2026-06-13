@@ -97,6 +97,23 @@ class ProfileNetworkServiceImplTest {
     }
 
     @Test
+    fun testFetchProfile_ServerError() = runTest {
+        val serverUrl = "http://localhost"
+        val mockEngine = MockEngine { _ ->
+            respond(content = "Error", status = HttpStatusCode.InternalServerError)
+        }
+        setupService(mockEngine)
+        every { authRepository.authenticationPreferencesFlow } returns flowOf(
+            AuthenticationPreferences("token123", "refresh", 3600, 7200)
+        )
+
+        val result = service.fetchProfile(serverUrl)
+        
+        assertTrue(result.isFailure)
+        assertFalse(result.exceptionOrNull() is RemoteAccountDeletedException)
+    }
+
+    @Test
     fun testUpdateProfile_Success() = runTest {
         val serverUrl = "http://localhost"
         val profileId = Uuid.random()
@@ -134,6 +151,25 @@ class ProfileNetworkServiceImplTest {
         
         assertTrue(result.isSuccess)
         assertNotNull(result.getOrNull())
+    }
+
+    @Test
+    fun testUpdateProfile_Deleted() = runTest {
+        val serverUrl = "http://localhost"
+        val profile = Profile(id = Uuid.random(), username = "u", email = "e", createdAt = Clock.System.now(), lastModifiedAt = Clock.System.now())
+        
+        val mockEngine = MockEngine { _ ->
+            respond(content = "", status = HttpStatusCode.Gone)
+        }
+        setupService(mockEngine)
+        every { authRepository.authenticationPreferencesFlow } returns flowOf(
+            AuthenticationPreferences("token123", "refresh", 3600, 7200)
+        )
+
+        val result = service.updateProfile(profile, serverUrl, null, null, null)
+        
+        assertTrue(result.isFailure)
+        assertTrue(result.exceptionOrNull() is RemoteAccountDeletedException)
     }
 
     @Test

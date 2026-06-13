@@ -1,10 +1,12 @@
 package org.darthacheron.pantrypal.profile
 
 import dev.mokkery.answering.returns
+import dev.mokkery.answering.throws
 import dev.mokkery.every
 import dev.mokkery.everySuspend
 import dev.mokkery.matcher.any
 import dev.mokkery.mock
+import dev.mokkery.verify
 import dev.mokkery.verifySuspend
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -23,6 +25,7 @@ import org.darthacheron.pantrypal.navigation.Navigator
 import org.darthacheron.pantrypal.networking.ConnectionNetworkService
 import org.darthacheron.pantrypal.settings.DataSynchronization
 import pantrypal.shared.generated.resources.Res
+import pantrypal.shared.generated.resources.profile_error_update
 import pantrypal.shared.generated.resources.profile_error_email_invalid
 import pantrypal.shared.generated.resources.profile_error_username_empty
 import kotlin.test.*
@@ -118,6 +121,62 @@ class ProfileViewModelTest {
         viewModel.saveProfile()
         verifySuspend { profileRepository.upsert(any()) }
         assertNull(viewModel.uiState.value.error)
+    }
+
+    @Test
+    fun testSaveProfileFailure() = runTest {
+        everySuspend { profileRepository.upsert(any()) } throws Exception("Database full")
+        viewModel.saveProfile()
+        assertNotNull(viewModel.uiState.value.error)
+        assertEquals(Res.string.profile_error_update, viewModel.uiState.value.error)
+    }
+
+    @Test
+    fun testUnlinkAccount() = runTest {
+        everySuspend { profileRepository.upsert(any()) } returns Unit
+        everySuspend { authService.logoutRemotely() } returns Result.success(true)
+
+        viewModel.unlinkAccount()
+
+        verifySuspend { profileRepository.upsert(any()) }
+        verifySuspend { authService.logoutRemotely() }
+    }
+
+    @Test
+    fun testLogout() = runTest {
+        everySuspend { authService.logout() } returns Result.success(true)
+        every { navigator.goToLogin() } returns Unit
+
+        viewModel.logout()
+
+        verifySuspend { authService.logout() }
+        verify { navigator.goToLogin() }
+    }
+
+    @Test
+    fun testDeleteLocalProfile() = runTest {
+        everySuspend { profileRepository.deleteLocal() } returns Unit
+        everySuspend { authService.logout() } returns Result.success(true)
+        every { navigator.goToLogin() } returns Unit
+
+        viewModel.deleteLocalProfile()
+
+        verifySuspend { profileRepository.deleteLocal() }
+        verifySuspend { authService.logout() }
+        verify { navigator.goToLogin() }
+    }
+
+    @Test
+    fun testDeleteRemoteProfile_NotLoggedIn_LoginFailure() = runTest {
+        authPreferencesFlow.value = authPreferencesFlow.value.copy(isLoggedInRemotely = false, serverUrl = "http://srv")
+        everySuspend { authService.loginRemotely(any(), any(), any()) } returns Result.failure(Exception("Wrong pass"))
+
+        viewModel.showDeleteRemoteDialog()
+        viewModel.onRemoteDeletePasswordChanged("wrong")
+        viewModel.deleteRemoteProfile()
+
+        verifySuspend { authService.loginRemotely(any(), any(), any()) }
+        assertNotNull(viewModel.remoteDeleteError.value)
     }
 
     private fun createTestProfile(id: Uuid) = Profile(
