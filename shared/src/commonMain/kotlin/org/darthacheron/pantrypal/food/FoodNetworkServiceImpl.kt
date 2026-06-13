@@ -28,7 +28,7 @@ class FoodNetworkServiceImpl(
         if (token.isNullOrBlank()) return emptyList()
 
         return clientFactory.create().use { httpClient ->
-            httpClient.post("$serverUrl/api/food/batch") {
+            httpClient.post("$serverUrl/api/v1/food/batch") {
                 header(HttpHeaders.Authorization, "Bearer $token")
                 setBody(foods)
             }.body()
@@ -41,7 +41,7 @@ class FoodNetworkServiceImpl(
         if (token.isNullOrBlank()) return emptyList()
 
         return clientFactory.create().use { httpClient ->
-            httpClient.get("$serverUrl/api/food/sync") {
+            httpClient.get("$serverUrl/api/v1/food/sync") {
                 header(HttpHeaders.Authorization, "Bearer $token")
                 parameter("since", lastSync.toString())
             }.body()
@@ -54,7 +54,7 @@ class FoodNetworkServiceImpl(
         if (token.isNullOrBlank()) return
 
         clientFactory.create().use { httpClient ->
-            httpClient.delete("$serverUrl/api/food/$serverId") {
+            httpClient.delete("$serverUrl/api/v1/food/$serverId") {
                 header(HttpHeaders.Authorization, "Bearer $token")
             }
         }

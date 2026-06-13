@@ -11,7 +11,7 @@ import org.koin.ktor.ext.inject
 fun Route.connectionRoutes() {
     val configurationService by inject<ConfigurationService>()
 
-    route("/api/connection") {
+    route("/connection") {
         get("/test") {
             val appToken = call.request.headers[NetworkingConstants.APP_TOKEN_HEADER]
             if (appToken == configurationService.appToken) {

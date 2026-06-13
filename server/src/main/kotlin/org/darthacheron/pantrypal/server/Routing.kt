@@ -5,6 +5,7 @@ import io.ktor.server.application.install
 import io.ktor.server.auth.authenticate
 import io.ktor.server.plugins.requestvalidation.RequestValidation
 import io.ktor.server.plugins.requestvalidation.ValidationResult
+import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
 import org.darthacheron.pantrypal.server.authentication.authenticationRoutes
 import org.darthacheron.pantrypal.server.food.foodRoutes
@@ -46,13 +47,15 @@ fun Application.configureRouting() {
     }
 
     routing {
-        authenticationRoutes()
-        connectionRoutes()
+        route("/api/v1") {
+            authenticationRoutes()
+            connectionRoutes()
 
-        authenticate("auth-jwt") {
-            profileRoutes()
-            foodRoutes()
-            inventoryItemRoutes()
+            authenticate("auth-jwt") {
+                profileRoutes()
+                foodRoutes()
+                inventoryItemRoutes()
+            }
         }
     }
 }

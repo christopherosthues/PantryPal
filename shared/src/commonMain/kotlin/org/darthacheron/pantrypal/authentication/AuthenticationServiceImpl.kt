@@ -35,7 +35,7 @@ class AuthenticationServiceImpl(
     }
 
     override suspend fun loginRemotely(username: String, password: String, serverUrl: String): Result<LoginResponse?> {
-        val loginUrl = "$serverUrl/login"
+        val loginUrl = "$serverUrl/api/v1/login"
 
         try {
             val response: HttpResponse = clientFactory.create().use { httpClient ->
@@ -99,7 +99,7 @@ class AuthenticationServiceImpl(
     }
 
     override suspend fun refreshToken(serverUrl: String): Result<Boolean> {
-        val refreshUrl = "$serverUrl/refresh"
+        val refreshUrl = "$serverUrl/api/v1/refresh"
 
         try {
             val authenticationPreferences =
@@ -146,7 +146,7 @@ class AuthenticationServiceImpl(
         password: String,
         serverUrl: String
     ): Result<RegistrationResponse?> {
-        val registerUrl = "$serverUrl/register"
+        val registerUrl = "$serverUrl/api/v1/register"
 
         try {
             val response: HttpResponse = clientFactory.create().use { httpClient ->
@@ -194,7 +194,7 @@ class AuthenticationServiceImpl(
         password: String?,
         currentPassword: String?
     ): Result<Boolean> {
-        val updateUrl = "$serverUrl/profile"
+        val updateUrl = "$serverUrl/api/v1/profile"
 
         try {
             val prefs = authenticationPreferencesRepository.authenticationPreferencesFlow.firstOrNull()

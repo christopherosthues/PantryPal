@@ -29,7 +29,7 @@ class ProfileNetworkServiceImpl(
 
         return runCatching {
             clientFactory.create().use { httpClient ->
-                val response = httpClient.get("$serverUrl/profile") {
+                val response = httpClient.get("$serverUrl/api/v1/profile") {
                     header(HttpHeaders.Authorization, "Bearer $token")
                 }
                 if (response.status == HttpStatusCode.NotFound || response.status == HttpStatusCode.Gone) {
@@ -53,7 +53,7 @@ class ProfileNetworkServiceImpl(
 
         return runCatching {
             clientFactory.create().use { httpClient ->
-                val response = httpClient.put("$serverUrl/profile") {
+                val response = httpClient.put("$serverUrl/api/v1/profile") {
                     header(HttpHeaders.Authorization, "Bearer $token")
                     setBody(profile.toDto(serverId, usernameOverride, emailOverride))
                 }
@@ -72,7 +72,7 @@ class ProfileNetworkServiceImpl(
 
         return runCatching {
             clientFactory.create().use { httpClient ->
-                val response = httpClient.delete("$serverUrl/profile") {
+                val response = httpClient.delete("$serverUrl/api/v1/profile") {
                     header(HttpHeaders.Authorization, "Bearer $token")
                     parameter("remote", remote)
                 }

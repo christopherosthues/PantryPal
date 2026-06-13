@@ -29,7 +29,7 @@ class InventoryNetworkServiceImpl(
         if (token.isNullOrBlank()) return emptyList()
 
         return clientFactory.create().use { httpClient ->
-            httpClient.post("$serverUrl/api/inventory/batch") {
+            httpClient.post("$serverUrl/api/v1/inventory/batch") {
                 header(HttpHeaders.Authorization, "Bearer $token")
                 setBody(items)
             }.body()
@@ -42,7 +42,7 @@ class InventoryNetworkServiceImpl(
         if (token.isNullOrBlank()) return emptyList()
 
         return clientFactory.create().use { httpClient ->
-            httpClient.get("$serverUrl/api/inventory/sync") {
+            httpClient.get("$serverUrl/api/v1/inventory/sync") {
                 header(HttpHeaders.Authorization, "Bearer $token")
                 parameter("since", lastSync.toString())
             }.body()
@@ -55,7 +55,7 @@ class InventoryNetworkServiceImpl(
         if (token.isNullOrBlank()) return
 
         clientFactory.create().use { httpClient ->
-            httpClient.delete("$serverUrl/api/inventory/$serverId") {
+            httpClient.delete("$serverUrl/api/v1/inventory/$serverId") {
                 header(HttpHeaders.Authorization, "Bearer $token")
             }
         }
