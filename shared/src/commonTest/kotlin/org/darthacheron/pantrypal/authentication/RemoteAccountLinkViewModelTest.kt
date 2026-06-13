@@ -103,4 +103,46 @@ class RemoteAccountLinkViewModelTest {
 
         assertEquals(Res.string.remote_login_error_user_exists, viewModel.state.value.error)
     }
+
+    @Test
+    fun testSubmit_Login_Success() = runTest {
+        val localProfileId = Uuid.random()
+        val serverUserId = Uuid.random()
+        val profile = Profile(id = localProfileId, username = "local", email = "local@ex.com", createdAt = Clock.System.now(), lastModifiedAt = Clock.System.now())
+        val loginResponse = org.darthacheron.pantrypal.core.auth.LoginResponse(
+            tokenResponse = org.darthacheron.pantrypal.core.auth.TokenResponse("access", "refresh", 3600, 7200, "Bearer"),
+            user = org.darthacheron.pantrypal.core.auth.UserResponse(serverUserId.toString(), "remote", "remote@ex.com")
+        )
+
+        every { preferencesRepository.authenticationPreferencesFlow } returns flowOf(
+            AuthenticationPreferences("", "", 0, 0, localProfileId = localProfileId.toString())
+        )
+        every { profileRepository.getProfileById(localProfileId) } returns flowOf(profile)
+        everySuspend { authenticationService.loginRemotely("remote", "pass", "http://localhost") } returns Result.success(loginResponse)
+        everySuspend { profileRepository.upsert(any()) } returns Unit
+        everySuspend { profileRepository.upsertRemoteProfile(any()) } returns Unit
+
+        viewModel.onServerUrlChanged("http://localhost")
+        viewModel.onUsernameChanged("remote")
+        viewModel.onPasswordChanged("pass")
+        viewModel.setIsCreatingNew(false)
+        
+        var successCalled = false
+        viewModel.submit { successCalled = true }
+
+        assertTrue(successCalled)
+        verifySuspend { profileRepository.upsert(any()) }
+        verifySuspend { profileRepository.upsertRemoteProfile(any()) }
+    }
+
+    @Test
+    fun testConnection() = runTest {
+        everySuspend { connectionNetworkService.testConnection("http://localhost") } returns Result.success("OK")
+
+        viewModel.onServerUrlChanged("http://localhost")
+        viewModel.testConnection()
+
+        assertFalse(viewModel.state.value.data?.isTestingConnection ?: true)
+        assertEquals(true, viewModel.state.value.data?.connectionTestSuccess)
+    }
 }

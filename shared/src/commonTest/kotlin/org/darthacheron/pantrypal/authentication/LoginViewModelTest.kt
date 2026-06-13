@@ -101,9 +101,10 @@ class LoginViewModelTest {
 
         viewModel.onUsernameChanged(username)
         viewModel.onPasswordChanged(password)
+        viewModel.onStayLoggedInChanged(true)
         viewModel.login()
 
-        verifySuspend { authenticationService.loginLocally(profile.id, false, null) }
+        verifySuspend { authenticationService.loginLocally(profile.id, true, null) }
         verify { navigator.goToMain() }
         assertNull(viewModel.loginState.value.error)
     }

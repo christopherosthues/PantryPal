@@ -66,6 +66,22 @@ class RegistrationViewModelTest {
     }
 
     @Test
+    fun testOnUserNameChanged_Exists() = runTest {
+        every { profileRepository.getProfileByUsername("existing") } returns flowOf(
+            Profile(
+                username = "existing",
+                email = "existing@example.com",
+                createdAt = Clock.System.now(),
+                lastModifiedAt = Clock.System.now()
+            )
+        )
+
+        viewModel.onUserNameChanged("existing")
+        delay(400.milliseconds)
+        assertEquals(Res.string.registration_error_username_exists, viewModel.registrationState.value.data?.userNameError)
+    }
+
+    @Test
     fun testOnEmailChanged() = runTest {
         every { profileRepository.getProfileByEmail(any()) } returns flowOf(null)
 
@@ -136,11 +152,12 @@ class RegistrationViewModelTest {
         viewModel.onEmailChanged(email)
         viewModel.onPasswordChanged(password)
         viewModel.onRepeatPasswordChanged(password)
+        viewModel.onStayLoggedInChanged(true)
         
         viewModel.register()
 
         verifySuspend { profileRepository.upsert(any()) }
-        verifySuspend { authenticationService.loginLocally(any(), false, null) }
+        verifySuspend { authenticationService.loginLocally(any(), true, null) }
         verify { navigator.goToMain() }
     }
 

@@ -266,4 +266,28 @@ class AuthenticationServiceImplTest {
         assertFalse(result.getOrDefault(true))
         verifySuspend { authRepository.logoutRemotely() }
     }
+
+    @Test
+    fun testLogoutRemotely_Success() = runTest {
+        val mockEngine = MockEngine { _ -> respond(content = "true", status = HttpStatusCode.OK) }
+        setupService(mockEngine)
+        everySuspend { authRepository.logoutRemotely() } returns Unit
+        
+        val result = service.logoutRemotely()
+        
+        assertTrue(result.isSuccess)
+        verifySuspend { authRepository.logoutRemotely() }
+    }
+
+    @Test
+    fun testLogout_Success() = runTest {
+        val mockEngine = MockEngine { _ -> respond(content = "true", status = HttpStatusCode.OK) }
+        setupService(mockEngine)
+        everySuspend { authRepository.logout() } returns Unit
+        
+        val result = service.logout()
+        
+        assertTrue(result.isSuccess)
+        verifySuspend { authRepository.logout() }
+    }
 }
