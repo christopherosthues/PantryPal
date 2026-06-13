@@ -7,7 +7,9 @@ import io.ktor.client.request.header
 import io.ktor.client.request.parameter
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
+import io.ktor.client.request.put
 import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.flow.firstOrNull
 import org.darthacheron.pantrypal.authentication.AuthenticationPreferencesRepository
 import org.darthacheron.pantrypal.core.food.FoodDto
@@ -21,6 +23,59 @@ class FoodNetworkServiceImpl(
     private val preferencesRepository: AuthenticationPreferencesRepository,
     private val clientFactory: HttpClientFactory
 ) : FoodNetworkService {
+
+    override suspend fun fetchAllFoods(serverUrl: String): List<FoodDto> {
+        val auth = preferencesRepository.authenticationPreferencesFlow.firstOrNull()
+        val token = auth?.accessToken
+        if (token.isNullOrBlank()) return emptyList()
+
+        return clientFactory.create().use { httpClient ->
+            httpClient.get("$serverUrl/api/v1/food") {
+                header(HttpHeaders.Authorization, "Bearer $token")
+            }.body()
+        }
+    }
+
+    override suspend fun fetchFoodById(serverId: Uuid, serverUrl: String): FoodDto? {
+        val auth = preferencesRepository.authenticationPreferencesFlow.firstOrNull()
+        val token = auth?.accessToken
+        if (token.isNullOrBlank()) return null
+
+        return clientFactory.create().use { httpClient ->
+            val response = httpClient.get("$serverUrl/api/v1/food/$serverId") {
+                header(HttpHeaders.Authorization, "Bearer $token")
+            }
+            if (response.status == HttpStatusCode.OK) response.body() else null
+        }
+    }
+
+    override suspend fun createFood(food: FoodDto, serverUrl: String): FoodDto? {
+        val auth = preferencesRepository.authenticationPreferencesFlow.firstOrNull()
+        val token = auth?.accessToken
+        if (token.isNullOrBlank()) return null
+
+        return clientFactory.create().use { httpClient ->
+            val response = httpClient.post("$serverUrl/api/v1/food") {
+                header(HttpHeaders.Authorization, "Bearer $token")
+                setBody(food)
+            }
+            if (response.status == HttpStatusCode.Created) response.body() else null
+        }
+    }
+
+    override suspend fun updateFood(food: FoodDto, serverUrl: String): FoodDto? {
+        val auth = preferencesRepository.authenticationPreferencesFlow.firstOrNull()
+        val token = auth?.accessToken
+        if (token.isNullOrBlank()) return null
+
+        return clientFactory.create().use { httpClient ->
+            val response = httpClient.put("$serverUrl/api/v1/food") {
+                header(HttpHeaders.Authorization, "Bearer $token")
+                setBody(food)
+            }
+            if (response.status == HttpStatusCode.OK) response.body() else null
+        }
+    }
 
     override suspend fun pushFoods(foods: List<FoodDto>, serverUrl: String): List<FoodDto> {
         val auth = preferencesRepository.authenticationPreferencesFlow.firstOrNull()

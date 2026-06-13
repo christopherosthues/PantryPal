@@ -162,5 +162,23 @@ class FoodService(
         true
     }.onSuccess { logger.info("Successfully soft deleted all food items for profile ID: {}", profileId) }
         .onFailure { logger.error("Failed to soft delete all food items for profile ID: {}", profileId, it) }
+
+    fun syncFood(profileId: Uuid, since: kotlin.time.Instant): Result<List<FoodDto>> = runCatching {
+        logger.debug("Syncing food for profile ID: {} since {}", profileId, since)
+        foodRepository.getAllFoodByProfileIdIncludingDeleted(profileId).filter {
+            it.lastModifiedAt >= since || (it.deletedAt != null && it.deletedAt!! >= since)
+        }
+    }
+
+    fun batchUpdateFood(profileId: Uuid, foods: List<FoodDto>): Result<List<FoodDto>> = runCatching {
+        logger.info("Batch updating {} food items for profile ID: {}", foods.size, profileId)
+        foods.map { foodDto ->
+            if (foodDto.serverId == null) {
+                foodRepository.createFood(foodDto, profileId)
+            } else {
+                updateFood(foodDto, profileId).getOrThrow()
+            }
+        }
+    }
 }
 

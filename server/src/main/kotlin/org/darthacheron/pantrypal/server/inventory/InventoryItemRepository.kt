@@ -19,6 +19,10 @@ class InventoryItemRepository {
         InventoryItemDAO.find { (InventoryItemsTable.profileId eq profileId) and (InventoryItemsTable.deletedAt.isNull()) }.map { it.toDto() }
     }
 
+    fun getAllInventoryItemsByProfileIdIncludingDeleted(profileId: Uuid): List<InventoryItemDto> = transaction {
+        InventoryItemDAO.find { InventoryItemsTable.profileId eq profileId }.map { it.toDto() }
+    }
+
     fun createInventoryItem(inventoryItemDto: InventoryItemDto, profileId: Uuid): InventoryItemDto = transaction {
         InventoryItemDAO.new {
             this.profileId = profileId

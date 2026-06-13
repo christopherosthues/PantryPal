@@ -107,8 +107,13 @@ class FoodRepositoryImpl(
                     profile.dataSynchronization == DataSynchronization.ONLY_UPLOAD)
         ) {
             try {
-                val syncedFoods = foodNetworkService.pushFoods(listOf(food.toDto(serverUrl)), serverUrl)
-                val serverFood = syncedFoods.firstOrNull()
+                val serverId = food.getServerId(serverUrl)
+                val serverFood = if (serverId == null) {
+                    foodNetworkService.createFood(food.toDto(serverUrl), serverUrl)
+                } else {
+                    foodNetworkService.updateFood(food.toDto(serverUrl), serverUrl)
+                }
+
                 if (serverFood != null) {
                     val serverFoodId = serverFood.serverId!!
                     remoteFoodDao.upsert(

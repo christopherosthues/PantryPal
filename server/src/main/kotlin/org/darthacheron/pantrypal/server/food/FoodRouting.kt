@@ -26,6 +26,7 @@ import org.darthacheron.pantrypal.server.networking.respondProblem
 import org.darthacheron.pantrypal.core.camera.ImageDto
 import org.darthacheron.pantrypal.core.food.FoodDto
 import org.koin.ktor.ext.inject
+import kotlin.time.Instant
 import kotlin.uuid.ExperimentalUuidApi
 
 @OptIn(ExperimentalUuidApi::class)
@@ -36,7 +37,40 @@ fun Route.foodRoutes() {
         createFood()
         updateFood()
         deleteFood()
+        batchUpdateFood()
+        syncFood()
         foodImageRoutes()
+    }
+}
+
+@OptIn(ExperimentalUuidApi::class)
+fun Route.batchUpdateFood() {
+    post("/batch") {
+        val foodService by inject<FoodService>()
+        val profileId = call.extractProfileId() ?: return@post
+        val foods = call.receive<List<FoodDto>>()
+
+        foodService.batchUpdateFood(profileId, foods).onSuccess {
+            call.respond(HttpStatusCode.OK, it)
+        }.onFailure {
+            call.respondProblem(it)
+        }
+    }
+}
+
+@OptIn(ExperimentalUuidApi::class)
+fun Route.syncFood() {
+    get("/sync") {
+        val foodService by inject<FoodService>()
+        val profileId = call.extractProfileId() ?: return@get
+        val sinceString = call.request.queryParameters["since"] ?: return@get call.respondBadRequest("Missing 'since' parameter")
+        val since = Instant.parse(sinceString)
+
+        foodService.syncFood(profileId, since).onSuccess {
+            call.respond(HttpStatusCode.OK, it)
+        }.onFailure {
+            call.respondProblem(it)
+        }
     }
 }
 

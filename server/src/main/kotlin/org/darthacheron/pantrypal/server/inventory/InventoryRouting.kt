@@ -25,6 +25,7 @@ import org.darthacheron.pantrypal.server.networking.respondNotFound
 import org.darthacheron.pantrypal.server.networking.respondProblem
 import org.darthacheron.pantrypal.core.inventory.InventoryItemDto
 import org.koin.ktor.ext.inject
+import kotlin.time.Instant
 import kotlin.uuid.ExperimentalUuidApi
 
 @OptIn(ExperimentalUuidApi::class)
@@ -35,7 +36,40 @@ fun Route.inventoryItemRoutes() {
         createInventoryItem()
         updateInventoryItem()
         deleteInventoryItem()
+        batchUpdateInventory()
+        syncInventory()
         inventoryImageRoutes()
+    }
+}
+
+@OptIn(ExperimentalUuidApi::class)
+fun Route.batchUpdateInventory() {
+    post("/batch") {
+        val inventoryItemService by inject<InventoryItemService>()
+        val profileId = call.extractProfileId() ?: return@post
+        val items = call.receive<List<InventoryItemDto>>()
+
+        inventoryItemService.batchUpdateInventory(profileId, items).onSuccess {
+            call.respond(HttpStatusCode.OK, it)
+        }.onFailure {
+            call.respondProblem(it)
+        }
+    }
+}
+
+@OptIn(ExperimentalUuidApi::class)
+fun Route.syncInventory() {
+    get("/sync") {
+        val inventoryItemService by inject<InventoryItemService>()
+        val profileId = call.extractProfileId() ?: return@get
+        val sinceString = call.request.queryParameters["since"] ?: return@get call.respondBadRequest("Missing 'since' parameter")
+        val since = Instant.parse(sinceString)
+
+        inventoryItemService.syncInventory(profileId, since).onSuccess {
+            call.respond(HttpStatusCode.OK, it)
+        }.onFailure {
+            call.respondProblem(it)
+        }
     }
 }
 

@@ -19,6 +19,10 @@ class FoodRepository {
         FoodDAO.find { (FoodsTable.profileId eq profileId) and (FoodsTable.deletedAt.isNull()) }.map { it.toDto() }
     }
 
+    fun getAllFoodByProfileIdIncludingDeleted(profileId: Uuid): List<FoodDto> = transaction {
+        FoodDAO.find { FoodsTable.profileId eq profileId }.map { it.toDto() }
+    }
+
     fun createFood(foodDto: FoodDto, profileId: Uuid): FoodDto = transaction {
         FoodDAO.new {
             this.profileId = profileId

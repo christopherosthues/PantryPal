@@ -101,9 +101,13 @@ class InventoryRepositoryImpl(
                     )
         ) {
             try {
-                val syncedItems =
-                    inventoryNetworkService.pushInventoryItems(listOf(inventoryItem.toDto(serverUrl)), serverUrl)
-                val serverItem = syncedItems.firstOrNull()
+                val serverId = inventoryItem.getServerId(serverUrl)
+                val serverItem = if (serverId == null) {
+                    inventoryNetworkService.createInventoryItem(inventoryItem.toDto(serverUrl), serverUrl)
+                } else {
+                    inventoryNetworkService.updateInventoryItem(inventoryItem.toDto(serverUrl), serverUrl)
+                }
+
                 if (serverItem != null) {
                     val serverItemId = serverItem.serverId!!
                     remoteInventoryItemDao.upsert(

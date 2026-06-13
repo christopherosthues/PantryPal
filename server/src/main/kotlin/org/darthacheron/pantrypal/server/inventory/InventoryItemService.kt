@@ -162,4 +162,22 @@ class InventoryItemService(
         true
     }.onSuccess { logger.info("Successfully soft deleted all inventory items for profile ID: {}", profileId) }
         .onFailure { logger.error("Failed to soft delete all inventory items for profile ID: {}", profileId, it) }
+
+    fun syncInventory(profileId: Uuid, since: kotlin.time.Instant): Result<List<InventoryItemDto>> = runCatching {
+        logger.debug("Syncing inventory for profile ID: {} since {}", profileId, since)
+        inventoryItemRepository.getAllInventoryItemsByProfileIdIncludingDeleted(profileId).filter {
+            it.lastModifiedAt >= since || (it.deletedAt != null && it.deletedAt!! >= since)
+        }
+    }
+
+    fun batchUpdateInventory(profileId: Uuid, items: List<InventoryItemDto>): Result<List<InventoryItemDto>> = runCatching {
+        logger.info("Batch updating {} inventory items for profile ID: {}", items.size, profileId)
+        items.map { itemDto ->
+            if (itemDto.serverId == null) {
+                inventoryItemRepository.createInventoryItem(itemDto, profileId)
+            } else {
+                updateInventoryItem(itemDto, profileId).getOrThrow()
+            }
+        }
+    }
 }
