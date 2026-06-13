@@ -1,6 +1,7 @@
 package org.darthacheron.pantrypal.authentication
 
 import dev.mokkery.answering.returns
+import dev.mokkery.answering.throws
 import dev.mokkery.every
 import dev.mokkery.everySuspend
 import dev.mokkery.matcher.any
@@ -183,5 +184,26 @@ class RegistrationViewModelTest {
         viewModel.register()
 
         assertEquals(Res.string.registration_error_username_exists, viewModel.registrationState.value.error)
+    }
+
+    @Test
+    fun testRegisterGenericError() = runTest {
+        every { profileRepository.getProfileByUsername(any()) } returns flowOf(null)
+        every { profileRepository.getProfileByEmail(any()) } returns flowOf(null)
+        every { profileRepository.getProfileByIdentifier(any()) } returns flowOf(null)
+        everySuspend { profileRepository.upsert(any()) } returns Unit
+        everySuspend { authenticationService.loginLocally(any(), any(), any()) } returns Unit
+        
+        // Mock throwing an exception using a lambda that throws
+        everySuspend { profileRepository.upsert(any()) } throws Exception("Disk failure")
+
+        viewModel.onUserNameChanged("user")
+        viewModel.onEmailChanged("user@example.com")
+        viewModel.onPasswordChanged("password")
+        viewModel.onRepeatPasswordChanged("password")
+        
+        viewModel.register()
+
+        assertEquals(Res.string.registration_error, viewModel.registrationState.value.error)
     }
 }

@@ -16,6 +16,7 @@ import org.darthacheron.pantrypal.profile.Profile
 import org.darthacheron.pantrypal.profile.ProfileRepository
 import org.darthacheron.pantrypal.settings.DataSynchronization
 import pantrypal.shared.generated.resources.Res
+import pantrypal.shared.generated.resources.login_error
 import pantrypal.shared.generated.resources.login_error_empty_password
 import pantrypal.shared.generated.resources.login_error_empty_username_or_email
 import pantrypal.shared.generated.resources.login_error_wrong_username_or_password
@@ -134,6 +135,20 @@ class LoginViewModelTest {
         viewModel.login()
 
         assertEquals(Res.string.login_error_wrong_username_or_password, viewModel.loginState.value.error)
+    }
+
+    @Test
+    fun testLoginGenericError() = runTest {
+        val username = "user"
+        every { profileRepository.getProfileByIdentifier(username) } returns kotlinx.coroutines.flow.flow {
+            throw Exception("Database error")
+        }
+
+        viewModel.onUsernameChanged(username)
+        viewModel.onPasswordChanged("any")
+        viewModel.login()
+
+        assertEquals(Res.string.login_error, viewModel.loginState.value.error)
     }
 
     private fun createTestProfile(username: String, password: String) = Profile(

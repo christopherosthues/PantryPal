@@ -268,6 +268,24 @@ class AuthenticationServiceImplTest {
     }
 
     @Test
+    fun testRegisterUser_ServerError() = runTest {
+        val mockEngine = MockEngine { _ ->
+            respond(
+                content = """{"detail": "Internal server error"}""",
+                status = HttpStatusCode.InternalServerError,
+                headers = headersOf(HttpHeaders.ContentType, "application/json")
+            )
+        }
+        setupService(mockEngine)
+
+        val result = service.registerUser("newuser", "new@example.com", "password", "http://localhost")
+
+        assertTrue(result.isFailure)
+        assertTrue(result.exceptionOrNull() is ServerErrorException)
+        assertEquals("Internal server error", result.exceptionOrNull()?.message)
+    }
+
+    @Test
     fun testLogoutRemotely_Success() = runTest {
         val mockEngine = MockEngine { _ -> respond(content = "true", status = HttpStatusCode.OK) }
         setupService(mockEngine)
