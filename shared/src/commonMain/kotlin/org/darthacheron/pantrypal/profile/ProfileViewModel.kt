@@ -192,20 +192,16 @@ class ProfileViewModel(
                 return@launch
             }
 
-            try {
-                _uiState.value = UiState.loading()
-                _profileValidationState.value = ProfileValidationState()
+            _uiState.value = UiState.loading()
+            _profileValidationState.value = ProfileValidationState()
 
-                profileRepository.upsert(profile)
-                    .onSuccess {
-                        _uiState.value = UiState.success(profile)
-                    }
-                    .onFailure { e ->
-                        _uiState.value = capturedState.copy(error = Res.string.profile_error_update)
-                    }
-            } catch (e: Exception) {
-                _uiState.value = capturedState.copy(error = Res.string.profile_error_update)
-            }
+            profileRepository.upsert(profile)
+                .onSuccess {
+                    _uiState.value = UiState.success(profile)
+                }
+                .onFailure { e ->
+                    _uiState.value = capturedState.copy(error = Res.string.profile_error_update)
+                }
         }
     }
 
@@ -243,21 +239,17 @@ class ProfileViewModel(
                 return@launch
             }
 
-            try {
-                _passwordChangeState.value = UiState.loading()
-                _passwordValidationState.value = PasswordValidationState()
-                val updatedProfile = profile.copy(passwordHash = hashPassword(changeData.new))
-                profileRepository.upsert(updatedProfile)
-                    .onSuccess {
-                        _uiState.value = UiState.success(updatedProfile)
-                        _passwordChangeState.value = UiState.success(PasswordChange())
-                    }
-                    .onFailure { e ->
-                        _passwordChangeState.value = capturedPasswordUiState.copy(error = Res.string.profile_error_update)
-                    }
-            } catch (e: Exception) {
-                _passwordChangeState.value = capturedPasswordUiState.copy(error = Res.string.profile_error_update)
-            }
+            _passwordChangeState.value = UiState.loading()
+            _passwordValidationState.value = PasswordValidationState()
+            val updatedProfile = profile.copy(passwordHash = hashPassword(changeData.new))
+            profileRepository.upsert(updatedProfile)
+                .onSuccess {
+                    _uiState.value = UiState.success(updatedProfile)
+                    _passwordChangeState.value = UiState.success(PasswordChange())
+                }
+                .onFailure { e ->
+                    _passwordChangeState.value = capturedPasswordUiState.copy(error = Res.string.profile_error_update)
+                }
         }
     }
 
@@ -310,15 +302,10 @@ class ProfileViewModel(
             }
 
             _isSyncing.value = true
-            try {
-                foodRepository.syncWithServer()
-                inventoryRepository.syncWithServer()
-                profileRepository.syncWithServer()
-            } catch (e: Exception) {
-                // TODO Log error
-            } finally {
-                _isSyncing.value = false
-            }
+            foodRepository.syncWithServer()
+            inventoryRepository.syncWithServer()
+            profileRepository.syncWithServer()
+            _isSyncing.value = false
         }
     }
 
@@ -347,18 +334,22 @@ class ProfileViewModel(
     }
 
     fun logoutRemote() {
-        // TODO: error handling
         viewModelScope.launch {
+            // TODO: error handling
             authenticationService.logoutRemotely()
-            _isLoggedInRemotely.value = false
+                .onSuccess {
+                    _isLoggedInRemotely.value = false
+                }
         }
     }
 
     fun logout() {
-        // TODO: error handling
         viewModelScope.launch {
+            // TODO: error handling
             authenticationService.logout()
-            navigator.goToLogin()
+                .onSuccess {
+                    navigator.goToLogin()
+                }
         }
     }
 
@@ -421,31 +412,27 @@ class ProfileViewModel(
         viewModelScope.launch {
             val serverUrl = _persistedServerUrl.value ?: return@launch
 
-            try {
-                if (!_isLoggedInRemotely.value) {
-                    val loginResult = authenticationService.loginRemotely(
-                        _remoteDeleteUsername.value,
-                        _remoteDeletePassword.value,
-                        serverUrl
-                    )
-                    if (loginResult.isFailure) {
-                        _remoteDeleteError.value = loginResult.exceptionOrNull()?.message ?: "Login failed"
-                        return@launch
-                    }
+            if (!_isLoggedInRemotely.value) {
+                val loginResult = authenticationService.loginRemotely(
+                    _remoteDeleteUsername.value,
+                    _remoteDeletePassword.value,
+                    serverUrl
+                )
+                if (loginResult.isFailure) {
+                    _remoteDeleteError.value = loginResult.exceptionOrNull()?.message ?: "Login failed"
+                    return@launch
                 }
-
-                profileRepository.deleteRemote()
-                    .onSuccess {
-                        authenticationService.logoutRemotely()
-                        dismissDeleteRemoteDialog()
-                        loadProfile() // Reload to reflect local-only state
-                    }
-                    .onFailure { e ->
-                        _remoteDeleteError.value = e.message ?: "Deletion failed"
-                    }
-            } catch (e: Exception) {
-                _remoteDeleteError.value = e.message ?: "Deletion failed"
             }
+
+            profileRepository.deleteRemote()
+                .onSuccess {
+                    authenticationService.logoutRemotely()
+                    dismissDeleteRemoteDialog()
+                    loadProfile() // Reload to reflect local-only state
+                }
+                .onFailure { e ->
+                    _remoteDeleteError.value = e.message ?: "Deletion failed"
+                }
         }
     }
 

@@ -12,7 +12,7 @@ class ServerErrorException(message: String) : Exception(message)
 class NotAuthenticatedException(message: String) : Exception(message)
 
 interface AuthenticationService {
-    suspend fun loginLocally(profileId: Uuid, stayLoggedIn: Boolean, serverUrl: String? = null)
+    suspend fun loginLocally(profileId: Uuid, stayLoggedIn: Boolean, serverUrl: String? = null): Result<Unit>
     suspend fun loginRemotely(username: String, password: String, serverUrl: String): Result<LoginResponse?>
     suspend fun logoutRemotely(): Result<Boolean>
     suspend fun logout(): Result<Boolean>

@@ -156,8 +156,14 @@ class RegistrationViewModel(
             createLocalProfile(userName, email, password)
                 .onSuccess { localProfile ->
                     authenticationService.loginLocally(localProfile.id, registrationData.stayLoggedIn)
-                    registrationState.emit(UiState.success(registrationData.copy(userName = userName, email = email, password = password)))
-                    navigator.goToMain()
+                        .onSuccess {
+                            registrationState.emit(UiState.success(registrationData.copy(userName = userName, email = email, password = password)))
+                            navigator.goToMain()
+                        }
+                        .onFailure { exception ->
+                            Logger.withTag(registrationTag).e(exception) { "Error login user locally after registration" }
+                            registrationState.emit(uiState.copy(error = Res.string.registration_error))
+                        }
                 }
                 .onFailure { exception ->
                     Logger.withTag(registrationTag).e(exception) { "Error registration of user: $userName with email: $email" }

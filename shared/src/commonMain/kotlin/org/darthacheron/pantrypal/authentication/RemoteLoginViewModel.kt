@@ -112,19 +112,21 @@ class RemoteLoginViewModel(
                         // Update profile sync timestamp
                         profileRepository.upsert(existingProfile.copy(
                             lastSyncedAt = Clock.System.now()
-                        ))
-
-                        profileRepository.upsertRemoteProfile(RemoteProfile(
-                            localProfileId = existingProfile.id,
-                            serverUrl = data.serverUrl,
-                            serverId = Uuid.parse(response.user.id),
-                            username = response.user.username,
-                            email = response.user.email,
-                            lastSyncedAt = Clock.System.now()
-                        ))
+                        )).onSuccess {
+                            profileRepository.upsertRemoteProfile(RemoteProfile(
+                                localProfileId = existingProfile.id,
+                                serverUrl = data.serverUrl,
+                                serverId = Uuid.parse(response.user.id),
+                                username = response.user.username,
+                                email = response.user.email,
+                                lastSyncedAt = Clock.System.now()
+                            ))
+                            state.emit(UiState.success(data))
+                            onSuccess()
+                        }.onFailure { e ->
+                            state.emit(uiState.copy(error = Res.string.remote_login_error_generic))
+                        }
                     }
-                    state.emit(UiState.success(data))
-                    onSuccess()
                 } else {
                     handleError(result.exceptionOrNull(), uiState)
                 }

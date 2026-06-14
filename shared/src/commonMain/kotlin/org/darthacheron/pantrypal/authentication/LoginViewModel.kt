@@ -97,8 +97,14 @@ class LoginViewModel(
 
     private suspend fun loginLocally(profile: Profile, username: String, password: String, stayLoggedIn: Boolean) {
         authenticationService.loginLocally(profile.id, stayLoggedIn)
-        loginState.emit(UiState.success(Login(username, password, stayLoggedIn = stayLoggedIn)))
-        navigator.goToMain()
+            .onSuccess {
+                loginState.emit(UiState.success(Login(username, password, stayLoggedIn = stayLoggedIn)))
+                navigator.goToMain()
+            }
+            .onFailure { e ->
+                Logger.withTag(loginTag).e(e) { "Error logging in locally" }
+                loginState.emit(UiState.error(Res.string.login_error))
+            }
     }
 
     fun openRegister() {

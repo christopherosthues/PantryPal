@@ -146,7 +146,7 @@ class RegistrationViewModelTest {
         every { profileRepository.getProfileByEmail(any()) } returns flowOf(null)
         every { profileRepository.getProfileByIdentifier(any()) } returns flowOf(null)
         everySuspend { profileRepository.upsert(any()) } returns Result.success(Unit)
-        everySuspend { authenticationService.loginLocally(any(), any(), any()) } returns Unit
+        everySuspend { authenticationService.loginLocally(any(), any(), any()) } returns Result.success(Unit)
         every { navigator.goToMain() } returns Unit
 
         viewModel.onUserNameChanged(username)
@@ -192,7 +192,7 @@ class RegistrationViewModelTest {
         every { profileRepository.getProfileByEmail(any()) } returns flowOf(null)
         every { profileRepository.getProfileByIdentifier(any()) } returns flowOf(null)
         everySuspend { profileRepository.upsert(any()) } returns Result.success(Unit)
-        everySuspend { authenticationService.loginLocally(any(), any(), any()) } returns Unit
+        everySuspend { authenticationService.loginLocally(any(), any(), any()) } returns Result.success(Unit)
         
         // Mock throwing an exception using a lambda that throws
         everySuspend { profileRepository.upsert(any()) } returns Result.failure(Exception("Disk failure"))

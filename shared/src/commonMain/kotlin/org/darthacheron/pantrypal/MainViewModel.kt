@@ -59,7 +59,6 @@ class MainViewModel(
     }
 
     fun keepLocalAccountOnly() {
-        // TODO: error handling
         viewModelScope.launch {
             val prefs = authenticationPreferencesRepository.authenticationPreferencesFlow.first()
             if (prefs.localProfileId.isNotBlank()) {
@@ -72,9 +71,8 @@ class MainViewModel(
                 }
             }
 
-            // Logout removes remote tokens but keeps localProfileId if we pass it back or change updateAccessPreferences
+            // TODO: error handling
             authenticationService.logoutRemotely()
-
             _showRemoteDeletedDialog.value = false
         }
     }

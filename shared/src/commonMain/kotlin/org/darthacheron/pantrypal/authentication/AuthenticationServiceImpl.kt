@@ -30,8 +30,8 @@ class AuthenticationServiceImpl(
 ) : AuthenticationService {
     private val authenticationTag = "Authentication"
 
-    override suspend fun loginLocally(profileId: Uuid, stayLoggedIn: Boolean, serverUrl: String?) {
-        authenticationPreferencesRepository.loginLocally(profileId.toString(), serverUrl, stayLoggedIn)
+    override suspend fun loginLocally(profileId: Uuid, stayLoggedIn: Boolean, serverUrl: String?): Result<Unit> {
+        return authenticationPreferencesRepository.loginLocally(profileId.toString(), serverUrl, stayLoggedIn)
     }
 
     override suspend fun loginRemotely(username: String, password: String, serverUrl: String): Result<LoginResponse?> {
@@ -55,7 +55,8 @@ class AuthenticationServiceImpl(
                     loginResponse.tokenResponse.refreshExpiresIn,
                     serverUrl,
                     Clock.System.now().toEpochMilliseconds()
-                )
+                ).onFailure { return Result.failure(it) }
+                
                 Logger.withTag(authenticationTag).d("Login successful")
 
                 return Result.success(loginResponse)
@@ -79,22 +80,22 @@ class AuthenticationServiceImpl(
     }
 
     override suspend fun logoutRemotely(): Result<Boolean> {
-        try {
+        return try {
             authenticationPreferencesRepository.logoutRemotely()
-            return Result.success(true)
+            Result.success(true)
         } catch (exception: Exception) {
             Logger.withTag(authenticationTag).e(exception) { "Error logging out remote user" }
-            return Result.failure(exception)
+            Result.failure(exception)
         }
     }
 
     override suspend fun logout(): Result<Boolean> {
-        try {
+        return try {
             authenticationPreferencesRepository.logout()
-            return Result.success(true)
+            Result.success(true)
         } catch (exception: Exception) {
             Logger.withTag(authenticationTag).e(exception) { "Error logging out user" }
-            return Result.failure(exception)
+            Result.failure(exception)
         }
     }
 
@@ -125,7 +126,7 @@ class AuthenticationServiceImpl(
                     tokenResponse.expiresIn,
                     tokenResponse.refreshExpiresIn,
                     Clock.System.now().toEpochMilliseconds()
-                )
+                ).onFailure { return Result.failure(it) }
                 return Result.success(true)
             } else if (response.status == HttpStatusCode.Unauthorized) {
                 logoutRemotely()
@@ -166,7 +167,7 @@ class AuthenticationServiceImpl(
                     registrationResponse.tokenResponse.refreshExpiresIn,
                     serverUrl,
                     Clock.System.now().toEpochMilliseconds()
-                )
+                ).onFailure { return Result.failure(it) }
                 return Result.success(registrationResponse)
             } else {
                 val problem = try {

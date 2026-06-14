@@ -97,7 +97,7 @@ class LoginViewModelTest {
         val profile = createTestProfile(username, password)
         
         every { profileRepository.getProfileByIdentifier(username) } returns flowOf(profile)
-        everySuspend { authenticationService.loginLocally(any(), any(), any()) } returns Unit
+        everySuspend { authenticationService.loginLocally(any(), any(), any()) } returns Result.success(Unit)
         every { navigator.goToMain() } returns Unit
 
         viewModel.onUsernameChanged(username)
