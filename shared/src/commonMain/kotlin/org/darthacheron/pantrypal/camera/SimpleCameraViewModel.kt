@@ -3,7 +3,6 @@ package org.darthacheron.pantrypal.camera
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import co.touchlab.kermit.Logger
-import com.kashif.cameraK.controller.CameraController
 import com.kashif.cameraK.enums.FlashMode
 import com.kashif.cameraK.enums.TorchMode
 import com.kashif.cameraK.result.ImageCaptureResult
@@ -34,17 +33,17 @@ class SimpleCameraViewModel : ViewModel() {
 
     private val loggerTag = "SimpleCameraViewModel"
 
-    fun onFlashToggle(cameraController: CameraController) {
+    fun onFlashToggle(cameraController: CameraControl) {
         cameraController.toggleFlashMode()
         _uiState.update { it.copy(flashMode = cameraController.getFlashMode() ?: FlashMode.OFF) }
     }
 
-    fun onTorchToggle(cameraController: CameraController) {
+    fun onTorchToggle(cameraController: CameraControl) {
         cameraController.toggleTorchMode()
         _uiState.update { it.copy(torchMode = cameraController.getTorchMode() ?: TorchMode.OFF) }
     }
 
-    fun onLensSwitch(cameraController: CameraController) {
+    fun onLensSwitch(cameraController: CameraControl) {
         cameraController.toggleCameraLens()
         _uiState.update {
             it.copy(
@@ -54,7 +53,7 @@ class SimpleCameraViewModel : ViewModel() {
         }
     }
 
-    fun onZoomChanged(cameraController: CameraController, zoomLevel: Float) {
+    fun onZoomChanged(cameraController: CameraControl, zoomLevel: Float) {
         cameraController.setZoom(zoomLevel)
         _uiState.update { it.copy(zoomLevel = zoomLevel) }
     }
@@ -63,7 +62,7 @@ class SimpleCameraViewModel : ViewModel() {
         _uiState.update { it.copy(maxZoom = maxZoom) }
     }
 
-    fun capture(cameraController: CameraController, onCapture: (String) -> Unit) {
+    fun capture(cameraController: CameraControl, onCapture: (String) -> Unit) {
         if (_uiState.value.isCapturing) return
 
         _uiState.update { it.copy(isCapturing = true) }

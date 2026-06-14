@@ -14,14 +14,14 @@ import okio.SYSTEM
 object CleanupUtils {
     private const val LOGGER_TAG = "CleanupUtils"
 
-    fun cleanupOcrDirectory(scope: CoroutineScope) {
-        scope.launch(Dispatchers.Default) {
+    fun cleanupOcrDirectory(scope: CoroutineScope, fileSystem: FileSystem = FileSystem.SYSTEM) {
+        scope.launch {
             try {
                 val ocrDir = FileKit.filesDir.path.toPath() / "PantryPal" / "OCR"
-                if (FileSystem.SYSTEM.exists(ocrDir)) {
-                    val files = FileSystem.SYSTEM.list(ocrDir)
+                if (fileSystem.exists(ocrDir)) {
+                    val files = fileSystem.list(ocrDir)
                     files.forEach { file ->
-                        FileSystem.SYSTEM.delete(file)
+                        fileSystem.delete(file)
                         Logger.withTag(LOGGER_TAG).i { "Deleted old OCR file: $file" }
                     }
                 }

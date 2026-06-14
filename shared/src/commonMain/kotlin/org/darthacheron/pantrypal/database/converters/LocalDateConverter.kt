@@ -5,14 +5,14 @@ import kotlinx.datetime.LocalDate
 import kotlin.time.ExperimentalTime
 
 /**
- * Room type converter for kotlin.time.LocalTime
- * Stores LocalTime as String in format HH:MM:SS
+ * Room type converter for kotlinx.datetime.LocalDate
+ * Stores LocalDate as String in format YYYY-MM-DD
  */
 @OptIn(ExperimentalTime::class)
 class LocalDateConverter {
     @TypeConverter
-    fun fromLocalTime(time: LocalDate): String = time.toString()
+    fun fromLocalDate(date: LocalDate): String = date.toString()
 
     @TypeConverter
-    fun toLocalTime(timeString: String): LocalDate = LocalDate.parse(timeString)
+    fun toLocalDate(dateString: String): LocalDate = LocalDate.parse(dateString)
 }

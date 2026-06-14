@@ -264,7 +264,7 @@ private fun EnhancedCameraScreen(
     cameraState: CameraKState.Ready,
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val cameraController = cameraState.controller
+    val cameraController = remember(cameraState.controller) { CameraControllerWrapper(cameraState.controller) }
     var imageBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
 
     LaunchedEffect(cameraController) {
