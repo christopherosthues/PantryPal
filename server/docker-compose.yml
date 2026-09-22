@@ -93,6 +93,29 @@ services:
     profiles:
       - db-init
 
+  pantrypal-mongo-init:
+    image: mongodb/mongodb-community-server:8.3.2-ubuntu2204-slim
+    restart: no
+    environment:
+      - MONGO_HOST=mongodb
+      - MONGODB_ROOT_USER=${MONGODB_ROOT_USER}
+      - MONGODB_ROOT_PASSWORD=${MONGODB_ROOT_PASSWORD}
+      - MONGODB_PANTRY_PAL_DATABASE=${MONGODB_PANTRY_PAL_DATABASE}
+      - MONGODB_PANTRY_PAL_USER=${MONGODB_PANTRY_PAL_USER}
+      - MONGODB_PANTRY_PAL_PASSWORD=${MONGODB_PANTRY_PAL_PASSWORD}
+    volumes:
+      - ./database/mongodb/01-create-pantrypal-mongo-user.sh:/mongo-init.sh:ro
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    entrypoint:
+      - /bin/bash
+      - /mongo-init.sh
+    networks:
+      - application_network
+    profiles:
+      - mongo-init
+
   pantrypal-kc-import:
     build:
       context: ./keycloak
