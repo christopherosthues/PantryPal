@@ -1,0 +1,5 @@
+FROM keycloak/keycloak:26.6 AS init
+
+COPY pantrypal-realm.json /opt/keycloak/data/import/
+
+ENTRYPOINT [ "kc.sh", "import", "/opt/keycloak/data/import/pantrypal-realm.json" ]

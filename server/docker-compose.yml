@@ -1,81 +1,4 @@
 services:
-  postgres:
-    image: postgres:18.4
-    environment:
-      - POSTGRES_DB=${POSTGRES_DB}
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - PANTRY_PAL_DB=${POSTGRES_DB}
-      - PANTRY_PAL_USER=${PANTRY_PAL_USER}
-      - PANTRY_PAL_USER_PASSWORD=${PANTRY_PAL_USER_PASSWORD}
-      - PANTRY_PAL_SCHEMA=${PANTRY_PAL_SCHEMA}
-      - KEYCLOAK_DB=${KEYCLOAK_DB}
-      - KEYCLOAK_ADMIN=${KEYCLOAK_DB_ADMIN}
-      - KEYCLOAK_ADMIN_PASSWORD=${KEYCLOAK_DB_ADMIN_PASSWORD}
-      - KEYCLOAK_USER=${KEYCLOAK_DB_USER}
-      - KEYCLOAK_USER_PASSWORD=${KEYCLOAK_DB_USER_PASSWORD}
-      - KEYCLOAK_SCHEMAS=${KEYCLOAK_DB_SCHEMA}
-    ports:
-      - "5432:5432"
-    volumes:
-      - ./database:/docker-entrypoint-initdb.d
-      - pantrypal-pgdata:/var/lib/postgresql
-    hostname: pantrypaldb
-    container_name: pantry_pal_db
-    restart: unless-stopped
-    networks:
-      - pantrypal_network
-      - pantrypal_keycloak_network
-    healthcheck:
-      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER}", "-d", "${POSTGRES_DB}"]
-      interval: 10s
-      retries: 5
-      start_period: 5s
-      timeout: 5s
-
-  pgadmin:
-    image: dpage/pgadmin4:9.15.0
-    environment:
-      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_MAIL}
-      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASSWORD}
-    ports:
-      - "5050:80"
-    volumes:
-      - pantrypal-pgadmin-data:/var/lib/pgadmin
-    container_name: pantry_pal_pgadmin
-    hostname: pantrypalpgadmin
-    restart: unless-stopped
-    depends_on:
-      - postgres
-    networks:
-      - pantrypal_network
-
-  keycloak:
-    image: keycloak/keycloak:26.6
-    container_name: pantry_pal_keycloak
-    environment:
-      - KC_BOOTSTRAP_ADMIN_USERNAME=${KEYCLOAK_ADMIN}
-      - KC_BOOTSTRAP_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD}
-      - KC_DB=postgres
-      - KC_DB_URL_HOST=pantrypaldb
-      - KC_DB_URL_PORT=5432
-      - KC_DB_URL_DATABASE=${KEYCLOAK_DB}
-      - KC_DB_USERNAME=${KEYCLOAK_DB_USER}
-      - KC_DB_PASSWORD=${KEYCLOAK_DB_USER_PASSWORD}
-      - KC_DB_SCHEMA=${KEYCLOAK_DB_SCHEMA}
-      - KC_HEALTH_ENABLED=true
-      - KC_METRICS_ENABLED=true
-    command: [ "start-dev", "--import-realm", "--http-port", "8080" ]
-    ports:
-      - "18080:8080"
-      - "7443:7443"
-    volumes:
-      - pantrypal-keycloak-data:/opt/keycloak/data
-      - ./pantrypal-realm.json:/opt/keycloak/data/import/realm.json
-    restart: always
-    networks:
-      - pantrypal_keycloak_network
-
   pantrypal:
     build:
       context: ..
@@ -111,8 +34,8 @@ services:
       mongodb:
         condition: service_started
     networks:
-      - pantrypal_network
-      - pantrypal_keycloak_network
+      - application_network
+      - keycloak_network
 
   pantrypal-migration:
     build:
@@ -140,52 +63,53 @@ services:
       postgres:
         condition: service_healthy
     networks:
-      - pantrypal_network
+      - application_network
     profiles:
       - migration
 
-  mongodb:
-    image: mongodb/mongodb-community-server:8.3.2-ubuntu2204-slim
-    container_name: pantry_pal_mongodb
+  pantrypal-db-init:
+    build:
+      context: ./database
+      dockerfile: Dockerfile.init
     environment:
-      - MONGODB_INITDB_ROOT_USERNAME=${MONGODB_ROOT_USER}
-      - MONGODB_INITDB_ROOT_PASSWORD=${MONGODB_ROOT_PASSWORD}
-    ports:
-      - "27017:27017"
-    volumes:
-      - pantrypal-mongodb-data:/data/db
-    restart: unless-stopped
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - KEYCLOAK_DB=${KEYCLOAK_DB}
+      - KEYCLOAK_ADMIN=${KEYCLOAK_ADMIN}
+      - KEYCLOAK_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD}
+      - KEYCLOAK_USER=${KEYCLOAK_USER}
+      - KEYCLOAK_USER_PASSWORD=${KEYCLOAK_USER_PASSWORD}
+      - KEYCLOAK_SCHEMAS=${KEYCLOAK_SCHEMAS}
+      - PANTRY_PAL_DB=${PANTRY_PAL_DB}
+      - PANTRY_PAL_USER=${PANTRY_PAL_USER}
+      - PANTRY_PAL_USER_PASSWORD=${PANTRY_PAL_USER_PASSWORD}
+      - PANTRY_PAL_SCHEMA=${PANTRY_PAL_SCHEMA}
+    depends_on:
+      postgres:
+        condition: service_healthy
     networks:
-      - pantrypal_network
+      - application_network
+    profiles:
+      - db-init
 
-#  mongo-express:
-#    image: mongo-express:1.0.2-alpha.4
-#    container_name: pantry_pal_mongo_express
-#    environment:
-#      - ME_CONFIG_MONGODB_ADMINUSERNAME=${MONGODB_ROOT_USER:admin}
-#      - ME_CONFIG_MONGODB_ADMINPASSWORD=${MONGODB_ROOT_PASSWORD:admin_password}
-#      - ME_CONFIG_MONGODB_URL=mongodb://${MONGODB_ROOT_USER:admin}:${MONGODB_ROOT_PASSWORD:admin_password}@pantry_pal_mongodb:27017/
-#      - ME_CONFIG_BASICAUTH_USERNAME=${MONGO_EXPRESS_USER:admin}
-#      - ME_CONFIG_BASICAUTH_PASSWORD=${MONGO_EXPRESS_PASSWORD:admin_password}
-#    ports:
-#      - "8081:8081"
-#    depends_on:
-#      - mongodb
-#    restart: unless-stopped
-#    networks:
-#      - pantrypal_network
+  pantrypal-kc-import:
+    build:
+      context: ./keycloak
+      dockerfile: Dockerfile.import
+    depends_on:
+      keycloak:
+        condition: service_started
+    networks:
+      - keycloak_network
+    profiles:
+      - kc-import
 
 volumes:
-  pantrypal-pgdata:
-  pantrypal-pgadmin-data:
-  pantrypal-keycloak-data:
-    driver: local
-  pantrypal-mongodb-data:
   images-data:
     driver: local
 
 networks:
-  pantrypal_network:
+  application_network:
     external: false
-  pantrypal_keycloak_network:
-    driver: bridge
+  keycloak_network:

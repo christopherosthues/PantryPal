@@ -1,0 +1,6 @@
+FROM postgres:18.4 AS init
+
+COPY create-databases.sh /app/init/
+RUN chmod +x /app/init/create-databases.sh
+
+ENTRYPOINT [ "/app/init/create-databases.sh" ]
