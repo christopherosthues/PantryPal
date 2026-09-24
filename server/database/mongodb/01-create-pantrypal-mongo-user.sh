@@ -3,10 +3,11 @@ set -euo pipefail
 
 : "${MONGO_HOST:?MONGO_HOST is required}"
 : "${MONGODB_ROOT_USER:?MONGODB_ROOT_USER is required}"
-: "${MONGODB_ROOT_PASSWORD:?MONGODB_ROOT_PASSWORD is required}"
 : "${MONGODB_PANTRY_PAL_DATABASE:?MONGODB_PANTRY_PAL_DATABASE is required}"
 : "${MONGODB_PANTRY_PAL_USER:?MONGODB_PANTRY_PAL_USER is required}"
-: "${MONGODB_PANTRY_PAL_PASSWORD:?MONGODB_PANTRY_PAL_PASSWORD is required}"
+
+MONGODB_ROOT_PASSWORD=$(cat /run/secrets/mongodb_root_password)
+MONGODB_PANTRY_PAL_PASSWORD=$(cat /run/secrets/mongodb_pantrypal_password)
 
 echo "Creating MongoDB application user..."
 

@@ -7,22 +7,8 @@ services:
     hostname: pantrypal
     ports:
       - "8080:8080"
-    environment:
-      - POSTGRES_CONNECTION_STRING=${POSTGRES_CONNECTION_STRING}
-      - POSTGRES_USER=${PANTRY_PAL_USER}
-      - POSTGRES_PASSWORD=${PANTRY_PAL_USER_PASSWORD}
-      - PANTRY_PAL_SCHEMA=${PANTRY_PAL_SCHEMA}
-      - KEYCLOAK_BASE_URL=${KEYCLOAK_BASE_URL}
-      - KEYCLOAK_EXTERNAL_BASE_URL=${KEYCLOAK_EXTERNAL_BASE_URL}
-      - KEYCLOAK_CLIENT_ID=${KEYCLOAK_CLIENT_ID}
-      - KEYCLOAK_CLIENT_SECRET=${KEYCLOAK_CLIENT_SECRET}
-      - KEYCLOAK_REALM=${KEYCLOAK_REALM}
-      - KEYCLOAK_AUDIENCE=${KEYCLOAK_AUDIENCE}
-      - KEYCLOAK_ADMIN=${KEYCLOAK_ADMIN}
-      - KEYCLOAK_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD}
-      - IMAGES_PATH=/app/pantrypal/
-      - MONGODB_URI=${MONGODB_CONNECTION_STRING}
-      - MONGODB_DATABASE=${MONGODB_DATABASE}
+    env_file:
+      - ./deploy/envfiles/pantrypal.env
     volumes:
       - images-data:/app/pantrypal/
     restart: unless-stopped
@@ -42,21 +28,11 @@ services:
       context: ..
       dockerfile: server/Dockerfile
     container_name: pantry_pal_migration
+    env_file:
+      - ./deploy/envfiles/pantrypal.env
     environment:
-      - POSTGRES_CONNECTION_STRING=${POSTGRES_CONNECTION_STRING}
-      - POSTGRES_USER=${PANTRY_PAL_USER}
-      - POSTGRES_PASSWORD=${PANTRY_PAL_USER_PASSWORD}
-      - PANTRY_PAL_SCHEMA=${PANTRY_PAL_SCHEMA}
       - GENERATE_MIGRATION=true
       - MIGRATIONS_PATH=/app/migrations
-      - KEYCLOAK_BASE_URL=${KEYCLOAK_BASE_URL}
-      - KEYCLOAK_EXTERNAL_BASE_URL=${KEYCLOAK_EXTERNAL_BASE_URL}
-      - KEYCLOAK_CLIENT_ID=${KEYCLOAK_CLIENT_ID}
-      - KEYCLOAK_CLIENT_SECRET=${KEYCLOAK_CLIENT_SECRET}
-      - KEYCLOAK_REALM=${KEYCLOAK_REALM}
-      - KEYCLOAK_AUDIENCE=${KEYCLOAK_AUDIENCE}
-      - KEYCLOAK_ADMIN=${KEYCLOAK_ADMIN}
-      - KEYCLOAK_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD}
     volumes:
       - ./migrations:/app/migrations
     depends_on:
@@ -71,20 +47,9 @@ services:
     build:
       context: ./database
       dockerfile: Dockerfile.init
-    environment:
-      - POSTGRES_DB=${POSTGRES_DB}
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - KEYCLOAK_DB=${KEYCLOAK_DB}
-      - KEYCLOAK_ADMIN=${KEYCLOAK_ADMIN}
-      - KEYCLOAK_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD}
-      - KEYCLOAK_USER=${KEYCLOAK_USER}
-      - KEYCLOAK_USER_PASSWORD=${KEYCLOAK_USER_PASSWORD}
-      - KEYCLOAK_SCHEMAS=${KEYCLOAK_SCHEMAS}
-      - PANTRY_PAL_DB=${PANTRY_PAL_DB}
-      - PANTRY_PAL_USER=${PANTRY_PAL_USER}
-      - PANTRY_PAL_USER_PASSWORD=${PANTRY_PAL_USER_PASSWORD}
-      - PANTRY_PAL_SCHEMA=${PANTRY_PAL_SCHEMA}
+    env_file:
+      - ../../deploy/envfiles/postgres-common.env
+      - ./deploy/envfiles/postgres.env
     depends_on:
       postgres:
         condition: service_healthy
@@ -92,17 +57,17 @@ services:
       - application_network
     profiles:
       - db-init
+    secrets:
+      - postgres_password
+      - pantrypal_admin_password
+      - pantrypal_user_password
 
   pantrypal-mongo-init:
     image: mongodb/mongodb-community-server:8.3.2-ubuntu2204-slim
     restart: no
-    environment:
-      - MONGO_HOST=mongodb
-      - MONGODB_ROOT_USER=${MONGODB_ROOT_USER}
-      - MONGODB_ROOT_PASSWORD=${MONGODB_ROOT_PASSWORD}
-      - MONGODB_PANTRY_PAL_DATABASE=${MONGODB_PANTRY_PAL_DATABASE}
-      - MONGODB_PANTRY_PAL_USER=${MONGODB_PANTRY_PAL_USER}
-      - MONGODB_PANTRY_PAL_PASSWORD=${MONGODB_PANTRY_PAL_PASSWORD}
+    env_file:
+      - ../../deploy/envfiles/mongodb-common.env
+      - ./deploy/envfiles/mongodb.env
     volumes:
       - ./database/mongodb/01-create-pantrypal-mongo-user.sh:/mongo-init.sh:ro
     depends_on:
@@ -115,6 +80,9 @@ services:
       - application_network
     profiles:
       - mongo-init
+    secrets:
+      - mongodb_root_password
+      - mongodb_pantrypal_password
 
   pantrypal-kc-import:
     build:
@@ -134,5 +102,18 @@ volumes:
 
 networks:
   application_network:
-    external: false
+    external: true
   keycloak_network:
+    external: true
+
+secrets:
+  postgres_password:
+    file: ./deploy/secrets/postgres_password.txt
+  pantrypal_admin_password:
+    file: ./deploy/secrets/pantrypal_admin_password.txt
+  pantrypal_user_password:
+    file: ./deploy/secrets/pantrypal_user_password.txt
+  mongodb_root_password:
+    file: ./deploy/secrets/mongodb_root_password.txt
+  mongodb_pantrypal_password:
+    file: ./deploy/secrets/mongodb_pantrypal_password.txt

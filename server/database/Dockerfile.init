@@ -1,6 +1,7 @@
-FROM postgres:18.4 AS init
+FROM postgres:18.4
 
-COPY create-databases.sh /app/init/
-RUN chmod +x /app/init/create-databases.sh
+COPY postgresql/01-create-pantrypal-db.sql /docker-entrypoint-initdb.d/
+COPY postgresql/01b-create-pantrypal-admin.sql /docker-entrypoint-initdb.d/
+COPY postgresql/02-create-pantrypal-user.sql /docker-entrypoint-initdb.d/
 
-ENTRYPOINT [ "/app/init/create-databases.sh" ]
+ENTRYPOINT [ "sh", "-c", "export PGPASSWORD=$(cat /run/secrets/postgres_password) && psql -U ${POSTGRES_USER} -d ${POSTGRES_DB} -f /docker-entrypoint-initdb.d/01-create-pantrypal-db.sql && psql -U ${POSTGRES_USER} -d ${PANTRY_PAL_DB} -f /docker-entrypoint-initdb.d/01b-create-pantrypal-admin.sql && psql -U ${POSTGRES_USER} -d ${PANTRY_PAL_DB} -f /docker-entrypoint-initdb.d/02-create-pantrypal-user.sql" ]
