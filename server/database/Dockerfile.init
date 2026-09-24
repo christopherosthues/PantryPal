@@ -1,7 +1,7 @@
 FROM postgres:18.4
 
-COPY postgresql/01-create-pantrypal-db.sql /docker-entrypoint-initdb.d/
-COPY postgresql/01b-create-pantrypal-admin.sql /docker-entrypoint-initdb.d/
-COPY postgresql/02-create-pantrypal-user.sql /docker-entrypoint-initdb.d/
+COPY ../../../database/postgresql/01-create-db.sql /docker-entrypoint-initdb.d/
+COPY ../../../database/postgresql/02-create-admin.sql /docker-entrypoint-initdb.d/
+COPY ../../../database/postgresql/03-create-user.sql /docker-entrypoint-initdb.d/
 
-ENTRYPOINT [ "sh", "-c", "export PGPASSWORD=$(cat /run/secrets/postgres_password) && psql -U ${POSTGRES_USER} -d ${POSTGRES_DB} -f /docker-entrypoint-initdb.d/01-create-pantrypal-db.sql && psql -U ${POSTGRES_USER} -d ${PANTRY_PAL_DB} -f /docker-entrypoint-initdb.d/01b-create-pantrypal-admin.sql && psql -U ${POSTGRES_USER} -d ${PANTRY_PAL_DB} -f /docker-entrypoint-initdb.d/02-create-pantrypal-user.sql" ]
+ENTRYPOINT [ "sh", "-c", "export APP_DB=$PANTRY_PAL_DB && export APP_ADMIN=$PANTRY_PAL_ADMIN && export APP_USER=$PANTRY_PAL_USER && export APP_SCHEMA=$PANTRY_PAL_SCHEMA && export APP_ADMIN_SECRET_FILE=pantrypal_admin_password && export APP_USER_SECRET_FILE=pantrypal_user_password && export PGPASSWORD=$(cat /run/secrets/postgres_password) && psql -U ${POSTGRES_USER} -d ${POSTGRES_DB} -f /docker-entrypoint-initdb.d/01-create-db.sql && psql -U ${POSTGRES_USER} -d ${PANTRY_PAL_DB} -f /docker-entrypoint-initdb.d/02-create-admin.sql && psql -U ${POSTGRES_USER} -d ${PANTRY_PAL_DB} -f /docker-entrypoint-initdb.d/03-create-user.sql" ]

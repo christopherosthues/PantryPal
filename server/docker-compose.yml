@@ -68,8 +68,12 @@ services:
     env_file:
       - ../../deploy/envfiles/mongodb-common.env
       - ./deploy/envfiles/mongodb.env
+    environment:
+      - APP_MONGO_DATABASE=${MONGODB_PANTRY_PAL_DATABASE}
+      - APP_MONGO_USER=${MONGODB_PANTRY_PAL_USER}
+      - APP_MONGO_SECRET_FILE=mongodb_pantrypal_password
     volumes:
-      - ./database/mongodb/01-create-pantrypal-mongo-user.sh:/mongo-init.sh:ro
+      - ../../../database/mongodb/01-create-mongo-user.sh:/mongo-init.sh:ro
     depends_on:
       mongodb:
         condition: service_healthy
