@@ -112,12 +112,12 @@ networks:
 
 secrets:
   postgres_password:
-    file: ./deploy/secrets/postgres_password.txt
+    file: ../../deploy/secrets/postgres_password.txt
   pantrypal_admin_password:
     file: ./deploy/secrets/pantrypal_admin_password.txt
   pantrypal_user_password:
     file: ./deploy/secrets/pantrypal_user_password.txt
   mongodb_root_password:
-    file: ./deploy/secrets/mongodb_root_password.txt
+    file: ../../deploy/secrets/mongodb_root_password.txt
   mongodb_pantrypal_password:
     file: ./deploy/secrets/mongodb_pantrypal_password.txt
